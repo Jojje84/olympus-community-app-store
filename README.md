@@ -17,9 +17,7 @@ Add this repository as a Community App Store in umbrelOS:
 ### Gaming & Servers
 - **Crafty Controller** — manage Minecraft servers from a web dashboard
 
-Umbrel's manifest categories use the platform's supported category names. Fitness
-apps use `files` (the same category used by wger in the official Umbrel store),
-while Crafty uses `developer`. This README keeps the human-friendly grouping above.
+This Community App Store uses custom category labels so the Umbrel UI groups the apps as **Health & Fitness** and **Gaming & Servers**.
 
 ## Automatic update discovery
 
