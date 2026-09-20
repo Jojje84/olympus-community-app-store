@@ -18,6 +18,7 @@ Update rules:
 """
 
 import json
+import os
 import re
 import urllib.parse
 import urllib.request
@@ -57,13 +58,17 @@ def upstream_from_url(url: str | None) -> tuple[str, str] | None:
 
 
 def fetch_json(url: str) -> object:
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/json",
-            "User-Agent": USER_AGENT,
-        },
-    )
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if token and url.startswith("https://api.github.com/"):
+        headers["Authorization"] = f"Bearer {token}"
+        headers["X-GitHub-Api-Version"] = "2022-11-28"
+
+    request = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 
