@@ -1,0 +1,32 @@
+manifestVersion: 1
+id: olympus-sparkyfitness
+category: files
+name: SparkyFitness
+version: "1.7.1"
+tagline: Track workouts, nutrition and health
+icon: https://raw.githubusercontent.com/CodeWithCJ/SparkyFitness/main/docs/public/logo.png
+description: >-
+  SparkyFitness is a self-hosted fitness and health tracker for workouts,
+  nutrition, body measurements, hydration and more.
+
+
+  This Olympus package uses persistent Umbrel storage and per-install generated
+  secrets. Create your own SparkyFitness account after installation.
+releaseNotes: >-
+  Packaged from upstream SparkyFitness v1.7.1.
+
+developer: CodeWithCJ
+website: https://codewithcj.github.io/SparkyFitness/
+dependencies: []
+repo: https://github.com/CodeWithCJ/SparkyFitness
+support: https://github.com/CodeWithCJ/SparkyFitness/issues
+
+port: 8798
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/zeus-community-app-store
