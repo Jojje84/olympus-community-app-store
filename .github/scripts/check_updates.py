@@ -108,6 +108,11 @@ def normalize_version(value: str) -> str:
     return value[1:] if value.startswith("v") else value
 
 
+def is_prerelease_tag(value: str) -> bool:
+    normalized = normalize_version(value).lower()
+    return bool(re.search(r"(?:^|[.\-_])(alpha|beta|rc|pre|preview|dev)(?:[.\-_]|\d|$)", normalized))
+
+
 def latest_release(releases: list[dict], allow_prerelease: bool) -> dict | None:
     for release in releases:
         if release.get("draft"):
@@ -219,19 +224,18 @@ def update_app(app_dir: Path) -> bool:
 
     provider, project = upstream
     releases = fetch_releases(provider, project)
-    allow_prerelease = "-" in normalize_version(version)
+    current_tag = (
+        tracking_path.read_text(encoding="utf-8").strip()
+        if tracking_path.exists()
+        else current_tag_for_version(releases, version)
+    )
+    allow_prerelease = is_prerelease_tag(current_tag)
     latest = latest_release(releases, allow_prerelease)
     if not latest:
         print(f"{name}: skipped — no suitable upstream release found")
         return False
 
     latest_tag = latest["tag_name"]
-    current_tag = (
-        tracking_path.read_text(encoding="utf-8").strip()
-        if tracking_path.exists()
-        else current_tag_for_version(releases, version)
-    )
-
     if normalize_version(latest_tag) == normalize_version(current_tag):
         if not tracking_path.exists():
             tracking_path.write_text(current_tag + "\n", encoding="utf-8")
