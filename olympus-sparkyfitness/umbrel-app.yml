@@ -4,7 +4,7 @@ category: "health-&-fitness"
 name: SparkyFitness
 version: "1.7.1"
 tagline: Track workouts, nutrition and health
-icon: https://raw.githubusercontent.com/CodeWithCJ/SparkyFitness/main/docs/public/logo.png
+icon: https://raw.githubusercontent.com/CodeWithCJ/SparkyFitness/main/docs/src/public/logo.png
 description: >-
   SparkyFitness is a self-hosted fitness and health tracker for workouts,
   nutrition, body measurements, hydration and more.
