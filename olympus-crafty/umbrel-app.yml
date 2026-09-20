@@ -31,9 +31,9 @@ dependencies: []
 repo: https://gitlab.com/crafty-controller/crafty-4
 support: https://gitlab.com/crafty-controller/crafty-4/-/issues
 
-port: 18443
+port: 18444
 gallery: []
-path: "https://umbrel.local:18443"
+path: "https://umbrel.local:18444"
 
 defaultUsername: "admin"
 defaultPassword: ""
