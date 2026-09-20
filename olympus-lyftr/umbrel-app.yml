@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: olympus-lyftr
-category: files
+category: "health-&-fitness"
 name: Lyftr
 version: "0.1.0-beta.6"
 tagline: Lightweight workout and nutrition tracking
