@@ -6,7 +6,7 @@ A curated Umbrel Community App Store for self-hosted apps.
 
 Add this repository as a Community App Store in umbrelOS:
 
-`https://github.com/Jojje84/zeus-community-app-store`
+`https://github.com/Jojje84/olympus-community-app-store`
 
 ## Categories
 
