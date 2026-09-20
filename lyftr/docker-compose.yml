@@ -17,7 +17,7 @@ services:
     environment:
       ENV: production
       PORT: 3000
-      JWT_SECRET: ${APP_OLYMPUS_LYFTR_JWT_SECRET}
+      JWT_SECRET: ${APP_LYFTR_JWT_SECRET}
       CORS_ORIGIN: "http://${DEVICE_DOMAIN_NAME}:8797"
       DB_TYPE: sqlite
       DB_PATH: /app/data/lyftr.db

@@ -19,6 +19,8 @@ Add this repository as a Community App Store in umbrelOS:
 
 This Community App Store uses custom category labels so the Umbrel UI groups the apps as **Health & Fitness** and **Gaming & Servers**.
 
+App package folders and manifest IDs use the clean upstream app name without an `olympus-` prefix (for example `crafty`, `lyftr`, and `sparkyfitness`).
+
 ## Automatic update discovery
 
 Olympus scans **every app package in this repository automatically every day**.
