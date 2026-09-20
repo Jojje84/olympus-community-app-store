@@ -1,0 +1,35 @@
+name: Check upstream app releases
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Olympus
+        uses: actions/checkout@v4
+
+      - name: Check upstream releases
+        run: python3 .github/scripts/check_updates.py
+
+      - name: Prepare update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/upstream-app-updates
+          delete-branch: true
+          commit-message: "chore: update upstream app releases"
+          title: "Update upstream app releases"
+          body: |
+            Automated Olympus update check found newer upstream release(s).
+
+            This pull request is intentionally **not auto-merged**. Review release notes and
+            any Docker/environment changes before merging so Umbrel users do not receive
+            an unreviewed breaking update.
+          labels: automated-update
