@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   crafty:
-    image: arcadiatechnology/crafty-4:4.11.0
+    image: registry.gitlab.com/crafty-controller/crafty-4:4.11.0
     restart: on-failure
     init: true
     environment:
