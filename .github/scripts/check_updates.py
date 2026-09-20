@@ -4,18 +4,22 @@
 No app list is hard-coded. Any top-level directory containing umbrel-app.yml and
 docker-compose.yml is discovered automatically.
 
+Supported upstream release sources:
+- GitHub repositories
+- GitLab repositories
+
 Update rules:
-- repo: in umbrel-app.yml must point to a GitHub repository.
-- Stable packages follow stable GitHub releases.
-- If the currently packaged version is a prerelease (contains "-"), prereleases
-  are followed too.
-- App Docker image tags that match the currently packaged release are bumped to
-  the new upstream release tag.
+- repo: in umbrel-app.yml identifies the upstream project.
+- Stable packages follow stable GitHub releases; prerelease packages can follow
+  prereleases too. GitLab releases are treated as published releases.
+- App Docker image tags that match the currently packaged app version are bumped
+  to the new release.
 - Sidecar images with unrelated versions (Postgres, Redis, etc.) are untouched.
 """
 
 import json
 import re
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -35,23 +39,68 @@ def read_scalar(text: str, key: str) -> str | None:
     return value.strip()
 
 
-def github_repo_from_url(url: str | None) -> str | None:
+def upstream_from_url(url: str | None) -> tuple[str, str] | None:
     if not url:
         return None
-    match = re.match(r"https://github\.com/([^/]+/[^/#]+?)(?:\.git)?/?$", url.strip())
-    return match.group(1) if match else None
+
+    value = url.strip().removesuffix(".git").rstrip("/")
+
+    github = re.match(r"https://github\.com/([^/]+/[^/#]+)$", value)
+    if github:
+        return ("github", github.group(1))
+
+    gitlab = re.match(r"https://gitlab\.com/(.+)$", value)
+    if gitlab:
+        return ("gitlab", gitlab.group(1))
+
+    return None
 
 
-def fetch_releases(repo: str) -> list[dict]:
+def fetch_json(url: str) -> object:
     request = urllib.request.Request(
-        f"https://api.github.com/repos/{repo}/releases?per_page=50",
+        url,
         headers={
-            "Accept": "application/vnd.github+json",
+            "Accept": "application/json",
             "User-Agent": USER_AGENT,
         },
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
+
+
+def fetch_releases(provider: str, project: str) -> list[dict]:
+    if provider == "github":
+        data = fetch_json(
+            f"https://api.github.com/repos/{project}/releases?per_page=50"
+        )
+        releases = []
+        for item in data:
+            releases.append(
+                {
+                    "tag_name": item["tag_name"],
+                    "draft": bool(item.get("draft")),
+                    "prerelease": bool(item.get("prerelease")),
+                }
+            )
+        return releases
+
+    if provider == "gitlab":
+        encoded = urllib.parse.quote(project, safe="")
+        data = fetch_json(
+            f"https://gitlab.com/api/v4/projects/{encoded}/releases?per_page=50"
+        )
+        releases = []
+        for item in data:
+            releases.append(
+                {
+                    "tag_name": item["tag_name"],
+                    "draft": False,
+                    "prerelease": False,
+                }
+            )
+        return releases
+
+    raise ValueError(f"Unsupported release provider: {provider}")
 
 
 def normalize_version(value: str) -> str:
@@ -77,18 +126,33 @@ def current_tag_for_version(releases: list[dict], version: str) -> str:
     return f"v{version}"
 
 
+def replacement_tag(
+    image_tag: str,
+    current_tag: str,
+    current_version: str,
+    latest_tag: str,
+) -> str | None:
+    current_normalized = normalize_version(current_tag)
+    version_normalized = normalize_version(current_version)
+    latest_normalized = normalize_version(latest_tag)
+
+    if image_tag == current_tag:
+        return latest_tag
+    if image_tag == current_normalized:
+        return latest_normalized
+    if image_tag == current_version:
+        return latest_normalized
+    if image_tag == f"v{version_normalized}":
+        return f"v{latest_normalized}"
+    return None
+
+
 def replace_versioned_images(
     compose: str,
     current_tag: str,
     current_version: str,
     latest_tag: str,
 ) -> tuple[str, int, list[str]]:
-    current_candidates = {
-        current_tag,
-        current_version,
-        f"v{normalize_version(current_version)}",
-        normalize_version(current_tag),
-    }
     warnings: list[str] = []
     changed = 0
 
@@ -100,8 +164,14 @@ def replace_versioned_images(
 
     def repl(match: re.Match) -> str:
         nonlocal changed
-        tag = match.group("tag")
-        if tag not in current_candidates:
+
+        new_tag = replacement_tag(
+            match.group("tag"),
+            current_tag=current_tag,
+            current_version=current_version,
+            latest_tag=latest_tag,
+        )
+        if not new_tag:
             return match.group(0)
 
         if match.group("digest"):
@@ -112,7 +182,7 @@ def replace_versioned_images(
 
         changed += 1
         return (
-            f"{match.group('prefix')}{match.group('image')}:{latest_tag}"
+            f"{match.group('prefix')}{match.group('image')}:{new_tag}"
             f"{match.group('suffix')}"
         )
 
@@ -138,20 +208,21 @@ def update_app(app_dir: Path) -> bool:
     name = read_scalar(manifest, "name") or app_dir.name
     version = read_scalar(manifest, "version")
     repo_url = read_scalar(manifest, "repo")
-    upstream_repo = github_repo_from_url(repo_url)
+    upstream = upstream_from_url(repo_url)
 
     if not version:
         print(f"{name}: skipped — manifest has no version")
         return False
-    if not upstream_repo:
-        print(f"{name}: skipped — repo is not a supported GitHub URL")
+    if not upstream:
+        print(f"{name}: skipped — repo is not a supported GitHub/GitLab URL")
         return False
 
-    releases = fetch_releases(upstream_repo)
+    provider, project = upstream
+    releases = fetch_releases(provider, project)
     allow_prerelease = "-" in normalize_version(version)
     latest = latest_release(releases, allow_prerelease)
     if not latest:
-        print(f"{name}: skipped — no suitable GitHub release found")
+        print(f"{name}: skipped — no suitable upstream release found")
         return False
 
     latest_tag = latest["tag_name"]
