@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Olympus
         uses: actions/checkout@v4
 
-      - name: Check upstream releases
+      - name: Discover apps and check upstream releases
         run: python3 .github/scripts/check_updates.py
 
       - name: Prepare update pull request
@@ -27,9 +27,11 @@ jobs:
           commit-message: "chore: update upstream app releases"
           title: "Update upstream app releases"
           body: |
-            Automated Olympus update check found newer upstream release(s).
+            Olympus automatically discovered one or more newer upstream releases.
 
-            This pull request is intentionally **not auto-merged**. Review release notes and
-            any Docker/environment changes before merging so Umbrel users do not receive
-            an unreviewed breaking update.
+            The updater scans every app package in this store; apps do not need to be
+            added to a hard-coded list.
+
+            This pull request is intentionally **not auto-merged**. Review upstream
+            release notes and any Docker/environment/database changes before merging.
           labels: automated-update
