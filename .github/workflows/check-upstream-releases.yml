@@ -20,6 +20,7 @@ jobs:
         run: python3 .github/scripts/check_updates.py
 
       - name: Prepare update pull request
+        id: update-pr
         uses: peter-evans/create-pull-request@v7
         with:
           branch: automation/upstream-app-updates
@@ -32,6 +33,16 @@ jobs:
             The updater scans every app package in this store; apps do not need to be
             added to a hard-coded list.
 
-            This pull request is intentionally **not auto-merged**. Review upstream
-            release notes and any Docker/environment/database changes before merging.
+            This pull request is automatically merged by the Olympus update workflow.
+            App installation on Umbrel remains manual, so the user chooses when to
+            install the published update.
           labels: automated-update
+
+      - name: Merge update pull request
+        if: steps.update-pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ steps.update-pr.outputs.pull-request-number }}" \
+            --squash \
+            --delete-branch
