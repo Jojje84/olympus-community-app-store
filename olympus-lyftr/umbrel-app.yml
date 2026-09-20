@@ -1,0 +1,32 @@
+manifestVersion: 1
+id: olympus-lyftr
+category: files
+name: Lyftr
+version: "0.1.0-beta.6"
+tagline: Lightweight workout and nutrition tracking
+icon: https://raw.githubusercontent.com/Cawlumm/lyftr/main/mobile/assets/icon.png
+description: >-
+  Lyftr is a lightweight self-hosted fitness tracker with workouts, programs,
+  progress tracking and nutrition logging.
+
+
+  This Olympus package stores its SQLite database persistently in Umbrel.
+  Registration is set to first-user so the first account claims the instance.
+releaseNotes: >-
+  Packaged from upstream Lyftr v0.1.0-beta.6.
+
+developer: Cawlumm
+website: https://lyftr-app.pages.dev/
+dependencies: []
+repo: https://github.com/Cawlumm/lyftr
+support: https://github.com/Cawlumm/lyftr/issues
+
+port: 8797
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/zeus-community-app-store
