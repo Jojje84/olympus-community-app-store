@@ -2,12 +2,21 @@
 
 ForgeCore Beta is the live Umbrel test package for ForgeCore.
 
-Before installing, make sure the external ForgeCore storage directory exists at:
+This Beelink installation uses the dedicated external HDD:
 
 ```text
-/mnt/forgecore
+/home/umbrel/umbrel/external/HDD/ForgeCore
 ```
 
-The package deliberately refuses to create that host path automatically. This prevents CI data from silently falling back to the Umbrel system disk.
+Before installing, create the directory and marker:
 
-ForgeCore source development remains on the `feat/forgecore-v1-runtime` branch in `Jojje84/ForgeCore`.
+```bash
+mkdir -p /home/umbrel/umbrel/external/HDD/ForgeCore
+touch /home/umbrel/umbrel/external/HDD/ForgeCore/.forgecore-external
+```
+
+The CI Docker engine refuses to start without that marker, so an unmounted
+external disk cannot silently redirect ForgeCore's heavy data to the system disk.
+
+ForgeCore source development remains on the `feat/forgecore-v1-runtime`
+branch in `Jojje84/ForgeCore`.
