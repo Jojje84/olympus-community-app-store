@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.26"
+version: "0.1.0-beta.27"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.26
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.27
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,13 +37,14 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 26 hardens the complete runner lifecycle after live Beelink testing. ForgeCore
-  now persists repair progress across dashboard refreshes, only reports a runner online
-  after the GitHub listener confirms "Listening for Jobs", exposes a live runner-manager
-  heartbeat and exact runtime build, and forces the runner/web/cleanup services to be
-  recreated on every package update so new runtime code cannot be left behind in an old
-  container. Persistent runner credentials, repository config, workspaces and caches
-  remain on their existing persistent volumes.
+  Beta 27 fixes the Umbrel update/storage regression found on the Beelink. Umbrel
+  replaces docker-compose.yml during app updates, so ForgeCore no longer relies on
+  a host-specific storage path edited into Compose. A new exports.sh resolver finds
+  the existing verified external ForgeCore directory, persists that host path in app
+  data, and re-exports it before every start/update. Runner credentials, workspaces,
+  caches, Docker data and logs therefore reconnect to the same external disk after an
+  update instead of silently falling back to /mnt/forgecore. The dashboard also shows
+  storage-resolution/startup errors directly when the external disk cannot be resolved.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
