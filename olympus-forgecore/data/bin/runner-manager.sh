@@ -277,7 +277,6 @@ runner_watchdog_recycle_reason() {
     pid="$(cat "${pid_file}" 2>/dev/null || true)"
     [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null || continue
     runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
-  registration_log="${STORAGE_ROOT}/logs/registration-${slug}.log"
     offset_file="${STATE_DIR}/runner-${slug}.log-offset"
     offset="$(cat "${offset_file}" 2>/dev/null || echo 0)"
     reason="$(runner_log_watchdog_reason "${runner_log}" "${offset}" || true)"
@@ -323,6 +322,7 @@ start_runner_from_config() {
   runner_name="${repo_label:0:63}"
   error_file="${STATE_DIR}/runner-${slug}.error"
   runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
+  registration_log="${STORAGE_ROOT}/logs/registration-${slug}.log"
 
   if [[ -n "${REGISTRATION_TOKEN}" ]]; then
     log "building a clean runner install for ${repo}"
