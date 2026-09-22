@@ -94,5 +94,32 @@ jobs:
         shell: bash
         run: bash olympus-forgecore/tests/runtime/runner-lifecycle.sh
 
+      - name: Validate candidate inside official Actions runner image
+        shell: bash
+        run: |
+          docker pull ghcr.io/actions/actions-runner:2.337.0
+          docker run --rm \
+            -v "$PWD/olympus-forgecore:/work:ro" \
+            -w /work \
+            ghcr.io/actions/actions-runner:2.337.0 \
+            /bin/bash -lc '
+              set -euo pipefail
+              command -v bash
+              command -v jq
+              command -v sudo
+              command -v curl
+              command -v sha256sum
+              command -v python3
+              test -x /home/runner/run.sh
+              bash tests/runtime/runner-lifecycle.sh
+            '
+
+      - name: Validate ForgeCore compose recreation marker
+        shell: bash
+        run: |
+          docker compose -f olympus-forgecore/docker-compose.yml config >/tmp/forgecore-compose.yml
+          grep -Fq 'FORGECORE_RUNTIME_VERSION: 0.1.0-beta.26-candidate' /tmp/forgecore-compose.yml
+          grep -Fq 'status_epoch // 0' olympus-forgecore/docker-compose.yml
+
       - name: Check whitespace errors
         run: git diff --check
