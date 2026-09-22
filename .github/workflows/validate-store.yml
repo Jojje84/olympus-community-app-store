@@ -50,6 +50,12 @@ jobs:
               actual = Path(source).read_bytes()
               if decoded != actual:
                   raise SystemExit(f"{source} is out of sync with {template}")
+
+          dashboard = Path("olympus-forgecore/data/bin/dashboard-server.py").read_text()
+          if 'img-src \'self\' data:' not in dashboard:
+              raise SystemExit("ForgeCore dashboard CSP must allow the approved embedded logo data")
+          if 'src="./icon.svg"' not in dashboard or 'href="./icon.svg"' not in dashboard:
+              raise SystemExit("ForgeCore dashboard logo and favicon must use relative app paths")
           PY
 
       - name: Check whitespace errors

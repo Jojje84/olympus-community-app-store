@@ -28,7 +28,7 @@ HTML = r'''<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ForgeCore</title>
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
 <style>
 :root{color-scheme:dark;--bg:#0a0f16;--panel:#101721;--panel2:#0c131c;--border:#283446;--text:#f4f7fb;--muted:#98a5b8;--green:#4ade80;--amber:#f59e0b;--red:#fb7185;--blue:#60a5fa}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% -10%,#182334 0,#0a0f16 38%);color:var(--text);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -49,7 +49,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
 <body>
 <main>
   <div class="top">
-    <div class="logo"><img src="/icon.svg" alt="ForgeCore"></div>
+    <div class="logo"><img src="./icon.svg" alt="ForgeCore"></div>
     <div class="identity"><h1>ForgeCore</h1><div class="subtitle">Self-hosted CI runner for your projects</div><div class="tagline">Run GitHub Actions on your own hardware. Simple. Flexible. Yours.</div></div>
     <div class="top-actions"><a class="btn" href="https://github.com/Jojje84/ForgeCore" target="_blank" rel="noopener">Open on GitHub ↗</a></div>
   </div>
@@ -172,7 +172,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.18</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.19</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -543,7 +543,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -564,7 +564,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)

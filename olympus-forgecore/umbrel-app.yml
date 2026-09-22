@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.18"
+version: "0.1.0-beta.19"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.18
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.19
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,12 +37,10 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 18 locks ForgeCore to the approved glowing orange anvil artwork everywhere,
-  refreshes the Umbrel icon cache, and aligns the dashboard typography, proportions
-  and spacing more closely with the approved mockup. Runner setup now visibly shows
-  that the repository name is both the runner name and the single custom label.
-  Cleanup keeps queued, running and completed feedback, and the readable runtime
-  sources are synchronized with the templates actually used by the Umbrel package.
+  Beta 19 fixes the dashboard logo rendering regression seen in Umbrel. The logo
+  now uses a relative app path, and the dashboard content security policy explicitly
+  permits the embedded PNG data used by the approved anvil SVG. The same approved
+  ForgeCore artwork remains the only logo asset.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
