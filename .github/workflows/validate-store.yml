@@ -88,6 +88,32 @@ jobs:
               raise SystemExit("Legacy ForgeCore emoji logo is still present")
           if not (root / "SOURCE_COMMIT").is_file():
               raise SystemExit("ForgeCore distribution package is missing SOURCE_COMMIT provenance")
+
+          import yaml
+          compose_path = root / "docker-compose.yml"
+          compose_text = compose_path.read_text(encoding="utf-8")
+          expected_mounts = (
+              "${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro",
+              "${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro",
+              "${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro",
+          )
+          for mount in expected_mounts:
+              if mount not in compose_text:
+                  raise SystemExit(f"ForgeCore compose is not mounting packaged runtime template directly: {mount}")
+
+          forbidden_mounts = (
+              "${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro",
+              "${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro",
+              "${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro",
+          )
+          for mount in forbidden_mounts:
+              if mount in compose_text:
+                  raise SystemExit(f"ForgeCore compose still references stale persistent runtime file: {mount}")
+
+          compose = yaml.safe_load(compose_text)
+          runner = compose["services"]["runner"]
+          if "depends_on" in runner:
+              raise SystemExit("ForgeCore runner must start independently of Docker; remove runner.depends_on")
           PY
 
       - name: Test ForgeCore clean runner engine
