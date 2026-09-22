@@ -52,14 +52,14 @@ services:
       - -lc
       - >-
         set -u;
-        uid=$(id -u);
-        gid=$(id -g);
+        echo "[bootstrap] ForgeCore beta36 pre-manager bootstrap entered";
         sudo mkdir -p /forgecore/app/state /forgecore/app/config/runners;
-        sudo chown -R "$uid:$gid" /forgecore/app;
+        sudo chown -R runner:docker /forgecore/app;
         sudo mkdir -p /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
-        sudo chown -R "$uid:$gid" /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
+        sudo chown -R runner:docker /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
         exec >> /forgecore/app/state/runner-bootstrap.log 2>&1;
-        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] ForgeCore 0.1.0-beta.36 runner bootstrap started uid=$uid gid=$gid";
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] ForgeCore 0.1.0-beta.36 runner bootstrap started";
+        id;
         if ! test -f /forgecore/storage/.forgecore-external; then
           printf '%s\n' "ForgeCore external storage is not mounted at the resolved host path. Update/storage binding must be repaired before the runner can start." > /forgecore/app/state/runner-service.error;
           echo "[bootstrap] external storage marker missing";
