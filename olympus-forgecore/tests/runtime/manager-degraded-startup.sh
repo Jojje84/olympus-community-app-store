@@ -13,7 +13,7 @@ app_dir="${tmp}/app"
 storage_dir="${tmp}/storage"
 mkdir -p "${app_dir}/data/state" "${storage_dir}"
 touch "${storage_dir}/.forgecore-external"
-cp "${PACKAGE_ROOT}/runner-manager.b64.template" "${app_dir}/runner-manager.b64"
+cp "${PACKAGE_ROOT}/runner-manager.b64.template" "${app_dir}/runner-manager.b64.template"
 
 export APP_DATA_DIR="${app_dir}"
 export FORGECORE_STORAGE_ROOT="${storage_dir}"

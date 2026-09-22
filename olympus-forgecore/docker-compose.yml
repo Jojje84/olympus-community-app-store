@@ -30,8 +30,6 @@ services:
     image: ghcr.io/actions/actions-runner:2.337.0
     restart: unless-stopped
     init: true
-    depends_on:
-      - docker
     environment:
       DOCKER_HOST: tcp://docker:2375
       DOCKER_CONFIG: /forgecore/storage/cache/docker-config
@@ -39,7 +37,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.34"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -48,7 +46,7 @@ services:
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro
+      - ${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro
     entrypoint:
       - /bin/bash
       - -lc
@@ -87,11 +85,11 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.34"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro
+      - ${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro
     entrypoint:
       - /bin/sh
       - -c
@@ -111,11 +109,11 @@ services:
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.34"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage:ro
-      - ${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro
+      - ${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro
     entrypoint:
       - /bin/sh
       - -c

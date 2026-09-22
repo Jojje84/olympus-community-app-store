@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.34"
+version: "0.1.0-beta.35"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.34
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.35
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,14 +37,13 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 34 decouples the ForgeCore control plane and GitHub listener from Docker
-  and Docker Compose startup. A slow or unhealthy isolated Docker engine no
-  longer leaves runner-manager stuck in startup preflight. The manager heartbeat
-  comes online first, Docker/Compose readiness is retried in the background, and
-  job hooks wait for those dependencies before workflows that need them proceed.
-  The dashboard now distinguishes manager/listener health from Docker dependency
-  health and disables the listener restart control while the manager is not live.
-  Beta 33's accidental-Repair protection and transactional rollback remain intact.
+  Beta 35 fixes the production package/runtime mismatch that allowed Umbrel to
+  display a new ForgeCore version while runner-manager, dashboard and cleanup
+  could still execute stale persisted .b64 copies from older betas. Compose now
+  mounts the versioned packaged .b64.template files directly for every runtime
+  component, and the runner service no longer depends on Docker container startup.
+  CI now uses the same template filenames as production and fails if Compose ever
+  references a runtime file that is not actually shipped in the package.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
