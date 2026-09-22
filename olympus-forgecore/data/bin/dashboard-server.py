@@ -172,7 +172,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.24</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.25</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -216,7 +216,7 @@ function renderStatus(s){
   const allOnline=runners.length>0&&online===runners.length;
   $('runnerBig').textContent=runners.length?(online+'/'+runners.length+' online'):'Not configured';
   $('runnerBig').className='big'+(allOnline?' good':'');
-  $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())):'Add a GitHub repository in Settings.';
+  $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')):'Add a GitHub repository in Settings.';
   setDot('runnerDot',online>0,!!(first&&first.error));
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
   $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
@@ -253,17 +253,17 @@ function renderStatus(s){
   $('setThreshold').value=s.disk_cleanup_threshold_percent||85;
   $('setBuildkit').value=s.buildkit_keep_storage_gb||50;
 
-  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+(r.error?' · '+esc(r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
+  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+(r.error?' · '+esc(r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
   document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>{setTab('settings');$('repo').value=b.dataset.repo;updateRepoLink();$('token').focus()}));
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
   if(restartBaseline!==null&&ms>restartBaseline){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted.';restartBaseline=null}
-  if(runnerRepairBaseline!==null&&ms>runnerRepairBaseline){
+  if(runnerRepairBaseline!==null){
     const m=$('runnerMsg');
-    if(online>0){m.className='msg ok';m.textContent='Runner repair completed. Runner is online.';runnerRepairBaseline=null}
+    if(online>0){m.className='msg ok';m.textContent='Runner repair completed. Runner is online in persistent mode.';runnerRepairBaseline=null}
     else if(first&&first.error){m.className='msg badtext';m.textContent=first.error;runnerRepairBaseline=null}
-    else{m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for GitHub runner to come online…'}
+    else if(ms>runnerRepairBaseline){m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for the persistent GitHub runner to come online…'}
   }
   $('updated').textContent='Last updated: '+new Date().toLocaleTimeString();
 }
@@ -362,14 +362,28 @@ def runners():
         s = slug(repo)
         ep = ST / f"runner-{s}.error"
         np = ST / f"runner-{s}.name"
+        runner_dir = STORAGE / "runners" / s
+        settings_file = runner_dir / ".runner"
         er = ep.read_text().strip() if ep.exists() else ""
         name = c.get("NAME", "")
         if np.exists():
             name = np.read_text().strip()
+
+        mode = "unregistered"
+        if settings_file.exists():
+            mode = "persistent"
+            try:
+                identity = json.loads(settings_file.read_text(encoding="utf-8", errors="replace"))
+                if bool(identity.get("Ephemeral", identity.get("ephemeral", False))):
+                    mode = "ephemeral"
+            except (OSError, json.JSONDecodeError):
+                mode = "unknown"
+
         out.append({
             "repository": repo,
             "name": name,
             "label": repo.rsplit("/", 1)[-1],
+            "mode": mode,
             "online": (ST / f"runner-{s}.online").exists(),
             "error": er,
         })
@@ -521,6 +535,8 @@ def log_sources():
         if path.exists():
             sources.append({"id": ident, "label": label})
     for p in sorted((STORAGE / "logs").glob("runner-*.log")):
+        if p.name == "runner-manager.log":
+            continue
         ident = "runner:" + p.stem[len("runner-"):]
         sources.append({"id": ident, "label": "Runner · " + p.stem[len("runner-"):].replace("-", "/")})
     return sources
