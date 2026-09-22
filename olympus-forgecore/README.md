@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 32 uses the standard `runners/<repository>` layout and migrates the working beta31 identity automatically without asking for another token. The Settings page now hides registration controls while a runner is healthy, separates listener connectivity from verified job execution, and the runner manager watches the real Actions diagnostic log for broker/session stalls.
+Beta 37 recovery returns ForgeCore to the live-verified beta31 runner core. The only runtime addition is a compatibility bridge that copies a verified persistent identity from the beta32+ runners/<repository> path back into beta31's runners/v2 layout without deleting the newer copy. The beta31 Compose startup, dashboard handoff, watchdog, Docker dependency and runner engine remain otherwise unchanged.
 
 
 

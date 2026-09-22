@@ -1,4 +1,5 @@
 ForgeCore source repository: Jojje84/ForgeCore
-Source ref: feat/forgecore-v1-runtime
-Source commit: 880d985030615e417f199953bdd3643ceef2cc00
-Package version: 0.1.0-beta.35
+Source ref: restore/beta31-core
+Source commit: 1f0ba66075ea6ff3cf34a1fda429a1ddaede4f9d
+Package version: 0.1.0-beta.37
+Recovery baseline: de85aa4bac1b02f6a49c6c65d66fb40bcdcbcb49

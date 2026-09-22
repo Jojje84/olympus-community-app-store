@@ -93,41 +93,36 @@ jobs:
           compose_path = root / "docker-compose.yml"
           compose_text = compose_path.read_text(encoding="utf-8")
           expected_mounts = (
-              "${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro",
-              "${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro",
-              "${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro",
-          )
-          for mount in expected_mounts:
-              if mount not in compose_text:
-                  raise SystemExit(f"ForgeCore compose is not mounting packaged runtime template directly: {mount}")
-
-          forbidden_mounts = (
               "${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro",
               "${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro",
               "${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro",
           )
+          for mount in expected_mounts:
+              if mount not in compose_text:
+                  raise SystemExit(f"ForgeCore compose is not consuming Umbrel-rendered runtime output: {mount}")
+
+          forbidden_mounts = (
+              "${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro",
+              "${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro",
+              "${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro",
+          )
           for mount in forbidden_mounts:
               if mount in compose_text:
-                  raise SystemExit(f"ForgeCore compose still references stale persistent runtime file: {mount}")
+                  raise SystemExit(f"ForgeCore compose incorrectly consumes template source at runtime: {mount}")
 
           compose = yaml.safe_load(compose_text)
           runner = compose["services"]["runner"]
-          if "depends_on" in runner:
-              raise SystemExit("ForgeCore runner must start independently of Docker; remove runner.depends_on")
+          if runner.get("depends_on") != ["docker"]:
+              raise SystemExit("ForgeCore beta37 recovery must preserve the live-verified beta31 runner->docker startup dependency")
           PY
 
-      - name: Test ForgeCore clean runner engine
+      - name: Test ForgeCore beta31 recovery core
         shell: bash
         run: |
           bash olympus-forgecore/tests/runtime/runner-lifecycle.sh
           bash olympus-forgecore/tests/runtime/runner-watchdog.sh
-          bash olympus-forgecore/tests/runtime/runner-layout-standard.sh
-          bash olympus-forgecore/tests/runtime/runner-hooks.sh
-          bash olympus-forgecore/tests/runtime/runner-repair-guard.sh
-
-      - name: Test ForgeCore degraded manager startup
-        shell: bash
-        run: bash olympus-forgecore/tests/runtime/manager-degraded-startup.sh
+          bash olympus-forgecore/tests/runtime/runner-engine-v2.sh
+          bash olympus-forgecore/tests/runtime/runner-restore-beta31.sh
 
       - name: Boot ForgeCore runner container
         shell: bash

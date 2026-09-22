@@ -14,17 +14,11 @@ RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
-RUNNER_IDLE_RECYCLE_SECONDS="${FORGECORE_RUNNER_IDLE_RECYCLE_SECONDS:-300}"
-RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners"
-RUNNER_LAYOUT_MARKER="${STATE_DIR}/runner-layout-standard.initialized"
-LEGACY_RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
-RUNNER_BACKUP_ROOT="${STORAGE_ROOT}/runner-backups"
-DEPENDENCY_READY_FILE="${STATE_DIR}/dependencies.ready"
-DEPENDENCY_ERROR_FILE="${STATE_DIR}/dependencies.error"
+RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
+RUNNER_ENGINE_MARKER="${STATE_DIR}/runner-engine-v2.initialized"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
-DEPENDENCY_PID=""
 MANAGER_STARTED_EPOCH="$(date +%s)"
 
 log() {
@@ -118,11 +112,11 @@ FORGECORE_CONFIG
 # ForgeCore derives runner name and its single custom label from REPOSITORY.
 REPOSITORY=""
 REGISTRATION_TOKEN=""
-REPAIR_EXISTING="false"
 FORGECORE_RUNNER_CONFIG
   chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
 
-  initialize_runner_layout
+  restore_beta31_runner_layout
+  initialize_runner_engine_v2
 }
 
 normalize_app_permissions() {
@@ -132,12 +126,12 @@ normalize_app_permissions() {
   sudo chown -R runner:docker "${CONFIG_DIR}" "${STATE_DIR}"
 }
 
-initialize_runner_layout() {
-  local config_file repo slug source_dir target_dir backup_dir stamp source_mode
-  [[ -f "${RUNNER_LAYOUT_MARKER}" ]] && return 0
-
-  mkdir -p "${RUNNER_BACKUP_ROOT}"
-  log "normalizing runner storage to standard runners/<repository> layout"
+restore_beta31_runner_layout() {
+  # beta31 was the last live-verified runner layout on the Beelink. beta32
+  # migrated identities from runners/v2/<repo> to runners/<repo>. When rolling
+  # back to the beta31 core, copy any verified persistent identity back into
+  # the beta31 path before beta31's clean-engine initializer runs.
+  local config_file repo slug beta31_dir standard_dir mode total=0 ready=0
 
   shopt -s nullglob
   local configs=("${RUNNER_CONFIG_DIR}"/*.env)
@@ -147,31 +141,60 @@ initialize_runner_layout() {
     [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
     repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
     [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || continue
+    total=$((total + 1))
     slug="$(slugify "${repo}")"
-    source_dir="${LEGACY_RUNNER_ENGINE_ROOT}/${slug}"
-    target_dir="${RUNNER_ENGINE_ROOT}/${slug}"
+    beta31_dir="${RUNNER_ENGINE_ROOT}/${slug}"
+    standard_dir="${STORAGE_ROOT}/runners/${slug}"
 
-    if [[ -d "${source_dir}" ]]; then
-      source_mode="$(runner_identity_mode "${source_dir}")"
-      if [[ "${source_mode}" == "persistent" ]]; then
-        if [[ -e "${target_dir}" ]]; then
-          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-standard-${stamp}"
-          mv "${target_dir}" "${backup_dir}"
-          log "archived previous runner directory for ${repo}: ${backup_dir}"
-        fi
-        mv "${source_dir}" "${target_dir}"
-        log "migrated active runner identity to standard path for ${repo}"
-        activity "runner" "Runner storage normalized for ${repo}; persistent identity preserved"
-      elif [[ ! -e "${target_dir}" ]]; then
-        mv "${source_dir}" "${target_dir}"
+    mode="$(runner_identity_mode "${beta31_dir}")"
+    if [[ "${mode}" == "persistent" ]]; then
+      ready=$((ready + 1))
+      continue
+    fi
+
+    if [[ "$(runner_identity_mode "${standard_dir}")" == "persistent" ]]; then
+      log "restoring beta31 runner identity layout for ${repo}"
+      rm -rf "${beta31_dir}"
+      mkdir -p "${beta31_dir}"
+      cp -a "${standard_dir}/." "${beta31_dir}/"
+      mode="$(runner_identity_mode "${beta31_dir}")"
+      if [[ "${mode}" == "persistent" ]]; then
+        ready=$((ready + 1))
+        activity "runner" "Restored beta31 runner identity layout for ${repo}"
       fi
     fi
   done
 
-  rmdir "${LEGACY_RUNNER_ENGINE_ROOT}" 2>/dev/null || true
-  rm -f "${STATE_DIR}/runner-engine-v2.initialized"
-  printf '%s\n' "1" > "${RUNNER_LAYOUT_MARKER}"
+  if (( total > 0 && ready == total )); then
+    printf '%s\n' "2" > "${RUNNER_ENGINE_MARKER}"
+    log "beta31 runner identity layout restored for all configured repositories"
+  fi
+}
+
+initialize_runner_engine_v2() {
+  local config_file repo slug
+  [[ -f "${RUNNER_ENGINE_MARKER}" ]] && return 0
+
+  log "initializing clean runner engine v2; legacy runner identities will not be reused"
+  shopt -s nullglob
+  local configs=("${RUNNER_CONFIG_DIR}"/*.env)
+  shopt -u nullglob
+
+  for config_file in "${configs[@]}"; do
+    [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
+    repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
+    sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${config_file}"
+    chmod 600 "${config_file}"
+    if [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+      slug="$(slugify "${repo}")"
+      rm -f "${STATE_DIR}/runner-${slug}.pid" "${STATE_DIR}/runner-${slug}.online"
+      printf '%s\n' "ForgeCore rebuilt the runner engine. Paste one fresh GitHub registration token to create a clean runner identity." > "${STATE_DIR}/runner-${slug}.error"
+      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "rebuilt" "Clean runner engine ready; one fresh registration token is required"
+    fi
+  done
+
+  printf '%s\n' "2" > "${RUNNER_ENGINE_MARKER}"
+  activity "runner" "Clean runner engine v2 initialized; legacy credentials preserved as backup only"
 }
 
 load_config() {
@@ -215,32 +238,6 @@ install_compose() {
   chmod +x "${plugin}"
 }
 
-dependency_loop() {
-  local announced_ready=false
-  rm -f "${DEPENDENCY_READY_FILE}"
-  while true; do
-    if docker info >/dev/null 2>&1; then
-      if install_compose >/dev/null 2>&1; then
-        : > "${DEPENDENCY_READY_FILE}"
-        rm -f "${DEPENDENCY_ERROR_FILE}"
-        if [[ "${announced_ready}" != true ]]; then
-          log "Docker/Compose dependencies are ready"
-          activity "runner" "Docker/Compose dependencies are ready"
-          announced_ready=true
-        fi
-        sleep 15
-        continue
-      fi
-      printf '%s\n' "Docker is reachable, but Docker Compose is not ready yet. ForgeCore will keep retrying in the background." > "${DEPENDENCY_ERROR_FILE}"
-    else
-      printf '%s\n' "Isolated Docker engine is not ready yet. ForgeCore runner manager remains online and will keep retrying in the background." > "${DEPENDENCY_ERROR_FILE}"
-    fi
-    rm -f "${DEPENDENCY_READY_FILE}"
-    announced_ready=false
-    sleep 5
-  done
-}
-
 slugify() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
 }
@@ -261,20 +258,14 @@ reset_runner_install() {
   copy_runner_distribution "${runner_dir}"
 }
 
-clear_registration_request() {
+clear_registration_token() {
   local file="$1"
   sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${file}"
-  if grep -Eq '^[[:space:]]*REPAIR_EXISTING=' "${file}"; then
-    sed -i -E 's/^[[:space:]]*REPAIR_EXISTING=.*/REPAIR_EXISTING="false"/' "${file}"
-  else
-    printf '%s\n' 'REPAIR_EXISTING="false"' >> "${file}"
-  fi
   chmod 600 "${file}"
 }
 
 runner_identity_mode() {
-  local runner_dir="$1"
-  local settings="${runner_dir}/.runner"
+  local runner_dir="$1" settings="${runner_dir}/.runner"
   if [[ ! -f "${settings}" ]]; then
     printf '%s\n' "unregistered"
     return 0
@@ -329,105 +320,7 @@ runner_worker_active() {
   done
   return 1
 }
-runner_diag_watchdog_reason() {
-  local slug="$1" runner_dir="$2" listener_start="$3"
-  local diag mtime segment seen_file seen now age
-  diag="$(ls -1t "${runner_dir}"/_diag/Runner_*.log 2>/dev/null | head -n 1 || true)"
-  [[ -n "${diag}" ]] || return 1
-  mtime="$(stat -c %Y "${diag}" 2>/dev/null || echo 0)"
-  (( mtime >= listener_start )) || return 1
-  segment="$(tail -n 500 "${diag}" 2>/dev/null || true)"
-  if grep -Eq 'RunnerSessionInvalid|session (is )?invalid|session has been deleted|session conflict' <<< "${segment}"; then
-    printf '%s\n' "session-invalid"
-    return 0
-  fi
-  seen_file="${STATE_DIR}/runner-${slug}.acquire-seen-epoch"
-  if grep -Fq 'Acknowledging runner request' <<< "${segment}"; then
-    now="$(date +%s)"
-    if [[ ! -f "${seen_file}" ]]; then
-      printf '%s\n' "${now}" > "${seen_file}"
-      return 1
-    fi
-    seen="$(cat "${seen_file}" 2>/dev/null || echo "${now}")"
-    [[ "${seen}" =~ ^[0-9]+$ ]] || seen="${now}"
-    age=$((now - seen))
-    if (( age >= RUNNER_ACQUIRE_STALL_SECONDS )); then
-      printf '%s\n' "acquire-stall"
-      return 0
-    fi
-  else
-    rm -f "${seen_file}"
-  fi
-  return 1
-}
 
-prepare_runner_hooks() {
-  local slug="$1" hook_dir start_hook complete_hook
-  hook_dir="${APP_ROOT}/hooks"
-  mkdir -p "${hook_dir}"
-  start_hook="${hook_dir}/job-started-${slug}.sh"
-  complete_hook="${hook_dir}/job-completed-${slug}.sh"
-
-  cat > "${start_hook}" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-: "${FORGECORE_HOOK_STATE_DIR:?}"
-: "${FORGECORE_HOOK_SLUG:?}"
-: "${FORGECORE_RUNTIME_VERSION:?}"
-printf '%s\n' "$(date +%s)" > "${FORGECORE_HOOK_STATE_DIR}/runner-${FORGECORE_HOOK_SLUG}.job-started-epoch"
-workflow="${GITHUB_WORKFLOW:-}"
-event="${GITHUB_EVENT_NAME:-}"
-ref_name="${GITHUB_REF_NAME:-}"
-runtime="${FORGECORE_RUNTIME_VERSION}"
-
-if [[ "${workflow}" != "ForgeCore runner live check" ]]; then
-  for _ in $(seq 1 60); do
-    [[ -f "${FORGECORE_HOOK_DEPENDENCY_READY_FILE:-}" ]] && break
-    sleep 2
-  done
-  if [[ ! -f "${FORGECORE_HOOK_DEPENDENCY_READY_FILE:-}" ]]; then
-    if [[ -n "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE:-}" && -f "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE}" ]]; then
-      cat "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE}" >&2
-    else
-      echo "ForgeCore Docker/Compose dependencies are not ready." >&2
-    fi
-    exit 43
-  fi
-fi
-current_beta=""
-if [[ "${runtime}" =~ beta\.([0-9]+)$ ]]; then current_beta="${BASH_REMATCH[1]}"; fi
-stale_beta() {
-  local value="$1" n=""
-  if [[ "${value}" =~ beta\.([0-9]+)$ ]]; then
-    n="${BASH_REMATCH[1]}"
-    [[ -n "${current_beta}" ]] && (( n < current_beta ))
-    return
-  fi
-  return 1
-}
-if [[ "${workflow}" == "Release channel preflight" && "${event}" != "workflow_dispatch" ]]; then
-  echo "ForgeCore rejected stale preflight event: ${event}" >&2
-  exit 42
-fi
-if [[ "${workflow}" == "Release" ]] && stale_beta "${ref_name}"; then
-  echo "ForgeCore rejected stale release ${ref_name}; runner runtime is ${runtime}" >&2
-  exit 42
-fi
-if [[ "${workflow}" == "Publish prerelease request" ]] && stale_beta "${ref_name}"; then
-  echo "ForgeCore rejected stale prerelease request ${ref_name}; runner runtime is ${runtime}" >&2
-  exit 42
-fi
-EOF
-
-  cat > "${complete_hook}" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-: "${FORGECORE_HOOK_STATE_DIR:?}"
-: "${FORGECORE_HOOK_SLUG:?}"
-printf '%s\n' "$(date +%s)" > "${FORGECORE_HOOK_STATE_DIR}/runner-${FORGECORE_HOOK_SLUG}.job-completed-epoch"
-EOF
-  chmod 700 "${start_hook}" "${complete_hook}"
-}
 runner_log_watchdog_reason() {
   local runner_log="$1" offset="$2"
   local segment now mtime age
@@ -452,7 +345,7 @@ runner_log_watchdog_reason() {
 }
 
 runner_watchdog_recycle_reason() {
-  local repo_file slug repo pid_file pid runner_log offset_file offset reason runner_dir start_file listener_start now
+  local repo_file slug repo pid_file pid runner_log offset_file offset reason
   runner_worker_active && return 1
 
   shopt -s nullglob
@@ -466,45 +359,26 @@ runner_watchdog_recycle_reason() {
     [[ -f "${pid_file}" ]] || continue
     pid="$(cat "${pid_file}" 2>/dev/null || true)"
     [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null || continue
-    runner_dir="${RUNNER_ENGINE_ROOT}/${slug}"
     runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
     offset_file="${STATE_DIR}/runner-${slug}.log-offset"
-    start_file="${STATE_DIR}/runner-${slug}.listener-start-epoch"
     offset="$(cat "${offset_file}" 2>/dev/null || echo 0)"
-    listener_start="$(cat "${start_file}" 2>/dev/null || echo 0)"
-    [[ "${listener_start}" =~ ^[0-9]+$ ]] || listener_start=0
-
     reason="$(runner_log_watchdog_reason "${runner_log}" "${offset}" || true)"
-    if [[ -z "${reason}" ]]; then
-      reason="$(runner_diag_watchdog_reason "${slug}" "${runner_dir}" "${listener_start}" || true)"
-    fi
-
     case "${reason}" in
       post-job)
         printf '%s\n' "Runner watchdog recycling listener after completed job: ${repo}"
         return 0
         ;;
       acquire-stall)
-        printf '%s\n' "Runner watchdog recovering stalled GitHub broker acquisition: ${repo}"
-        return 0
-        ;;
-      session-invalid)
-        printf '%s\n' "Runner watchdog recovering invalid GitHub listener session: ${repo}"
+        printf '%s\n' "Runner watchdog recovering stalled GitHub job acquisition: ${repo}"
         return 0
         ;;
     esac
-
-    now="$(date +%s)"
-    if (( listener_start > 0 && now - listener_start >= RUNNER_IDLE_RECYCLE_SECONDS )); then
-      printf '%s\n' "Runner watchdog refreshing idle GitHub listener session: ${repo}"
-      return 0
-    fi
   done
   return 1
 }
+
 prepare_real_workdir() {
-  local runner_dir="$1"
-  local work_dir="${runner_dir}/_work"
+  local runner_dir="$1" work_dir="${runner_dir}/_work"
   if [[ -L "${work_dir}" ]]; then
     log "migrating ${work_dir} from symlink to real directory"
     rm -f "${work_dir}"
@@ -512,28 +386,10 @@ prepare_real_workdir() {
   mkdir -p "${work_dir}"
 }
 
-begin_runner_repair_backup() {
-  local slug="$1" runner_dir="$2"
-  local backup_dir=""
-  if [[ -e "${runner_dir}" ]]; then
-    mkdir -p "${RUNNER_BACKUP_ROOT}"
-    backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-repair-$(date -u +%Y%m%dT%H%M%SZ)"
-    mv "${runner_dir}" "${backup_dir}"
-  fi
-  printf '%s\n' "${backup_dir}"
-}
-
-restore_runner_repair_backup() {
-  local runner_dir="$1" backup_dir="$2"
-  [[ -n "${backup_dir}" && -d "${backup_dir}" ]] || return 0
-  rm -rf "${runner_dir}"
-  mv "${backup_dir}" "${runner_dir}"
-}
-
 start_runner_from_config() {
   local config_file="$1"
-  local REPOSITORY="" REGISTRATION_TOKEN="" REPAIR_EXISTING="false" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary repair_backup=""
+  local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary
 
   source "${config_file}"
   repo="${REPOSITORY}"
@@ -551,38 +407,18 @@ start_runner_from_config() {
   runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
   registration_log="${STORAGE_ROOT}/logs/registration-${slug}.log"
 
-  mkdir -p "${runner_dir}"
-  identity_mode="$(runner_identity_mode "${runner_dir}")"
-
-  if [[ -n "${REGISTRATION_TOKEN}" && "${identity_mode}" != "unregistered" && "${REPAIR_EXISTING}" != "true" ]]; then
-    log "blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
-    activity "runner" "Blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
-    clear_registration_request "${config_file}"
-    REGISTRATION_TOKEN=""
-    REPAIR_EXISTING="false"
-    if [[ "${identity_mode}" == "persistent" ]]; then
-      write_runner_runtime_state "${slug}" "${repo}" "checking" "persistent" "Ignored unconfirmed registration token; existing runner identity preserved"
-    else
-      printf '%s\n' "Runner identity needs repair, but replacement was not explicitly confirmed. Open Repair connection and confirm replacement first." > "${error_file}"
-      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
-      return 0
-    fi
-  fi
-
   if [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    if [[ "${REPAIR_EXISTING}" == "true" && "${identity_mode}" != "unregistered" ]]; then
-      repair_backup="$(begin_runner_repair_backup "${slug}" "${runner_dir}")"
-      log "explicit runner replacement authorized for ${repo}; previous identity backed up at ${repair_backup}"
-    fi
+    log "building a clean runner install for ${repo}"
     reset_runner_install "${runner_dir}"
-    identity_mode="unregistered"
-  elif [[ ! -x "${runner_dir}/run.sh" ]]; then
-    log "initializing clean runner files for ${repo}"
-    copy_runner_distribution "${runner_dir}"
+  else
+    mkdir -p "${runner_dir}"
+    if [[ ! -x "${runner_dir}/run.sh" ]]; then
+      log "initializing clean runner files for ${repo}"
+      copy_runner_distribution "${runner_dir}"
+    fi
   fi
 
   prepare_real_workdir "${runner_dir}"
-  prepare_runner_hooks "${slug}"
   rm -f "${error_file}"
   printf '%s\n' "${runner_name}" > "${STATE_DIR}/runner-${slug}.name"
   printf '%s\n' "${repo}" > "${STATE_DIR}/runner-${slug}.repo"
@@ -604,9 +440,10 @@ start_runner_from_config() {
     fi
   fi
 
-  if [[ -n "${REGISTRATION_TOKEN}" && "${REPAIR_EXISTING}" == "true" ]]; then
+  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
     log "repairing persistent runner registration for ${repo}"
     write_runner_runtime_state "${slug}" "${repo}" "registering" "${identity_mode}" "Registering persistent runner"
+    clear_runner_identity "${runner_dir}"
     identity_mode="unregistered"
   fi
 
@@ -620,7 +457,7 @@ start_runner_from_config() {
     log "registering persistent runner for ${repo}"
     {
       printf '%s registration started for %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${repo}"
-      printf 'Runner layout: standard registration\n'
+      printf 'Runner engine: v2 clean registration\n'
     } > "${registration_log}"
 
     if ! (
@@ -637,47 +474,25 @@ start_runner_from_config() {
         --labels "${labels}"
     ) >> "${registration_log}" 2>&1; then
       registration_summary="$(tail -n 12 "${registration_log}" 2>/dev/null | tr '\n' ' ' | cut -c1-1600)"
-      if [[ -n "${repair_backup}" ]]; then
-        restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
-        identity_mode="$(runner_identity_mode "${runner_dir}")"
-        clear_registration_request "${config_file}"
-        REGISTRATION_TOKEN=""
-        REPAIR_EXISTING="false"
-        printf '%s\n' "Repair failed. Previous runner identity was restored. GitHub/config.sh: ${registration_summary}" > "${error_file}"
-        write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
-        activity "runner" "Repair failed for ${repo}; previous runner identity restored"
-      else
-        printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
-        write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
-        activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
-      fi
+      printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
+      write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
+      activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
       return 1
     fi
 
     identity_mode="$(runner_identity_mode "${runner_dir}")"
     if [[ "${identity_mode}" != "persistent" ]]; then
-      if [[ -n "${repair_backup}" ]]; then
-        restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
-        identity_mode="$(runner_identity_mode "${runner_dir}")"
-        clear_registration_request "${config_file}"
-        REGISTRATION_TOKEN=""
-        REPAIR_EXISTING="false"
-        printf '%s\n' "Repair did not create a verified persistent identity. Previous runner identity was restored." > "${error_file}"
-        write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
-        activity "runner" "Repair verification failed for ${repo}; previous runner identity restored"
-      else
-        printf '%s\n' "Registration did not create a verified persistent runner identity." > "${error_file}"
-        log "refusing non-persistent runner identity for ${repo}: ${identity_mode}"
-        write_runner_runtime_state "${slug}" "${repo}" "error" "${identity_mode}" "$(cat "${error_file}")"
-        clear_runner_identity "${runner_dir}"
-      fi
+      printf '%s\n' "Registration did not create a verified persistent runner identity." > "${error_file}"
+      log "refusing non-persistent runner identity for ${repo}: ${identity_mode}"
+      write_runner_runtime_state "${slug}" "${repo}" "error" "${identity_mode}" "$(cat "${error_file}")"
+      clear_runner_identity "${runner_dir}"
       return 1
     fi
 
-    clear_registration_request "${config_file}"
+    clear_registration_token "${config_file}"
     activity "runner" "Persistent runner registered for ${repo}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    clear_registration_request "${config_file}"
+    clear_registration_token "${config_file}"
   fi
 
   identity_mode="$(runner_identity_mode "${runner_dir}")"
@@ -696,22 +511,10 @@ start_runner_from_config() {
   printf '%s runner starting: %s (%s) mode=persistent\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
   write_runner_runtime_state "${slug}" "${repo}" "starting" "persistent" "Starting GitHub runner process"
 
-  (
-    cd "${runner_dir}"
-    export FORGECORE_HOOK_STATE_DIR="${STATE_DIR}"
-    export FORGECORE_HOOK_SLUG="${slug}"
-    export FORGECORE_RUNTIME_VERSION="${RUNTIME_VERSION}"
-    export FORGECORE_HOOK_DEPENDENCY_READY_FILE="${DEPENDENCY_READY_FILE}"
-    export FORGECORE_HOOK_DEPENDENCY_ERROR_FILE="${DEPENDENCY_ERROR_FILE}"
-    export ACTIONS_RUNNER_HOOK_JOB_STARTED="${APP_ROOT}/hooks/job-started-${slug}.sh"
-    export ACTIONS_RUNNER_HOOK_JOB_COMPLETED="${APP_ROOT}/hooks/job-completed-${slug}.sh"
-    exec ./run.sh
-  ) >> "${runner_log}" 2>&1 &
+  ( cd "${runner_dir}" && exec ./run.sh ) >> "${runner_log}" 2>&1 &
   pid=$!
   printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
   printf '%s\n' "${log_offset}" > "${STATE_DIR}/runner-${slug}.log-offset"
-  printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.listener-start-epoch"
-  rm -f "${STATE_DIR}/runner-${slug}.acquire-seen-epoch"
   RUNNER_PIDS+=("${pid}")
 
   sleep "${RUNNER_STARTUP_GRACE_SECONDS}"
@@ -761,11 +564,10 @@ refresh_runner_readiness() {
 
 write_status() {
   refresh_runner_readiness || true
-  local docker_online=false compose_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
+  local docker_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
   local repo_file slug pid_file pid
 
   docker info >/dev/null 2>&1 && docker_online=true
-  [[ -f "${DEPENDENCY_READY_FILE}" ]] && compose_online=true
 
   shopt -s nullglob
   local repo_files=("${STATE_DIR}"/runner-*.repo)
@@ -791,7 +593,7 @@ write_status() {
     --argjson runner_online "$([[ "${online}" -gt 0 ]] && echo true || echo false)" \
     --arg runner_name "${runner_summary}" \
     --argjson docker_online "${docker_online}" \
-    --argjson compose_online "${compose_online}" \
+    --argjson compose_online true \
     --arg disk_used "${disk_used}" \
     --arg disk_total "${disk_total}" \
     --argjson disk_used_percent "${disk_pct:-0}" \
@@ -819,7 +621,7 @@ stop_runners() {
     done
   fi
   RUNNER_PIDS=()
-  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.online "${STATE_DIR}"/runner-*.listener-start-epoch "${STATE_DIR}"/runner-*.acquire-seen-epoch
+  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.online
 }
 
 start_all_runners() {
@@ -860,28 +662,24 @@ shutdown_all() {
     kill "${STATUS_PID}" 2>/dev/null || true
     wait "${STATUS_PID}" 2>/dev/null || true
   fi
-  if [[ -n "${DEPENDENCY_PID}" ]]; then
-    kill "${DEPENDENCY_PID}" 2>/dev/null || true
-    wait "${DEPENDENCY_PID}" 2>/dev/null || true
-  fi
 }
 trap shutdown_all TERM INT EXIT
 
 main() {
-write_service_error "ForgeCore runner manager is starting"
+write_service_error "ForgeCore runner manager is starting; waiting for startup preflight"
 prepare_paths
 normalize_app_permissions
 log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
 activity "runner" "Runner manager ${RUNTIME_VERSION} booting"
 load_config
 rm -f "${RELOAD_FILE}"
-log "ForgeCore runner manager ${RUNTIME_VERSION} control plane ready"
+wait_for_docker
+install_compose
+log "ForgeCore runner manager ${RUNTIME_VERSION} ready"
 rm -f "${STATE_DIR}/runner-service.error"
-activity "runner" "Runner manager ${RUNTIME_VERSION} control plane ready"
+activity "runner" "Runner manager ${RUNTIME_VERSION} ready"
 status_loop &
 STATUS_PID=$!
-dependency_loop &
-DEPENDENCY_PID=$!
 
 start_all_runners
 
