@@ -138,6 +138,33 @@ clear_registration_token() {
   chmod 600 "${file}"
 }
 
+runner_identity_mode() {
+  local runner_dir="$1" settings="${runner_dir}/.runner"
+  if [[ ! -f "${settings}" ]]; then
+    printf '%s\n' "unregistered"
+    return 0
+  fi
+  if ! jq -e 'type == "object"' "${settings}" >/dev/null 2>&1; then
+    printf '%s\n' "invalid"
+    return 0
+  fi
+  if jq -e '(.Ephemeral // .ephemeral // false) == true' "${settings}" >/dev/null 2>&1; then
+    printf '%s\n' "ephemeral"
+  else
+    printf '%s\n' "persistent"
+  fi
+}
+
+clear_runner_identity() {
+  local runner_dir="$1"
+  rm -f \
+    "${runner_dir}/.runner" \
+    "${runner_dir}/.credentials" \
+    "${runner_dir}/.credentials_rsaparams" \
+    "${runner_dir}/.credentials_migrated" \
+    "${runner_dir}/.service"
+}
+
 prepare_real_workdir() {
   local runner_dir="$1" work_dir="${runner_dir}/_work"
   if [[ -L "${work_dir}" ]]; then
@@ -150,7 +177,7 @@ prepare_real_workdir() {
 start_runner_from_config() {
   local config_file="$1"
   local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log identity_mode
 
   source "${config_file}"
   repo="${REPOSITORY}"
@@ -178,47 +205,85 @@ start_runner_from_config() {
   printf '%s\n' "${runner_name}" > "${STATE_DIR}/runner-${slug}.name"
   printf '%s\n' "${repo}" > "${STATE_DIR}/runner-${slug}.repo"
 
-  # Supplying a fresh token from the dashboard means explicit registration/repair.
-  # Clear only the local runner identity files; --replace then refreshes the same
-  # named runner at GitHub. Workspaces, caches and repository config are kept.
-  if [[ -n "${REGISTRATION_TOKEN}" && -f "${runner_dir}/.runner" ]]; then
-    log "refreshing runner registration for ${repo}"
-    rm -f \
-      "${runner_dir}/.runner" \
-      "${runner_dir}/.credentials" \
-      "${runner_dir}/.credentials_rsaparams" \
-      "${runner_dir}/.credentials_migrated" \
-      "${runner_dir}/.service"
-  fi
-
-  if [[ ! -f "${runner_dir}/.runner" ]]; then
+  identity_mode="$(runner_identity_mode "${runner_dir}")"
+  if [[ "${identity_mode}" == "ephemeral" || "${identity_mode}" == "invalid" ]]; then
+    log "detected ${identity_mode} runner identity for ${repo}"
     if [[ -z "${REGISTRATION_TOKEN}" ]]; then
-      printf '%s\n' "Waiting for a GitHub registration token" > "${error_file}"
+      if [[ "${identity_mode}" == "ephemeral" ]]; then
+        printf '%s\n' "Runner is one-time/ephemeral. Repair once with a fresh GitHub registration token to convert it to persistent mode." > "${error_file}"
+      else
+        printf '%s\n' "Runner identity is invalid. Repair once with a fresh GitHub registration token to rebuild it safely." > "${error_file}"
+      fi
+      activity "runner" "Persistent migration required for ${repo}"
       return 0
     fi
-    log "registering runner for ${repo}"
+  fi
+
+  # A fresh dashboard token means explicit repair. Replace the complete local identity,
+  # but preserve workspaces/caches. This forces GitHub to receive the desired persistent
+  # runner configuration and removes stale one-time identities.
+  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
+    log "repairing persistent runner registration for ${repo}"
+    clear_runner_identity "${runner_dir}"
+    identity_mode="unregistered"
+  fi
+
+  if [[ "${identity_mode}" == "unregistered" ]]; then
+    if [[ -z "${REGISTRATION_TOKEN}" ]]; then
+      printf '%s\n' "Runner identity is missing. Open Repair and paste a fresh GitHub registration token once." > "${error_file}"
+      return 0
+    fi
+
+    log "registering persistent runner for ${repo}"
     if ! (
       cd "${runner_dir}"
-      ./config.sh --unattended --replace --url "https://github.com/${repo}" --token "${REGISTRATION_TOKEN}" --name "${runner_name}" --work "_work" --labels "${labels}"
+      ./config.sh \
+        --unattended \
+        --replace \
+        --disableupdate \
+        --no-default-labels \
+        --url "https://github.com/${repo}" \
+        --token "${REGISTRATION_TOKEN}" \
+        --name "${runner_name}" \
+        --work "_work" \
+        --labels "${labels}"
     ); then
-      clear_registration_token "${config_file}"
       printf '%s\n' "Registration failed. Generate a fresh GitHub runner token and try again." > "${error_file}"
       return 1
     fi
+
+    identity_mode="$(runner_identity_mode "${runner_dir}")"
+    if [[ "${identity_mode}" != "persistent" ]]; then
+      printf '%s\n' "GitHub returned a one-time runner identity. ForgeCore refused to start it; repair with a fresh token." > "${error_file}"
+      log "refusing non-persistent runner identity for ${repo}"
+      clear_runner_identity "${runner_dir}"
+      return 1
+    fi
+
     clear_registration_token "${config_file}"
-    activity "runner" "Runner registered for ${repo}"
+    activity "runner" "Persistent runner registered for ${repo}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
     clear_registration_token "${config_file}"
   fi
 
-  log "starting ${runner_name}"
-  printf '%s runner starting: %s (%s)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
+  log "starting persistent runner ${runner_name}"
+  printf '%s runner starting: %s (%s) mode=persistent\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
   ( cd "${runner_dir}" && exec ./run.sh ) >> "${runner_log}" 2>&1 &
   pid=$!
+
+  # Do not advertise the runner as online until the listener survives startup.
+  sleep 3
+  if ! kill -0 "${pid}" 2>/dev/null; then
+    wait "${pid}" 2>/dev/null || true
+    printf '%s\n' "Runner process exited during startup. Check the per-runner log for the current error." > "${error_file}"
+    log "runner ${runner_name} exited during startup"
+    return 1
+  fi
+
   printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
   printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
   RUNNER_PIDS+=("${pid}")
-  activity "runner" "Runner online: ${repo}"
+  activity "runner" "Runner process online: ${repo}"
 }
 
 write_status() {
@@ -325,6 +390,8 @@ load_config
 rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
+log "ForgeCore runner manager beta25 started"
+activity "runner" "Runner manager beta25 started"
 status_loop &
 STATUS_PID=$!
 
@@ -353,6 +420,10 @@ while true; do
     activity "runner" "Runner process exited; automatic recovery started"
     sleep 3
     reload_runners "Recovering configured runners"
+    if (( ${#RUNNER_PIDS[@]} == 0 )); then
+      log "automatic recovery stopped because no runnable persistent identity is available"
+      activity "runner" "Automatic recovery stopped; repair is required"
+    fi
     sleep 5
     continue
   fi
