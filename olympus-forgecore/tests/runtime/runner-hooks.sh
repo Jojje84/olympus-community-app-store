@@ -18,6 +18,8 @@ mkdir -p "${FORGECORE_APP_ROOT}/state" "${FORGECORE_STORAGE_ROOT}/logs"
 source "${PACKAGE_ROOT}/data/bin/runner-manager.sh"
 prepare_runner_hooks "jojje84-forgecore"
 hook="${FORGECORE_APP_ROOT}/hooks/job-started-jojje84-forgecore.sh"
+export FORGECORE_HOOK_STATE_DIR="${FORGECORE_APP_ROOT}/state"
+export FORGECORE_HOOK_SLUG="jojje84-forgecore"
 
 if GITHUB_WORKFLOW="Release" GITHUB_EVENT_NAME="workflow_dispatch" GITHUB_REF_NAME="v0.1.0-beta.23" "${hook}"; then
   echo "stale release was not rejected" >&2
