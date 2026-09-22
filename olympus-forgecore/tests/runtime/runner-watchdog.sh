@@ -6,11 +6,15 @@ if [[ -d "${ROOT}/umbrel" ]]; then
 else
   PACKAGE_ROOT="${ROOT}"
 fi
-export FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS=1
-source "${PACKAGE_ROOT}/data/bin/runner-manager.sh"
-
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
+export FORGECORE_APP_ROOT="${tmp}/app"
+export FORGECORE_STORAGE_ROOT="${tmp}/storage"
+export FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS=1
+mkdir -p "${FORGECORE_APP_ROOT}/state" "${FORGECORE_STORAGE_ROOT}/logs"
+
+source "${PACKAGE_ROOT}/data/bin/runner-manager.sh"
+
 log="${tmp}/runner.log"
 diag_dir="${tmp}/runner/_diag"
 mkdir -p "${diag_dir}"
