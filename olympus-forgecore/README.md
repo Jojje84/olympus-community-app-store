@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 26 hardens the runner lifecycle and Umbrel update path after live Beelink testing. Repair progress is persisted across dashboard refreshes, online state is only set after the GitHub listener confirms it is listening, the manager heartbeat/runtime build is visible, and a versioned Compose marker forces runtime services to be recreated when the app is updated.
+Beta 27 fixes the Umbrel update/storage regression found during live Beelink testing. ForgeCore now resolves and persists the verified external storage path through `exports.sh`, re-exports that path before every start/update, reconnects runners, workspaces, caches, Docker data and logs to the same external disk, and surfaces storage-resolution/startup failures in the dashboard instead of silently falling back to the system disk.
 
 
 
@@ -30,6 +30,7 @@ Contents:
 
 - `umbrel-app.yml` — Umbrel metadata and capability description
 - `docker-compose.yml` — isolated Docker, runner manager, cleanup and dashboard services
+- `exports.sh` — resolves and persists the verified external ForgeCore storage path before Umbrel start/update
 - `runner-manager.b64.template` — update-safe runner manager payload
 - `cleanup-loop.b64.template` — update-safe cleanup payload
 - `dashboard-server.b64.template` — update-safe dashboard/API payload

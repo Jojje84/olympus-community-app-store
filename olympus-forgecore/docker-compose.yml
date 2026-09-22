@@ -37,7 +37,9 @@ services:
       DOCKER_CONFIG: /forgecore/storage/cache/docker-config
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
+      FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
+      FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.27"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -51,8 +53,13 @@ services:
       - /bin/bash
       - -lc
       - >-
-        test -f /forgecore/storage/.forgecore-external
-        || { echo "ForgeCore external storage marker missing"; exit 1; };
+        mkdir -p /forgecore/app/state;
+        if ! test -f /forgecore/storage/.forgecore-external; then
+          printf '%s\n' "ForgeCore external storage is not mounted at the resolved host path. Update/storage binding must be repaired before the runner can start." > /forgecore/app/state/runner-service.error;
+          echo "ForgeCore external storage marker missing";
+          exit 1;
+        fi;
+        rm -f /forgecore/app/state/runner-service.error;
         base64 -d /forgecore/runtime/runner-manager.b64 > /tmp/runner-manager.sh;
         chmod 700 /tmp/runner-manager.sh;
         exec /bin/bash /tmp/runner-manager.sh
@@ -78,7 +85,9 @@ services:
       DOCKER_HOST: tcp://docker:2375
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
+      FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
+      FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.27"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
@@ -100,7 +109,9 @@ services:
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
+      FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
+      FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.27"
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage:ro
