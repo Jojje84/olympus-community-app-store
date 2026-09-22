@@ -120,7 +120,7 @@ start_runner_from_config "${config_file}"
 jq -e '.phase == "needs-repair" and .mode == "ephemeral"' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.runtime.json" >/dev/null
 test ! -f "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.pid"
 
-# A failed registration must keep the short-lived token so the request is not silently lost.
+# A failed confirmed Repair must restore the previous identity and clear the request so it is not retried destructively.
 printf '%s\n' 'not-json' > "${runner_dir}/.runner"
 cat > "${config_file}" <<'EOF'
 REPOSITORY="Jojje84/ForgeCore"
@@ -133,9 +133,11 @@ if start_runner_from_config "${config_file}"; then
   exit 1
 fi
 unset FAKE_CONFIG_FAIL
-grep -Fq 'REGISTRATION_TOKEN="keep-this-token"' "${config_file}"
-jq -e '.phase == "error"' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.runtime.json" >/dev/null
-grep -Fq 'GitHub rejected clean registration in lifecycle test' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.error"
+grep -Fq 'REGISTRATION_TOKEN=""' "${config_file}"
+grep -Fq 'REPAIR_EXISTING="false"' "${config_file}"
+jq -e '.phase == "needs-repair"' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.runtime.json" >/dev/null
+grep -Fq 'not-json' "${runner_dir}/.runner"
+grep -Fq 'Previous runner identity was restored' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.error"
 grep -Fq 'GitHub rejected clean registration in lifecycle test' "${FORGECORE_STORAGE_ROOT}/logs/registration-jojje84-forgecore.log"
 
 # Dashboard must parse the runner file even when it starts with a UTF-8 BOM and
