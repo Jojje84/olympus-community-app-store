@@ -75,6 +75,24 @@ kill -0 "${TEST_RUNNER_PID}"
 stop_runners
 unset TEST_RUNNER_PID
 
+# A normal manager reload must reuse the persistent identity without another token.
+cat > "${FORGECORE_APP_ROOT}/config/forgecore.env" <<'EOF'
+COMPOSE_VERSION="5.5.1"
+COMPOSE_SHA256_X86_64="test"
+COMPOSE_SHA256_AARCH64="test"
+CLEANUP_INTERVAL_HOURS=168
+CACHE_MAX_AGE_DAYS=14
+EOF
+FAKE_LISTEN_DELAY=0
+export FAKE_LISTEN_DELAY
+reload_runners "Test persistent restart"
+grep -Fq 'REGISTRATION_TOKEN=""' "${config_file}"
+jq -e '.phase == "online" and .mode == "persistent"' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.runtime.json" >/dev/null
+TEST_RUNNER_PID="$(cat "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.pid")"
+kill -0 "${TEST_RUNNER_PID}"
+stop_runners
+unset TEST_RUNNER_PID
+
 # A valid persistent identity may connect after startup; readiness must become online later.
 cat > "${config_file}" <<'EOF'
 REPOSITORY="Jojje84/ForgeCore"
