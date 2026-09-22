@@ -1,0 +1,82 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: olympus-github-ci-runner_status_1
+      APP_PORT: 8080
+
+  init_perms:
+    image: busybox:1.37.0
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /data/runner /data/cache/go-build /data/cache/go-mod
+        /data/cache/npm /data/cache/playwright /data/config /data/docker &&
+        chown -R 1001:123 /data/runner /data/cache /data/config &&
+        chmod 700 /data/config
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    restart: "no"
+
+  status:
+    image: busybox:1.37.0
+    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/data/www:/www:ro
+
+  dind:
+    image: docker:29.8.1-dind@sha256:3f3c01aaaebf7cce837356b688b7c059a4749f10bd7660dec7c58fc454a283f0
+    privileged: true
+    restart: on-failure
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    command:
+      - --host=tcp://0.0.0.0:2375
+      - --host=unix:///var/run/docker.sock
+      - --storage-driver=overlay2
+    volumes:
+      - ${APP_DATA_DIR}/data/docker:/var/lib/docker
+
+  runner:
+    image: ghcr.io/actions/actions-runner:2.336.0@sha256:0cfdcc701ce933c6d243c6b0b2da767366dc9f2e99961d4c3754b0b78084cdda
+    restart: on-failure
+    init: true
+    depends_on:
+      init_perms:
+        condition: service_completed_successfully
+      dind:
+        condition: service_started
+    environment:
+      DOCKER_HOST: tcp://dind:2375
+      DOCKER_TLS_CERTDIR: ""
+      GOCACHE: /data/cache/go-build
+      GOMODCACHE: /data/cache/go-mod
+      npm_config_cache: /data/cache/npm
+      PLAYWRIGHT_BROWSERS_PATH: /data/cache/playwright
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    entrypoint: ["/bin/bash", "/data/entrypoint.sh"]
+
+  cleanup:
+    image: docker:29.8.1-cli
+    restart: on-failure
+    depends_on:
+      dind:
+        condition: service_started
+    environment:
+      DOCKER_HOST: tcp://dind:2375
+      DOCKER_TLS_CERTDIR: ""
+    command:
+      - sh
+      - -c
+      - >-
+        while true; do
+          sleep 604800;
+          docker container prune -f --filter "until=168h" || true;
+          docker image prune -f --filter "until=168h" || true;
+          docker builder prune -f --filter "until=168h" --keep-storage 50GB || true;
+        done
