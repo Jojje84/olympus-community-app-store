@@ -1,0 +1,47 @@
+manifestVersion: 1
+id: olympus-github-ci-runner
+category: "developer-tools"
+name: GitHub CI Runner
+version: "2.336.0"
+tagline: Run GitHub Actions builds on your Umbrel server
+icon: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+description: >-
+  A self-hosted GitHub Actions runner packaged for Umbrel.
+
+
+  The runner uses GitHub's official Actions runner image and a dedicated
+  Docker-in-Docker engine for CI workloads. It does not mount Umbrel's host
+  Docker socket, so normal build jobs are separated from your other Umbrel apps.
+
+
+  Persistent caches are kept for Docker, Go, npm and Playwright to speed up
+  repeated builds. A conservative weekly cleanup removes old stopped containers,
+  dangling images and stale build cache.
+
+
+  ⚠️ The isolated Docker engine runs in privileged mode because Docker builds,
+  QEMU/binfmt and integration labs need low-level container features. Only attach
+  trusted repositories and do not run untrusted external pull-request code on
+  this runner.
+
+
+  GitHub repository-level runners belong to one repository. For personal GitHub
+  accounts, use one runner instance per repository. Organization-level runners
+  can be shared across repositories.
+releaseNotes: >-
+  Initial Olympus package based on GitHub Actions Runner v2.336.0.
+developer: GitHub
+website: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners
+dependencies: []
+repo: https://github.com/actions/runner
+support: https://github.com/actions/runner/issues
+
+port: 18445
+gallery: []
+path: "http://umbrel.local:18445"
+
+defaultUsername: ""
+defaultPassword: ""
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/olympus-community-app-store
