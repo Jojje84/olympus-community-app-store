@@ -90,5 +90,58 @@ jobs:
               raise SystemExit("ForgeCore distribution package is missing SOURCE_COMMIT provenance")
           PY
 
+      - name: Validate ForgeCore Umbrel storage resolution
+        shell: bash
+        run: bash olympus-forgecore/tests/runtime/umbrel-storage-resolution.sh
+
+      - name: Validate ForgeCore storage resolution inside Umbrel update contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          umbrel_root="$tmp/umbrel"
+          app_dir="$umbrel_root/app-data/olympus-forgecore"
+          storage="$umbrel_root/external/HDD/ForgeCore"
+
+          mkdir -p "$app_dir/data/state" "$storage"
+          touch "$storage/.forgecore-external"
+
+          # Umbrel's app-script sources exports.sh before Compose evaluation on
+          # start/update. Simulate the same environment contract here.
+          export UMBREL_ROOT="$umbrel_root"
+          export EXPORTS_APP_DIR="$app_dir"
+          export EXPORTS_APP_DATA_DIR="$app_dir/data"
+          unset FORGECORE_STORAGE_ROOT FORGECORE_STORAGE_RESOLUTION || true
+          source olympus-forgecore/exports.sh
+
+          test "$FORGECORE_STORAGE_ROOT" = "$storage"
+          test "$FORGECORE_STORAGE_RESOLUTION" = "external-discovery"
+
+          export APP_DATA_DIR="$app_dir"
+          docker compose -f olympus-forgecore/docker-compose.yml config > "$tmp/compose.yml"
+          grep -Fq "$storage:/forgecore/storage" "$tmp/compose.yml"
+          grep -Fq 'FORGECORE_STORAGE_RESOLUTION: external-discovery' "$tmp/compose.yml"
+
+          # Simulate an app update replacing docker-compose.yml. Because the
+          # host path is now owned by exports.sh/app data, resolving again must
+          # still return the same external directory without any manual edit.
+          unset FORGECORE_STORAGE_ROOT FORGECORE_STORAGE_RESOLUTION || true
+          source olympus-forgecore/exports.sh
+          test "$FORGECORE_STORAGE_ROOT" = "$storage"
+          test "$FORGECORE_STORAGE_RESOLUTION" = "saved"
+
+      - name: Validate candidate dashboard/runtime template sync
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          src = Path("olympus-forgecore/data/bin/dashboard-server.py").read_bytes()
+          tpl = base64.b64decode(Path("olympus-forgecore/dashboard-server.b64.template").read_text().strip())
+          if src != tpl:
+              raise SystemExit("dashboard template is out of sync")
+          PY
+
       - name: Check whitespace errors
         run: git diff --check
