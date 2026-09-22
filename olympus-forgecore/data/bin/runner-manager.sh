@@ -14,7 +14,7 @@ RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
-RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runner-engine-v2"
+RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
 RUNNER_ENGINE_MARKER="${STATE_DIR}/runner-engine-v2.initialized"
 
 declare -a RUNNER_PIDS=()
@@ -28,6 +28,21 @@ log() {
   fi
 }
 
+write_service_error() {
+  mkdir -p "${STATE_DIR}" 2>/dev/null || true
+  printf '%s\n' "$*" > "${STATE_DIR}/runner-service.error" 2>/dev/null || true
+}
+
+manager_error_trap() {
+  local rc="$1" line="$2" command="$3"
+  trap - ERR
+  write_service_error "Runner manager failed before becoming healthy (exit ${rc}, line ${line}): ${command}"
+  printf '[forgecore] FATAL exit=%s line=%s command=%s\n' "${rc}" "${line}" "${command}" >&2
+  exit "${rc}"
+}
+
+trap 'manager_error_trap "$?" "$LINENO" "$BASH_COMMAND"' ERR
+
 activity() {
   local kind="$1" message="$2"
   jq -cn --argjson epoch "$(date +%s)" --arg type "${kind}" --arg message "${message}"     '{epoch:$epoch,type:$type,message:$message}' >> "${ACTIVITY_FILE}" || true
@@ -38,7 +53,6 @@ prepare_paths() {
   sudo mkdir -p "${STORAGE_ROOT}/docker"
   sudo mkdir -p \
     "${STORAGE_ROOT}/runners" \
-    "${RUNNER_ENGINE_ROOT}" \
     "${STORAGE_ROOT}/workspaces" \
     "${STORAGE_ROOT}/cache/docker-config/cli-plugins" \
     "${STORAGE_ROOT}/cache/go-build" \
@@ -50,13 +64,29 @@ prepare_paths() {
     "${STORAGE_ROOT}/logs"
 
   sudo chown -R runner:docker "${APP_ROOT}"
-  sudo chown -R runner:docker \
+
+  local writable_dir
+  for writable_dir in \
     "${STORAGE_ROOT}/runners" \
-    "${RUNNER_ENGINE_ROOT}" \
     "${STORAGE_ROOT}/workspaces" \
     "${STORAGE_ROOT}/cache" \
     "${STORAGE_ROOT}/artifacts" \
-    "${STORAGE_ROOT}/logs"
+    "${STORAGE_ROOT}/logs"; do
+    if [[ ! -w "${writable_dir}" ]]; then
+      sudo chown -R runner:docker "${writable_dir}" 2>/dev/null || true
+    fi
+  done
+
+  if [[ ! -w "${STORAGE_ROOT}/runners" ]]; then
+    write_service_error "ForgeCore cannot write to the existing external runners directory: ${STORAGE_ROOT}/runners"
+    return 1
+  fi
+
+  mkdir -p "${RUNNER_ENGINE_ROOT}"
+  if [[ ! -w "${RUNNER_ENGINE_ROOT}" ]]; then
+    write_service_error "ForgeCore cannot write to the clean runner engine directory: ${RUNNER_ENGINE_ROOT}"
+    return 1
+  fi
 
   if [[ ! -f "${CONFIG_FILE}" ]]; then
     cat > "${CONFIG_FILE}" <<'FORGECORE_CONFIG'
@@ -581,6 +611,7 @@ shutdown_all() {
 trap shutdown_all TERM INT EXIT
 
 main() {
+write_service_error "ForgeCore runner manager is starting; waiting for startup preflight"
 prepare_paths
 log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
 activity "runner" "Runner manager ${RUNTIME_VERSION} booting"

@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 29 rebuilds the runner engine around a clean `runner-engine-v2` state root. Existing repository configuration is kept, legacy credentials are preserved only as backup, and one fresh GitHub registration token creates a completely new runner identity. Registration output is persisted so GitHub/config.sh failures are visible instead of being hidden.
+Beta 30 hardens runner-manager startup on real Umbrel storage. The clean engine now lives under `runners/v2`, startup failures are written to `runner-service.error`, and Olympus CI now boots the actual Docker + actions-runner containers and requires a live manager heartbeat before publication.
 
 
 
