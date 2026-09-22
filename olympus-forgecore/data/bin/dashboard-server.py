@@ -172,12 +172,12 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.20</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.24</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let lastStatus=null,cleanupBaseline=null,restartBaseline=null;
+let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null;
 
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
@@ -259,6 +259,12 @@ function renderStatus(s){
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
   if(restartBaseline!==null&&ms>restartBaseline){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted.';restartBaseline=null}
+  if(runnerRepairBaseline!==null&&ms>runnerRepairBaseline){
+    const m=$('runnerMsg');
+    if(online>0){m.className='msg ok';m.textContent='Runner repair completed. Runner is online.';runnerRepairBaseline=null}
+    else if(first&&first.error){m.className='msg badtext';m.textContent=first.error;runnerRepairBaseline=null}
+    else{m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for GitHub runner to come online…'}
+  }
   $('updated').textContent='Last updated: '+new Date().toLocaleTimeString();
 }
 async function refresh(){try{renderStatus(await api('/api/status'))}catch(e){$('updated').textContent='Waiting for ForgeCore runtime…'}}
@@ -277,11 +283,11 @@ $('restartRunners').addEventListener('click',async()=>{
   catch(e){restartBaseline=null;b.disabled=false;b.textContent='Restart runners';m.className='msg badtext';m.textContent=e.message}
 });
 $('runnerForm').addEventListener('submit',async ev=>{
-  ev.preventDefault();const m=$('runnerMsg');m.className='msg warn';m.textContent='Saving and registering runner…';
+  ev.preventDefault();const m=$('runnerMsg');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);m.className='msg warn';m.textContent='Saving token and reloading runner manager…';
   try{
     await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';m.className='msg ok';m.textContent='Saved. ForgeCore is registering the runner.';setTimeout(refresh,1800)
-  }catch(e){m.className='msg badtext';m.textContent=e.message}
+    $('token').value='';m.className='msg warn';m.textContent='Saved. ForgeCore is reloading and registering the runner.';setTimeout(refresh,900)
+  }catch(e){runnerRepairBaseline=null;m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('settingsMsg');m.className='msg warn';m.textContent='Saving configuration…';
