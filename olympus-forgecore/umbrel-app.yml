@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.31"
+version: "0.1.0-beta.32"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.31
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.32
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,13 +37,15 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 31 fixes the Repair handoff between the root-based dashboard container
-  and the actions-runner container. The dashboard now preserves runner ownership
-  when atomically saving repository/token configuration, while runner-manager
-  defensively normalizes config/state ownership before every reload. This fixes
-  the live failure where "Dashboard requested runner reload" appeared but
-  registration never started and no Registration log was created. Full
-  cross-container Repair handoff is now covered by CI.
+  Beta 32 promotes the repaired runner implementation to the standard ForgeCore
+  layout. A working beta31 identity under runners/v2 is migrated automatically
+  to runners/<repository> without requiring a new GitHub token. The Settings
+  flow now treats an online runner as a connected listener and hides the
+  registration form until repair is actually requested. ForgeCore now watches
+  the Actions runner diagnostic log for broker/session stalls, refreshes idle
+  listener sessions, records real job execution, and safely rejects stale beta
+  release jobs before any release steps can run. Release workflows also use
+  concurrency controls to prevent duplicate future queues.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
