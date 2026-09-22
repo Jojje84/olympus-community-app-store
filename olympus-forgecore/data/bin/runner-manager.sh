@@ -468,10 +468,28 @@ prepare_real_workdir() {
   mkdir -p "${work_dir}"
 }
 
+begin_runner_repair_backup() {
+  local slug="$1" runner_dir="$2"
+  local backup_dir=""
+  if [[ -e "${runner_dir}" ]]; then
+    mkdir -p "${RUNNER_BACKUP_ROOT}"
+    backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-repair-$(date -u +%Y%m%dT%H%M%SZ)"
+    mv "${runner_dir}" "${backup_dir}"
+  fi
+  printf '%s\n' "${backup_dir}"
+}
+
+restore_runner_repair_backup() {
+  local runner_dir="$1" backup_dir="$2"
+  [[ -n "${backup_dir}" && -d "${backup_dir}" ]] || return 0
+  rm -rf "${runner_dir}"
+  mv "${backup_dir}" "${runner_dir}"
+}
+
 start_runner_from_config() {
   local config_file="$1"
   local REPOSITORY="" REGISTRATION_TOKEN="" REPAIR_EXISTING="false" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary repair_backup=""
 
   source "${config_file}"
   repo="${REPOSITORY}"
@@ -508,7 +526,10 @@ start_runner_from_config() {
   fi
 
   if [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    log "explicit runner replacement authorized for ${repo}; building a clean runner install"
+    if [[ "${REPAIR_EXISTING}" == "true" && "${identity_mode}" != "unregistered" ]]; then
+      repair_backup="$(begin_runner_repair_backup "${slug}" "${runner_dir}")"
+      log "explicit runner replacement authorized for ${repo}; previous identity backed up at ${repair_backup}"
+    fi
     reset_runner_install "${runner_dir}"
     identity_mode="unregistered"
   elif [[ ! -x "${runner_dir}/run.sh" ]]; then
@@ -572,18 +593,40 @@ start_runner_from_config() {
         --labels "${labels}"
     ) >> "${registration_log}" 2>&1; then
       registration_summary="$(tail -n 12 "${registration_log}" 2>/dev/null | tr '\n' ' ' | cut -c1-1600)"
-      printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
-      write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
-      activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
+      if [[ -n "${repair_backup}" ]]; then
+        restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
+        identity_mode="$(runner_identity_mode "${runner_dir}")"
+        clear_registration_request "${config_file}"
+        REGISTRATION_TOKEN=""
+        REPAIR_EXISTING="false"
+        printf '%s\n' "Repair failed. Previous runner identity was restored. GitHub/config.sh: ${registration_summary}" > "${error_file}"
+        write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
+        activity "runner" "Repair failed for ${repo}; previous runner identity restored"
+      else
+        printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
+        write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
+        activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
+      fi
       return 1
     fi
 
     identity_mode="$(runner_identity_mode "${runner_dir}")"
     if [[ "${identity_mode}" != "persistent" ]]; then
-      printf '%s\n' "Registration did not create a verified persistent runner identity." > "${error_file}"
-      log "refusing non-persistent runner identity for ${repo}: ${identity_mode}"
-      write_runner_runtime_state "${slug}" "${repo}" "error" "${identity_mode}" "$(cat "${error_file}")"
-      clear_runner_identity "${runner_dir}"
+      if [[ -n "${repair_backup}" ]]; then
+        restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
+        identity_mode="$(runner_identity_mode "${runner_dir}")"
+        clear_registration_request "${config_file}"
+        REGISTRATION_TOKEN=""
+        REPAIR_EXISTING="false"
+        printf '%s\n' "Repair did not create a verified persistent identity. Previous runner identity was restored." > "${error_file}"
+        write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
+        activity "runner" "Repair verification failed for ${repo}; previous runner identity restored"
+      else
+        printf '%s\n' "Registration did not create a verified persistent runner identity." > "${error_file}"
+        log "refusing non-persistent runner identity for ${repo}: ${identity_mode}"
+        write_runner_runtime_state "${slug}" "${repo}" "error" "${identity_mode}" "$(cat "${error_file}")"
+        clear_runner_identity "${runner_dir}"
+      fi
       return 1
     fi
 

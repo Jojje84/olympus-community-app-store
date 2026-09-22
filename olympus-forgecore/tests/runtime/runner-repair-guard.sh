@@ -25,6 +25,10 @@ mkdir -p \
 cat > "${FORGECORE_RUNNER_DIST_ROOT}/config.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${FAKE_REPAIR_FAIL:-0}" == "1" ]]; then
+  echo "simulated GitHub registration failure"
+  exit 1
+fi
 printf '%s\n' '{"AgentId":88,"Ephemeral":false}' > .runner
 printf '%s\n' 'replacement-credentials' > .credentials
 SH
@@ -63,6 +67,25 @@ grep -Fq 'blocked unconfirmed runner replacement' "${FORGECORE_STORAGE_ROOT}/log
 echo "ForgeCore accidental token guard preserved identity: OK"
 
 stop_runners
+
+cat > "${config}" <<'EOF'
+REPOSITORY="Jojje84/ForgeCore"
+REGISTRATION_TOKEN="failing-repair-token-1234567890"
+REPAIR_EXISTING="true"
+EOF
+
+export FAKE_REPAIR_FAIL=1
+if start_runner_from_config "${config}"; then
+  echo "expected failed confirmed Repair" >&2
+  exit 1
+fi
+unset FAKE_REPAIR_FAIL
+jq -e '.AgentId == 77 and .Ephemeral == false' "${runner_dir}/.runner" >/dev/null
+grep -Fq 'original-credentials' "${runner_dir}/.credentials"
+grep -Fq 'REGISTRATION_TOKEN=""' "${config}"
+grep -Fq 'REPAIR_EXISTING="false"' "${config}"
+grep -Fq 'Previous runner identity was restored' "${FORGECORE_APP_ROOT}/state/runner-jojje84-forgecore.error"
+echo "ForgeCore failed Repair rollback preserved identity: OK"
 
 cat > "${config}" <<'EOF'
 REPOSITORY="Jojje84/ForgeCore"

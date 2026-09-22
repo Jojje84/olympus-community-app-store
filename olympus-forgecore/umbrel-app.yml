@@ -42,9 +42,9 @@ releaseNotes: >-
   The dashboard requires an explicit destructive Repair confirmation before the
   token field is shown, the API rejects unconfirmed replacements with HTTP 409,
   and runner-manager independently preserves existing .runner/.credentials files
-  unless REPAIR_EXISTING=true is present. New runner registration remains a
-  one-step flow. Confirmed Repair is still supported and clears its authorization
-  after use.
+  unless REPAIR_EXISTING=true is present. Confirmed Repair is transactional: the
+  current identity is backed up first and automatically restored if GitHub
+  registration fails. New runner registration remains a one-step flow.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
