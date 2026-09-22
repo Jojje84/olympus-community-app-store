@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.27"
+version: "0.1.0-beta.28"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.27
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.28
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,14 +37,13 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 27 fixes the Umbrel update/storage regression found on the Beelink. Umbrel
-  replaces docker-compose.yml during app updates, so ForgeCore no longer relies on
-  a host-specific storage path edited into Compose. A new exports.sh resolver finds
-  the existing verified external ForgeCore directory, persists that host path in app
-  data, and re-exports it before every start/update. Runner credentials, workspaces,
-  caches, Docker data and logs therefore reconnect to the same external disk after an
-  update instead of silently falling back to /mnt/forgecore. The dashboard also shows
-  storage-resolution/startup errors directly when the external disk cannot be resolved.
+  Beta 28 hardens the live GitHub listener after the Beelink reproduced a runner
+  that stayed alive locally while GitHub jobs remained queued. ForgeCore now
+  recycles the listener after each completed job, while preserving the persistent
+  runner identity and caches, and detects the GitHub Runner 2.337.0 broker-acquire
+  stall where a request is acknowledged but no worker starts. In either case the
+  manager rebuilds the GitHub session automatically instead of leaving a dead
+  listener marked online. External-storage recovery from Beta 27 remains unchanged.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore

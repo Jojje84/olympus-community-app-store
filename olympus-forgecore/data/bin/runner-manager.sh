@@ -13,6 +13,7 @@ ACTIVITY_FILE="${STATE_DIR}/activity.log"
 RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
+RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
@@ -186,6 +187,72 @@ runner_log_ready_since() {
   local runner_log="$1" offset="$2"
   [[ -f "${runner_log}" ]] || return 1
   tail -c "+$((offset + 1))" "${runner_log}" 2>/dev/null | grep -Fq "Listening for Jobs"
+}
+
+runner_worker_active() {
+  local proc cmdline
+  for proc in /proc/[0-9]*/cmdline; do
+    [[ -r "${proc}" ]] || continue
+    cmdline="$(tr '\0' ' ' < "${proc}" 2>/dev/null || true)"
+    [[ "${cmdline}" == *"/bin/Runner.Worker"* ]] && return 0
+  done
+  return 1
+}
+
+runner_log_watchdog_reason() {
+  local runner_log="$1" offset="$2"
+  local segment now mtime age
+  [[ -f "${runner_log}" ]] || return 1
+  segment="$(tail -c "+$((offset + 1))" "${runner_log}" 2>/dev/null || true)"
+
+  if grep -Eq 'Job .+ completed with result:' <<< "${segment}"; then
+    printf '%s\n' "post-job"
+    return 0
+  fi
+
+  if grep -Fq 'Acknowledging runner request' <<< "${segment}"; then
+    mtime="$(stat -c %Y "${runner_log}" 2>/dev/null || echo 0)"
+    now="$(date +%s)"
+    age=$((now - mtime))
+    if (( mtime > 0 && age >= RUNNER_ACQUIRE_STALL_SECONDS )); then
+      printf '%s\n' "acquire-stall"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+runner_watchdog_recycle_reason() {
+  local repo_file slug repo pid_file pid runner_log offset_file offset reason
+  runner_worker_active && return 1
+
+  shopt -s nullglob
+  local repo_files=("${STATE_DIR}"/runner-*.repo)
+  shopt -u nullglob
+
+  for repo_file in "${repo_files[@]}"; do
+    slug="${repo_file##*/runner-}"; slug="${slug%.repo}"
+    repo="$(cat "${repo_file}" 2>/dev/null || true)"
+    pid_file="${STATE_DIR}/runner-${slug}.pid"
+    [[ -f "${pid_file}" ]] || continue
+    pid="$(cat "${pid_file}" 2>/dev/null || true)"
+    [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null || continue
+    runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
+    offset_file="${STATE_DIR}/runner-${slug}.log-offset"
+    offset="$(cat "${offset_file}" 2>/dev/null || echo 0)"
+    reason="$(runner_log_watchdog_reason "${runner_log}" "${offset}" || true)"
+    case "${reason}" in
+      post-job)
+        printf '%s\n' "Runner watchdog recycling listener after completed job: ${repo}"
+        return 0
+        ;;
+      acquire-stall)
+        printf '%s\n' "Runner watchdog recovering stalled GitHub job acquisition: ${repo}"
+        return 0
+        ;;
+    esac
+  done
+  return 1
 }
 
 prepare_real_workdir() {
@@ -504,6 +571,16 @@ while true; do
       activity "runner" "Automatic recovery stopped; repair is required"
     fi
     sleep 5
+    continue
+  fi
+
+  watchdog_reason="$(runner_watchdog_recycle_reason || true)"
+  if [[ -n "${watchdog_reason}" ]]; then
+    log "${watchdog_reason}"
+    activity "runner" "${watchdog_reason}"
+    sleep 2
+    reload_runners "${watchdog_reason}"
+    sleep 2
     continue
   fi
 

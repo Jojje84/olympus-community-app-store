@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 27 fixes the Umbrel update/storage regression found during live Beelink testing. ForgeCore now resolves and persists the verified external storage path through `exports.sh`, re-exports that path before every start/update, reconnects runners, workspaces, caches, Docker data and logs to the same external disk, and surfaces storage-resolution/startup failures in the dashboard instead of silently falling back to the system disk.
+Beta 28 hardens the live GitHub listener after the Beelink reproduced a runner process that stayed alive while GitHub jobs remained queued. ForgeCore now recycles the persistent listener after completed jobs and detects broker-acquisition stalls where a request is acknowledged but no Runner.Worker starts. Persistent identity, external storage, workspaces and caches are preserved during recovery.
 
 
 
