@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.2"
+version: "0.1.0-beta.3"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -20,9 +20,9 @@ description: >-
   This beta intentionally keeps the dashboard small: runner status, storage
   usage, Docker status and cleanup settings.
 releaseNotes: >-
-  Beta 2 binds ForgeCore to the dedicated external HDD path and adds a mount
-  guard that prevents the CI Docker engine from starting unless the external
-  storage marker is present.
+  Beta 3 simplifies the external-disk mount path and adds the storage-marker
+  guard directly to Docker, runner and cleanup services to avoid containers
+  getting stuck during installation.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
