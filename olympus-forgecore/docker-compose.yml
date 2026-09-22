@@ -81,9 +81,20 @@ services:
   web:
     image: busybox:1.37.0
     restart: unless-stopped
-    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        mkdir -p /srv/state;
+        cp -f /static/index.html /srv/index.html;
+        if [ -f /state/status.json ]; then
+          ln -sf /state/status.json /srv/state/status.json;
+        else
+          cp -f /static/status.json /srv/state/status.json;
+        fi;
+        exec httpd -f -p 8080 -h /srv
     ports:
       - "8799:8080"
     volumes:
-      - ./data/www:/www:ro
-      - ${APP_DATA_DIR}/data/state:/www/state:ro
+      - ./data/www:/static:ro
+      - ${APP_DATA_DIR}/data/state:/state:ro
