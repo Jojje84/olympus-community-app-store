@@ -13,6 +13,8 @@ ST = APP / "state"
 GC = CFG / "forgecore.env"
 STORAGE = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/forgecore/storage"))
 STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
+STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLAY)
+STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -174,7 +176,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.26</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.27-candidate</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -221,8 +223,8 @@ function renderStatus(s){
   $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')+'<br>Phase: '+esc(first.phase||'idle')):'Add a GitHub repository in Settings.';
   setDot('runnerDot',online>0,!!(first&&first.error));
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
-  $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):'Offline / stale';
-  $('svcManager').className=s.manager_alive?'status-ok':'status-muted';
+  $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):(s.storage_error?'Blocked by storage':'Offline / stale');
+  $('svcManager').className=s.manager_alive?'status-ok':(s.storage_error?'status-bad':'status-muted');
   $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
   $('version').textContent=(s.web_runtime_version||'dev').replace(/^0\.1\.0-/,'');
   $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):'Unavailable';$('svcCompose').className=s.compose_online?'status-ok':'status-muted';
@@ -230,7 +232,7 @@ function renderStatus(s){
   const used=Number(s.disk_used_percent||0);
   $('diskBig').textContent=(s.disk_used||'—')+' / '+(s.disk_total||'—');
   $('diskBar').style.width=Math.max(0,Math.min(100,used))+'%';
-  $('diskMeta').textContent=used+'% used · '+(s.storage_display||'External ForgeCore storage');
+  $('diskMeta').textContent=s.storage_error?('Storage error · '+s.storage_error):(used+'% used · '+(s.storage_host_path||s.storage_display||'External ForgeCore storage')+' · '+(s.storage_resolution||'unknown'));
 
   const last=Number(s.last_cleanup_epoch||0),days=Number(s.cleanup_interval_days||7),next=last+days*86400;
   $('cleanupBig').textContent=rel(last);
@@ -264,7 +266,7 @@ function renderStatus(s){
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
   if(restartBaseline!==null&&ms>restartBaseline&&s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted and heartbeat is live.';restartBaseline=null}
-  else if(!s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg badtext';rm.textContent='Runner manager heartbeat is stale. The runner service needs recovery.'}
+  else if(!s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg badtext';rm.textContent=s.storage_error||'Runner manager heartbeat is stale. The runner service needs recovery.'}
   {
     const m=$('runnerMsg');
     const phase=first&&first.phase?first.phase:'';
@@ -465,8 +467,19 @@ def status():
     x["manager_alive"] = status_epoch > 0 and (now - status_epoch) <= 20
     x["manager_runtime_version"] = str(x.get("runtime_version", "unknown"))
     x["web_runtime_version"] = RUNTIME_VERSION
-    x["runners"] = runners()
     x["storage_display"] = STORAGE_DISPLAY
+    x["storage_host_path"] = STORAGE_HOST_PATH
+    x["storage_resolution"] = STORAGE_RESOLUTION
+    storage_messages = []
+    for error_path in (ST / "storage-resolution.error", ST / "runner-service.error"):
+        try:
+            message = error_path.read_text(encoding="utf-8", errors="replace").strip()
+        except OSError:
+            message = ""
+        if message and message not in storage_messages:
+            storage_messages.append(message)
+    x["storage_error"] = " ".join(storage_messages)
+    x["runners"] = runners()
     x["activity"] = activity()
     try:
         x["last_cleanup_epoch"] = int((ST / "last-cleanup-epoch").read_text().strip())
@@ -585,6 +598,8 @@ def tail_text(path, max_bytes=65536):
 def log_sources():
     sources = []
     mapping = [
+        ("startup", "Startup / storage", ST / "runner-service.error"),
+        ("storage", "Storage resolution", ST / "storage-resolution.error"),
         ("runner-manager", "Runner manager", STORAGE / "logs" / "runner-manager.log"),
         ("cleanup", "Cleanup", STORAGE / "logs" / "cleanup.log"),
     ]
@@ -599,6 +614,10 @@ def log_sources():
     return sources
 
 def resolve_log(kind):
+    if kind == "startup":
+        return ST / "runner-service.error"
+    if kind == "storage":
+        return ST / "storage-resolution.error"
     if kind == "runner-manager":
         return STORAGE / "logs" / "runner-manager.log"
     if kind == "cleanup":
