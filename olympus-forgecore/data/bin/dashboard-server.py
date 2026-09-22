@@ -520,11 +520,28 @@ def activity(limit=12):
     return list(reversed(out))
 
 def inspect_manager_artifact():
-    result = {"manager_artifact_ok": False, "manager_artifact_build": "missing", "manager_artifact_error": ""}
+    result = {
+        "manager_artifact_ok": False,
+        "manager_artifact_build": "missing",
+        "manager_artifact_error": "",
+    }
     try:
         encoded = MANAGER_ARTIFACT.read_bytes()
         decoded = base64.b64decode(encoded, validate=True).decode("utf-8", errors="strict")
-        match = re.search(r'^FORGECORE_MANAGER_BUILD="([^"]+)"
+        match = re.search(r'^FORGECORE_MANAGER_BUILD="([^"]+)"$', decoded, re.MULTILINE)
+        build = match.group(1) if match else "unknown"
+        result["manager_artifact_build"] = build
+        result["manager_artifact_ok"] = build == WEB_BUILD
+        if not result["manager_artifact_ok"]:
+            result["manager_artifact_error"] = (
+                f"Installed runner-manager build is {build}; dashboard build is {WEB_BUILD}."
+            )
+    except (OSError, ValueError, UnicodeError) as exc:
+        result["manager_artifact_error"] = f"Runner-manager artifact could not be verified: {exc}"
+    return result
+
+def status():
+    x = {
         "runner_online": False,
         "runner_name": "Runner not configured",
         "docker_online": False,
