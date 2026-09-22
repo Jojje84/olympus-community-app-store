@@ -80,71 +80,23 @@ services:
         exec /bin/sh /tmp/cleanup-loop.sh
 
   web:
-    image: busybox:1.37.0
+    image: python:3.13-alpine
     restart: unless-stopped
-    command:
+    environment:
+      FORGECORE_APP_ROOT: /forgecore/app
+    volumes:
+      - ${APP_DATA_DIR}/data:/forgecore/app
+      - ${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro
+    entrypoint:
       - /bin/sh
       - -c
-      - |
-        set -eu
-        mkdir -p /srv
-        cat > /srv/index.html <<'FORGECORE_HTML'
-        <!doctype html>
-        <html lang="en">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>ForgeCore</title>
-          <style>
-            :root{color-scheme:dark;--bg:#0b1017;--panel:#121923;--border:#263142;--text:#f5f7fb;--muted:#9ba8bb;--ok:#45d483;--accent:#f59e0b}
-            *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
-            main{max-width:980px;margin:auto;padding:32px 20px}header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
-            .logo{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:#111827;border:1px solid var(--border);color:var(--accent);font-size:29px}
-            h1{margin:0;font-size:32px}p{margin:4px 0 0;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
-            .card{background:var(--panel);border:1px solid var(--border);border-radius:17px;padding:19px}.label,.sub,footer{color:var(--muted);font-size:14px}
-            .label{margin-bottom:9px}.value{font-size:27px;font-weight:700}.row{display:flex;align-items:center;gap:9px}
-            .dot{width:11px;height:11px;border-radius:50%;background:var(--ok)}.dot.off{background:#7b8798}.sub{margin-top:8px}
-            .bar{height:9px;background:#202a39;border-radius:20px;margin-top:13px;overflow:hidden}.bar span{display:block;height:100%;background:var(--ok);width:0}
-            footer{margin-top:20px}@media(max-width:680px){.grid{grid-template-columns:1fr}main{padding:22px 14px}h1{font-size:27px}}
-          </style>
-        </head>
-        <body>
-          <main>
-            <header><div class="logo">⚒</div><div><h1>ForgeCore</h1><p>Simple self-hosted CI for your projects</p></div></header>
-            <section class="grid">
-              <article class="card"><div class="label">Runner status</div><div class="row"><span id="rd" class="dot off"></span><div id="rs" class="value">Starting…</div></div><div id="rn" class="sub">Waiting for runner status</div></article>
-              <article class="card"><div class="label">Storage</div><div id="dv" class="value">—</div><div class="bar"><span id="db"></span></div><div id="dp" class="sub">External storage</div></article>
-              <article class="card"><div class="label">Docker</div><div class="row"><span id="dd" class="dot off"></span><div id="ds" class="value">Checking…</div></div><div class="sub">Isolated CI Docker engine</div></article>
-              <article class="card"><div class="label">Cleanup</div><div id="cv" class="value">7 days</div><div id="cs" class="sub">Cache max age: 14 days</div></article>
-            </section>
-            <footer id="up">ForgeCore status</footer>
-          </main>
-          <script>
-            function dot(id,on){document.getElementById(id).classList.toggle('off',!on)}
-            async function refresh(){try{let r=await fetch('/status.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;let s=await r.json();rs.textContent=s.runner_online?'Online':'Offline';rn.textContent=s.runner_name||'Runner not configured';dot('rd',!!s.runner_online);ds.textContent=s.docker_online?'Running':'Offline';dot('dd',!!s.docker_online);let u=Number(s.disk_used_percent||0);dv.textContent=(s.disk_used||'—')+' / '+(s.disk_total||'—');dp.textContent=(s.disk_path||'External storage')+' · '+u+'% used';db.style.width=Math.max(0,Math.min(100,u))+'%';cv.textContent=(s.cleanup_interval_days||7)+' days';cs.textContent='Cache max age: '+(s.cache_max_age_days||14)+' days';up.textContent='Last updated: '+new Date().toLocaleTimeString()}catch(e){up.textContent='Waiting for ForgeCore runtime…'}}
-            refresh();setInterval(refresh,5000);
-          </script>
-        </body>
-        </html>
-        FORGECORE_HTML
-        cat > /srv/status.json <<'FORGECORE_STATUS'
-        {"runner_online":false,"runner_name":"Runner not configured","docker_online":false,"disk_used":"—","disk_total":"—","disk_used_percent":0,"disk_path":"External storage","cleanup_interval_days":7,"cache_max_age_days":14}
-        FORGECORE_STATUS
-        (
-          while true; do
-            if [ -f /state/status.json ]; then
-              cp -f /state/status.json /srv/status.json
-            fi
-            sleep 5
-          done
-        ) &
-        exec httpd -f -p 8080 -h /srv
+      - >-
+        base64 -d /forgecore/runtime/dashboard-server.b64 > /tmp/dashboard-server.py;
+        exec python3 /tmp/dashboard-server.py
     ports:
       - "8799:8080"
-    volumes:
-      - ${APP_DATA_DIR}/data/state:/state:ro
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2).read()"]
       interval: 10s
       timeout: 5s
       retries: 6

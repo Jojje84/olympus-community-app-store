@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.8"
+version: "0.1.0-beta.9"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -17,13 +17,14 @@ description: >-
   from filling the Umbrel system disk.
 
 
-  This beta intentionally keeps the dashboard small: runner status, storage
-  usage, Docker status and cleanup settings.
+  The dashboard can add or repair GitHub repository runners, restart runners,
+  show per-repository status and trigger cleanup without SSH.
 releaseNotes: >-
-  Beta 8 makes ForgeCore updates compatible with Umbrel's app update flow.
-  Versioned runner and cleanup runtime files are now delivered through root
-  templates that Umbrel refreshes on every update, removing the need to
-  uninstall the app when ForgeCore runtime files change.
+  Beta 9 fixes private repository checkout on the self-hosted runner by using
+  a real Actions work directory instead of the beta 8 symlink. It also upgrades
+  the dashboard with repository runner setup, per-runner status, runner restart
+  and manual cleanup controls so normal ForgeCore administration no longer
+  requires terminal access.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore

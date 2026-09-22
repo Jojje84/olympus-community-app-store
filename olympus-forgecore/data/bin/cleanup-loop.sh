@@ -7,10 +7,9 @@ CONFIG_FILE="${APP_ROOT}/config/forgecore.env"
 STATE_DIR="${APP_ROOT}/state"
 LOG_FILE="${STORAGE_ROOT}/logs/cleanup.log"
 LAST_RUN_FILE="${STATE_DIR}/last-cleanup-epoch"
+RUN_NOW_FILE="${STATE_DIR}/cleanup-now.request"
 
-log() {
-  printf '[forgecore-cleanup] %s\n' "$*" | tee -a "${LOG_FILE}"
-}
+log() { printf '[forgecore-cleanup] %s\n' "$*" | tee -a "${LOG_FILE}"; }
 
 load_config() {
   CLEANUP_INTERVAL_HOURS=168
@@ -18,10 +17,7 @@ load_config() {
   WORKSPACE_MAX_AGE_DAYS=30
   DISK_CLEANUP_THRESHOLD_PERCENT=85
   BUILDKIT_KEEP_STORAGE_GB=50
-
-  if [ -f "${CONFIG_FILE}" ]; then
-    . "${CONFIG_FILE}"
-  fi
+  if [ -f "${CONFIG_FILE}" ]; then . "${CONFIG_FILE}"; fi
 }
 
 wait_for_docker() {
@@ -34,44 +30,48 @@ wait_for_docker() {
 }
 
 prune_workspace_contents() {
-  [ -d "${STORAGE_ROOT}/workspaces" ] || return 0
+  if [ -d "${STORAGE_ROOT}/runners" ]; then
+    for workspace_root in "${STORAGE_ROOT}"/runners/*/_work; do
+      [ -d "${workspace_root}" ] || continue
+      find "${workspace_root}" -mindepth 1 -maxdepth 1 -mtime "+${WORKSPACE_MAX_AGE_DAYS}" -exec rm -rf '{}' ';' || true
+    done
+  fi
 
-  for workspace_root in "${STORAGE_ROOT}"/workspaces/*; do
-    [ -d "${workspace_root}" ] || continue
-    find "${workspace_root}" -mindepth 1 -maxdepth 1       -mtime "+${WORKSPACE_MAX_AGE_DAYS}" -exec rm -rf '{}' ';' || true
-  done
+  # beta.8 legacy workspace location.
+  if [ -d "${STORAGE_ROOT}/workspaces" ]; then
+    for workspace_root in "${STORAGE_ROOT}"/workspaces/*; do
+      [ -d "${workspace_root}" ] || continue
+      find "${workspace_root}" -mindepth 1 -maxdepth 1 -mtime "+${WORKSPACE_MAX_AGE_DAYS}" -exec rm -rf '{}' ';' || true
+    done
+  fi
 }
 
 prune_artifacts() {
   [ -d "${STORAGE_ROOT}/artifacts" ] || return 0
-
-  find "${STORAGE_ROOT}/artifacts" -mindepth 1     -mtime "+${WORKSPACE_MAX_AGE_DAYS}" -exec rm -rf '{}' ';' || true
+  find "${STORAGE_ROOT}/artifacts" -mindepth 1 -mtime "+${WORKSPACE_MAX_AGE_DAYS}" -exec rm -rf '{}' ';' || true
 }
 
 run_cleanup() {
   load_config
-
   now="$(date +%s)"
   age_hours=$((CACHE_MAX_AGE_DAYS * 24))
 
   log "cleanup started"
-
   docker container prune -f --filter "until=${age_hours}h" >>"${LOG_FILE}" 2>&1 || true
   docker image prune -f --filter "until=${age_hours}h" >>"${LOG_FILE}" 2>&1 || true
-  docker builder prune -f     --filter "until=${age_hours}h"     --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
+  docker builder prune -f --filter "until=${age_hours}h" --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
 
   prune_workspace_contents
   prune_artifacts
 
   usage="$(df -P "${STORAGE_ROOT}" | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
-
   if [ "${usage:-0}" -ge "${DISK_CLEANUP_THRESHOLD_PERCENT}" ]; then
     log "disk pressure threshold reached at ${usage}%"
-
-    docker builder prune -f       --filter "until=168h"       --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
+    docker builder prune -f --filter "until=${age_hours}h" --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
   fi
 
   printf '%s\n' "${now}" > "${LAST_RUN_FILE}"
+  rm -f "${RUN_NOW_FILE}"
   log "cleanup completed"
 }
 
@@ -80,19 +80,13 @@ wait_for_docker
 
 while true; do
   load_config
-
   now="$(date +%s)"
   last=0
-
-  if [ -f "${LAST_RUN_FILE}" ]; then
-    last="$(cat "${LAST_RUN_FILE}" 2>/dev/null || echo 0)"
-  fi
-
+  if [ -f "${LAST_RUN_FILE}" ]; then last="$(cat "${LAST_RUN_FILE}" 2>/dev/null || echo 0)"; fi
   due=$((CLEANUP_INTERVAL_HOURS * 3600))
 
-  if [ $((now - last)) -ge "${due}" ]; then
+  if [ -f "${RUN_NOW_FILE}" ] || [ $((now - last)) -ge "${due}" ]; then
     run_cleanup
   fi
-
-  sleep 3600
+  sleep 10
 done

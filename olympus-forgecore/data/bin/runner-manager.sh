@@ -6,17 +6,13 @@ STORAGE_ROOT="${FORGECORE_STORAGE_ROOT:-/forgecore/storage}"
 CONFIG_DIR="${APP_ROOT}/config"
 RUNNER_CONFIG_DIR="${CONFIG_DIR}/runners"
 STATE_DIR="${APP_ROOT}/state"
-STATIC_WWW="${FORGECORE_STATIC_WWW:-/forgecore/static-www}"
 CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
-DEFAULT_CONFIG="${FORGECORE_DEFAULT_CONFIG:-/forgecore/defaults/forgecore.env.example}"
-DEFAULT_RUNNER_CONFIG="${FORGECORE_DEFAULT_RUNNER_CONFIG:-/forgecore/defaults/runner.env.example}"
+RELOAD_FILE="${STATE_DIR}/reload-runners.request"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
 
-log() {
-  printf '[forgecore] %s\n' "$*"
-}
+log() { printf '[forgecore] %s\n' "$*"; }
 
 prepare_paths() {
   sudo mkdir -p "${CONFIG_DIR}" "${RUNNER_CONFIG_DIR}" "${STATE_DIR}"
@@ -42,21 +38,38 @@ prepare_paths() {
     "${STORAGE_ROOT}/logs"
 
   if [[ ! -f "${CONFIG_FILE}" ]]; then
-    cp "${DEFAULT_CONFIG}" "${CONFIG_FILE}"
+    cat > "${CONFIG_FILE}" <<'FORGECORE_CONFIG'
+# ForgeCore v1 global settings.
+RUNNER_NAME_PREFIX="beelink"
+RUNNER_LABELS="beelink,forgecore"
+CLEANUP_INTERVAL_HOURS=168
+CACHE_MAX_AGE_DAYS=14
+WORKSPACE_MAX_AGE_DAYS=30
+DISK_CLEANUP_THRESHOLD_PERCENT=85
+BUILDKIT_KEEP_STORAGE_GB=50
+COMPOSE_VERSION="5.5.1"
+COMPOSE_SHA256_X86_64="db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576"
+COMPOSE_SHA256_AARCH64="732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7"
+FORGECORE_CONFIG
     chmod 600 "${CONFIG_FILE}"
   fi
 
-  if [[ ! -f "${RUNNER_CONFIG_DIR}/runner.env.example" ]]; then
-    cp "${DEFAULT_RUNNER_CONFIG}" "${RUNNER_CONFIG_DIR}/runner.env.example"
-    chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
-  fi
-
+  # This is only an example/fallback file, so refresh it on every startup.
+  # Real repository configs are separate *.env files and are never overwritten here.
+  cat > "${RUNNER_CONFIG_DIR}/runner.env.example" <<'FORGECORE_RUNNER_CONFIG'
+# One file per GitHub repository.
+# Prefer the ForgeCore dashboard for normal setup.
+# Manual fallback: copy this file to a new .env file in this directory.
+REPOSITORY=""
+REGISTRATION_TOKEN=""
+NAME=""
+LABELS="beelink,forgecore"
+FORGECORE_RUNNER_CONFIG
+  chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
 }
 
 load_config() {
-  # shellcheck disable=SC1090
   source "${CONFIG_FILE}"
-
   : "${RUNNER_NAME_PREFIX:=beelink}"
   : "${RUNNER_LABELS:=beelink,forgecore}"
   : "${COMPOSE_VERSION:=5.5.1}"
@@ -68,7 +81,6 @@ load_config() {
 
 wait_for_docker() {
   log "waiting for isolated Docker engine"
-
   for _ in $(seq 1 60); do
     if docker info >/dev/null 2>&1; then
       log "isolated Docker engine is ready"
@@ -76,7 +88,6 @@ wait_for_docker() {
     fi
     sleep 2
   done
-
   log "Docker engine did not become ready"
   return 1
 }
@@ -85,49 +96,27 @@ install_compose() {
   local plugin_dir="${DOCKER_CONFIG:-/home/runner/.docker}/cli-plugins"
   local plugin="${plugin_dir}/docker-compose"
   local machine compose_arch compose_sha
-
   machine="$(uname -m)"
   case "${machine}" in
-    x86_64|amd64)
-      compose_arch="x86_64"
-      compose_sha="${COMPOSE_SHA256_X86_64}"
-      ;;
-    aarch64|arm64)
-      compose_arch="aarch64"
-      compose_sha="${COMPOSE_SHA256_AARCH64}"
-      ;;
-    *)
-      log "unsupported architecture for Docker Compose: ${machine}"
-      return 1
-      ;;
+    x86_64|amd64) compose_arch="x86_64"; compose_sha="${COMPOSE_SHA256_X86_64}" ;;
+    aarch64|arm64) compose_arch="aarch64"; compose_sha="${COMPOSE_SHA256_AARCH64}" ;;
+    *) log "unsupported architecture for Docker Compose: ${machine}"; return 1 ;;
   esac
-
   mkdir -p "${plugin_dir}"
-
-  if [[ -x "${plugin}" ]] && "${plugin}" version >/dev/null 2>&1; then
-    return 0
-  fi
-
+  if [[ -x "${plugin}" ]] && "${plugin}" version >/dev/null 2>&1; then return 0; fi
   log "installing Docker Compose v${COMPOSE_VERSION} for ${compose_arch}"
-  curl -fsSL --retry 3 \
-    "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" \
-    -o "${plugin}.tmp"
-
+  curl -fsSL --retry 3 "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" -o "${plugin}.tmp"
   printf '%s  %s\n' "${compose_sha}" "${plugin}.tmp" | sha256sum -c -
   mv "${plugin}.tmp" "${plugin}"
   chmod +x "${plugin}"
 }
 
 slugify() {
-  printf '%s' "$1" \
-    | tr '[:upper:]' '[:lower:]' \
-    | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
 }
 
 copy_runner_distribution() {
-  local destination="$1"
-  local item
-
+  local destination="$1" item
   for item in /home/runner/* /home/runner/.[!.]* /home/runner/..?*; do
     [[ -e "${item}" ]] || continue
     [[ "$(basename "${item}")" == ".docker" ]] && continue
@@ -141,112 +130,105 @@ clear_registration_token() {
   chmod 600 "${file}"
 }
 
+prepare_real_workdir() {
+  local runner_dir="$1" work_dir="${runner_dir}/_work"
+  if [[ -L "${work_dir}" ]]; then
+    log "migrating ${work_dir} from symlink to real directory"
+    rm -f "${work_dir}"
+  fi
+  mkdir -p "${work_dir}"
+}
+
 start_runner_from_config() {
   local config_file="$1"
-  local REPOSITORY=""
-  local REGISTRATION_TOKEN=""
-  local NAME=""
-  local LABELS=""
-  local repo slug runner_dir work_dir runner_name labels pid
+  local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
+  local repo slug runner_dir runner_name labels pid error_file
 
-  # shellcheck disable=SC1090
   source "${config_file}"
-
   repo="${REPOSITORY}"
   labels="${LABELS:-${RUNNER_LABELS}}"
 
-  if [[ -z "${repo}" ]]; then
-    log "skipping ${config_file}: REPOSITORY is empty"
-    return 0
-  fi
-
-  if [[ ! "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
-    log "invalid repository in ${config_file}: ${repo}"
-    return 1
-  fi
+  [[ -n "${repo}" ]] || return 0
+  [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { log "invalid repository in ${config_file}: ${repo}"; return 1; }
+  [[ -z "${NAME}" || "${NAME}" =~ ^[A-Za-z0-9_.-]+$ ]] || { log "invalid runner name in ${config_file}"; return 1; }
+  [[ "${labels}" =~ ^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$ ]] || { log "invalid labels in ${config_file}"; return 1; }
 
   slug="$(slugify "${repo}")"
   runner_dir="${STORAGE_ROOT}/runners/${slug}"
-  work_dir="${STORAGE_ROOT}/workspaces/${slug}"
   runner_name="${NAME:-${RUNNER_NAME_PREFIX}-${slug}}"
   runner_name="${runner_name:0:63}"
+  error_file="${STATE_DIR}/runner-${slug}.error"
 
-  mkdir -p "${runner_dir}" "${work_dir}"
-
+  mkdir -p "${runner_dir}"
   if [[ ! -x "${runner_dir}/run.sh" ]]; then
     log "initializing runner files for ${repo}"
     copy_runner_distribution "${runner_dir}"
-    rm -rf "${runner_dir}/_work"
-    ln -s "${work_dir}" "${runner_dir}/_work"
+  fi
+
+  prepare_real_workdir "${runner_dir}"
+  rm -f "${error_file}"
+  printf '%s\n' "${runner_name}" > "${STATE_DIR}/runner-${slug}.name"
+  printf '%s\n' "${repo}" > "${STATE_DIR}/runner-${slug}.repo"
+
+  # Supplying a fresh token from the dashboard means explicit registration/repair.
+  # Clear only the local runner identity files; --replace then refreshes the same
+  # named runner at GitHub. Workspaces, caches and repository config are kept.
+  if [[ -n "${REGISTRATION_TOKEN}" && -f "${runner_dir}/.runner" ]]; then
+    log "refreshing runner registration for ${repo}"
+    rm -f \
+      "${runner_dir}/.runner" \
+      "${runner_dir}/.credentials" \
+      "${runner_dir}/.credentials_rsaparams" \
+      "${runner_dir}/.credentials_migrated" \
+      "${runner_dir}/.service"
   fi
 
   if [[ ! -f "${runner_dir}/.runner" ]]; then
     if [[ -z "${REGISTRATION_TOKEN}" ]]; then
-      log "${repo} is waiting for a GitHub registration token in ${config_file}"
+      printf '%s\n' "Waiting for a GitHub registration token" > "${error_file}"
       return 0
     fi
-
     log "registering runner for ${repo}"
-    (
+    if ! (
       cd "${runner_dir}"
-      ./config.sh \
-        --unattended \
-        --replace \
-        --url "https://github.com/${repo}" \
-        --token "${REGISTRATION_TOKEN}" \
-        --name "${runner_name}" \
-        --work "_work" \
-        --labels "${labels}"
-    )
-
+      ./config.sh --unattended --replace --url "https://github.com/${repo}" --token "${REGISTRATION_TOKEN}" --name "${runner_name}" --work "_work" --labels "${labels}"
+    ); then
+      clear_registration_token "${config_file}"
+      printf '%s\n' "Registration failed. Generate a fresh GitHub runner token and try again." > "${error_file}"
+      return 1
+    fi
     clear_registration_token "${config_file}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
     clear_registration_token "${config_file}"
   fi
 
   log "starting ${runner_name}"
-  (
-    cd "${runner_dir}"
-    ./run.sh
-  ) &
-
+  ( cd "${runner_dir}" && ./run.sh ) &
   pid=$!
   printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
-  printf '%s\n' "${runner_name}" > "${STATE_DIR}/runner-${slug}.name"
+  printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
   RUNNER_PIDS+=("${pid}")
 }
 
 write_status() {
-  local docker_online=false
-  local configured=0
-  local online=0
-  local disk_total="—"
-  local disk_used="—"
-  local disk_pct=0
-  local runner_summary="Runner not configured"
-  local pid_file pid
+  local docker_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
+  local repo_file slug pid_file pid
 
-  if docker info >/dev/null 2>&1; then
-    docker_online=true
-  fi
+  docker info >/dev/null 2>&1 && docker_online=true
 
   shopt -s nullglob
-  local name_files=("${STATE_DIR}"/runner-*.name)
-  configured="${#name_files[@]}"
-
-  for pid_file in "${STATE_DIR}"/runner-*.pid; do
+  local repo_files=("${STATE_DIR}"/runner-*.repo)
+  configured="${#repo_files[@]}"
+  for repo_file in "${repo_files[@]}"; do
+    slug="${repo_file##*/runner-}"; slug="${slug%.repo}"
+    pid_file="${STATE_DIR}/runner-${slug}.pid"
     [[ -f "${pid_file}" ]] || continue
     pid="$(cat "${pid_file}" 2>/dev/null || true)"
-
-    if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
-      online=$((online + 1))
-    fi
+    [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null && online=$((online + 1))
   done
   shopt -u nullglob
 
-  if (( configured > 0 )); then
-    runner_summary="${online}/${configured} runner(s) online"
-  fi
+  (( configured > 0 )) && runner_summary="${online}/${configured} runner(s) online"
 
   if df -Pk "${STORAGE_ROOT}" >/dev/null 2>&1; then
     disk_pct="$(df -Pk "${STORAGE_ROOT}" | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
@@ -264,67 +246,48 @@ write_status() {
     --arg disk_path "${STORAGE_ROOT}" \
     --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))" \
     --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}" \
-    '{
-      runner_online: $runner_online,
-      runner_name: $runner_name,
-      docker_online: $docker_online,
-      disk_used: $disk_used,
-      disk_total: $disk_total,
-      disk_used_percent: $disk_used_percent,
-      disk_path: $disk_path,
-      cleanup_interval_days: $cleanup_interval_days,
-      cache_max_age_days: $cache_max_age_days
-    }' > "${STATE_DIR}/status.json.tmp"
-
+    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days}' \
+    > "${STATE_DIR}/status.json.tmp"
   mv "${STATE_DIR}/status.json.tmp" "${STATE_DIR}/status.json"
 }
 
-status_loop() {
-  while true; do
-    write_status || true
-    sleep 10
-  done
-}
+status_loop() { while true; do write_status || true; sleep 5; done; }
 
 stop_all() {
   local pid
-
-  log "stopping runners"
-  for pid in "${RUNNER_PIDS[@]:-}"; do
-    kill "${pid}" 2>/dev/null || true
-  done
-
-  if [[ -n "${STATUS_PID}" ]]; then
-    kill "${STATUS_PID}" 2>/dev/null || true
-  fi
+  for pid in "${RUNNER_PIDS[@]:-}"; do kill "${pid}" 2>/dev/null || true; done
+  rm -f "${STATE_DIR}"/runner-*.online
+  [[ -z "${STATUS_PID}" ]] || kill "${STATUS_PID}" 2>/dev/null || true
 }
 trap stop_all TERM INT EXIT
 
 prepare_paths
 load_config
-rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.name
-
+rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.name "${STATE_DIR}"/runner-*.repo "${STATE_DIR}"/runner-*.online
+rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
-
 status_loop &
 STATUS_PID=$!
 
 shopt -s nullglob
 runner_configs=("${RUNNER_CONFIG_DIR}"/*.env)
 shopt -u nullglob
+for config_file in "${runner_configs[@]}"; do start_runner_from_config "${config_file}" || true; done
 
-for config_file in "${runner_configs[@]}"; do
-  start_runner_from_config "${config_file}"
+(( ${#RUNNER_PIDS[@]} > 0 )) || log "No runner is ready. Add or repair one from the ForgeCore dashboard."
+
+while true; do
+  if [[ -f "${RELOAD_FILE}" ]]; then
+    rm -f "${RELOAD_FILE}"
+    log "dashboard requested runner reload"
+    exit 0
+  fi
+  for pid in "${RUNNER_PIDS[@]:-}"; do
+    if ! kill -0 "${pid}" 2>/dev/null; then
+      log "a runner process exited; restarting ForgeCore runner manager"
+      exit 1
+    fi
+  done
+  sleep 2
 done
-
-if (( ${#RUNNER_PIDS[@]} == 0 )); then
-  log "ForgeCore is running, but no configured GitHub runner is ready"
-  log "copy ${RUNNER_CONFIG_DIR}/runner.env.example to a .env file and add a fresh registration token"
-  wait "${STATUS_PID}"
-  exit 0
-fi
-
-wait -n "${RUNNER_PIDS[@]}"
-log "a runner process exited; restarting ForgeCore runner manager"
-exit 1
