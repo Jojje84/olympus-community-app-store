@@ -1,0 +1,82 @@
+version: "3.7"
+
+services:
+  docker:
+    image: docker:29.8.1-dind
+    restart: unless-stopped
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    command:
+      - --host=tcp://0.0.0.0:2375
+      - --host=unix:///var/run/docker.sock
+      - --data-root=/forgecore/storage/docker
+      - --log-level=warn
+    volumes:
+      - forgecore-storage:/forgecore/storage
+    healthcheck:
+      test: ["CMD", "docker", "-H", "tcp://127.0.0.1:2375", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  runner:
+    image: ghcr.io/actions/actions-runner:2.337.0
+    restart: unless-stopped
+    init: true
+    depends_on:
+      - docker
+    environment:
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_CONFIG: /forgecore/storage/cache/docker-config
+      FORGECORE_APP_ROOT: /forgecore/app
+      FORGECORE_STORAGE_ROOT: /forgecore/storage
+      FORGECORE_STATIC_WWW: /forgecore/static-www
+      GOCACHE: /forgecore/storage/cache/go-build
+      GOMODCACHE: /forgecore/storage/cache/go-mod
+      NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
+      PLAYWRIGHT_BROWSERS_PATH: /forgecore/storage/cache/playwright
+      RUNNER_TOOL_CACHE: /forgecore/storage/cache/toolcache
+    volumes:
+      - forgecore-storage:/forgecore/storage
+      - ${APP_DATA_DIR}/data:/forgecore/app
+      - ./data/bin:/forgecore/bin:ro
+      - ./data/defaults:/forgecore/defaults:ro
+      - ./data/www:/forgecore/static-www:ro
+    entrypoint: ["/bin/bash", "/forgecore/bin/runner-manager.sh"]
+
+  cleanup:
+    image: docker:29.8.1-cli
+    restart: unless-stopped
+    depends_on:
+      - docker
+    environment:
+      DOCKER_HOST: tcp://docker:2375
+      FORGECORE_APP_ROOT: /forgecore/app
+      FORGECORE_STORAGE_ROOT: /forgecore/storage
+    volumes:
+      - forgecore-storage:/forgecore/storage
+      - ${APP_DATA_DIR}/data:/forgecore/app
+      - ./data/bin:/forgecore/bin:ro
+    entrypoint: ["/bin/sh", "/forgecore/bin/cleanup-loop.sh"]
+
+  web:
+    image: busybox:1.37.0
+    restart: unless-stopped
+    user: "65534:65534"
+    depends_on:
+      - runner
+    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    ports:
+      - "8799:8080"
+    volumes:
+      - ${APP_DATA_DIR}/data/state/www:/www:ro
+
+volumes:
+  forgecore-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}

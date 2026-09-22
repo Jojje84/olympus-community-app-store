@@ -1,0 +1,41 @@
+manifestVersion: 1
+id: olympus-forgecore
+category: developer
+name: ForgeCore Beta
+version: "0.1.0-beta.1"
+tagline: Run GitHub Actions on your own Umbrel hardware
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
+description: >-
+  ForgeCore is a lightweight self-hosted CI runner for Umbrel. It connects
+  trusted GitHub repositories to your own hardware and runs jobs through an
+  isolated Docker engine instead of Umbrel's host Docker socket.
+
+
+  Heavy CI data such as Docker images, build cache, workspaces and artifacts
+  is stored on the configured ForgeCore storage root. ForgeCore refuses to
+  create a missing storage root automatically, preventing accidental CI data
+  from filling the Umbrel system disk.
+
+
+  This beta intentionally keeps the dashboard small: runner status, storage
+  usage, Docker status and cleanup settings.
+releaseNotes: >-
+  First live beta for Umbrel testing. Includes GitHub self-hosted runners,
+  isolated Docker, external-storage protection, configurable cleanup and a
+  minimal status dashboard.
+
+developer: Jojje84
+website: https://github.com/Jojje84/ForgeCore
+dependencies: []
+repo: https://github.com/Jojje84/ForgeCore
+support: https://github.com/Jojje84/ForgeCore/issues
+
+port: 8799
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/olympus-community-app-store
