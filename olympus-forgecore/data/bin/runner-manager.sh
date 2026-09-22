@@ -620,6 +620,7 @@ rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
 log "ForgeCore runner manager ${RUNTIME_VERSION} ready"
+rm -f "${STATE_DIR}/runner-service.error"
 activity "runner" "Runner manager ${RUNTIME_VERSION} ready"
 status_loop &
 STATUS_PID=$!
