@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.24"
+version: "0.1.0-beta.25"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.24
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.25
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,11 +37,12 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 24 fixes the runner supervisor and dashboard repair lifecycle. Runner reloads
-  and unexpected runner exits are now recovered inside the long-lived manager instead
-  of depending on the container restart policy. Repair requests complete without
-  leaving the dashboard stuck on "Waiting for runner manager", and existing runner
-  credentials, workspaces and caches remain persistent across normal restarts.
+  Beta 25 fixes the root runner lifecycle issue found during Beelink testing. ForgeCore
+  now rejects one-time/ephemeral runner identities, forces repair registrations into
+  persistent mode, verifies the saved runner identity before startup, reports clear
+  migration errors in the dashboard, and uses only the repository-derived ForgeCore
+  label for new jobs. Old queued jobs that target the former system-label set remain
+  paused instead of being picked up by the repaired runner.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
