@@ -10,6 +10,8 @@ CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
 RELOAD_FILE="${STATE_DIR}/reload-runners.request"
 LOG_FILE="${STORAGE_ROOT}/logs/runner-manager.log"
 ACTIVITY_FILE="${STATE_DIR}/activity.log"
+RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
+RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
@@ -125,7 +127,7 @@ slugify() {
 
 copy_runner_distribution() {
   local destination="$1" item
-  for item in /home/runner/* /home/runner/.[!.]* /home/runner/..?*; do
+  for item in "${RUNNER_DIST_ROOT}"/* "${RUNNER_DIST_ROOT}"/.[!.]* "${RUNNER_DIST_ROOT}"/..?*; do
     [[ -e "${item}" ]] || continue
     [[ "$(basename "${item}")" == ".docker" ]] && continue
     cp -a "${item}" "${destination}/"
@@ -165,6 +167,26 @@ clear_runner_identity() {
     "${runner_dir}/.service"
 }
 
+write_runner_runtime_state() {
+  local slug="$1" repo="$2" phase="$3" mode="$4" message="$5"
+  local path="${STATE_DIR}/runner-${slug}.runtime.json"
+  jq -n \
+    --argjson epoch "$(date +%s)" \
+    --arg repository "${repo}" \
+    --arg phase "${phase}" \
+    --arg mode "${mode}" \
+    --arg message "${message}" \
+    '{epoch:$epoch,repository:$repository,phase:$phase,mode:$mode,message:$message}' \
+    > "${path}.tmp"
+  mv "${path}.tmp" "${path}"
+}
+
+runner_log_ready_since() {
+  local runner_log="$1" offset="$2"
+  [[ -f "${runner_log}" ]] || return 1
+  tail -c "+$((offset + 1))" "${runner_log}" 2>/dev/null | grep -Fq "Listening for Jobs"
+}
+
 prepare_real_workdir() {
   local runner_dir="$1" work_dir="${runner_dir}/_work"
   if [[ -L "${work_dir}" ]]; then
@@ -177,7 +199,7 @@ prepare_real_workdir() {
 start_runner_from_config() {
   local config_file="$1"
   local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log identity_mode
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log identity_mode log_offset
 
   source "${config_file}"
   repo="${REPOSITORY}"
@@ -206,24 +228,25 @@ start_runner_from_config() {
   printf '%s\n' "${repo}" > "${STATE_DIR}/runner-${slug}.repo"
 
   identity_mode="$(runner_identity_mode "${runner_dir}")"
+  write_runner_runtime_state "${slug}" "${repo}" "checking" "${identity_mode}" "Checking saved runner identity"
+
   if [[ "${identity_mode}" == "ephemeral" || "${identity_mode}" == "invalid" ]]; then
     log "detected ${identity_mode} runner identity for ${repo}"
     if [[ -z "${REGISTRATION_TOKEN}" ]]; then
       if [[ "${identity_mode}" == "ephemeral" ]]; then
         printf '%s\n' "Runner is one-time/ephemeral. Repair once with a fresh GitHub registration token to convert it to persistent mode." > "${error_file}"
       else
-        printf '%s\n' "Runner identity is invalid. Repair once with a fresh GitHub registration token to rebuild it safely." > "${error_file}"
+        printf '%s\n' "Runner identity could not be read safely. Repair once with a fresh GitHub registration token to rebuild it." > "${error_file}"
       fi
+      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
       activity "runner" "Persistent migration required for ${repo}"
       return 0
     fi
   fi
 
-  # A fresh dashboard token means explicit repair. Replace the complete local identity,
-  # but preserve workspaces/caches. This forces GitHub to receive the desired persistent
-  # runner configuration and removes stale one-time identities.
   if [[ -n "${REGISTRATION_TOKEN}" ]]; then
     log "repairing persistent runner registration for ${repo}"
+    write_runner_runtime_state "${slug}" "${repo}" "registering" "${identity_mode}" "Registering persistent runner"
     clear_runner_identity "${runner_dir}"
     identity_mode="unregistered"
   fi
@@ -231,6 +254,7 @@ start_runner_from_config() {
   if [[ "${identity_mode}" == "unregistered" ]]; then
     if [[ -z "${REGISTRATION_TOKEN}" ]]; then
       printf '%s\n' "Runner identity is missing. Open Repair and paste a fresh GitHub registration token once." > "${error_file}"
+      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "unregistered" "$(cat "${error_file}")"
       return 0
     fi
 
@@ -248,14 +272,16 @@ start_runner_from_config() {
         --work "_work" \
         --labels "${labels}"
     ); then
-      printf '%s\n' "Registration failed. Generate a fresh GitHub runner token and try again." > "${error_file}"
+      printf '%s\n' "Registration failed. The token was kept so you can retry without losing the request." > "${error_file}"
+      write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
       return 1
     fi
 
     identity_mode="$(runner_identity_mode "${runner_dir}")"
     if [[ "${identity_mode}" != "persistent" ]]; then
-      printf '%s\n' "GitHub returned a one-time runner identity. ForgeCore refused to start it; repair with a fresh token." > "${error_file}"
-      log "refusing non-persistent runner identity for ${repo}"
+      printf '%s\n' "Registration did not create a verified persistent runner identity." > "${error_file}"
+      log "refusing non-persistent runner identity for ${repo}: ${identity_mode}"
+      write_runner_runtime_state "${slug}" "${repo}" "error" "${identity_mode}" "$(cat "${error_file}")"
       clear_runner_identity "${runner_dir}"
       return 1
     fi
@@ -266,27 +292,71 @@ start_runner_from_config() {
     clear_registration_token "${config_file}"
   fi
 
+  identity_mode="$(runner_identity_mode "${runner_dir}")"
+  if [[ "${identity_mode}" != "persistent" ]]; then
+    printf '%s\n' "ForgeCore will only start a verified persistent runner identity." > "${error_file}"
+    write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
+    return 1
+  fi
+
   log "starting persistent runner ${runner_name}"
+  log_offset="$(wc -c < "${runner_log}" 2>/dev/null || echo 0)"
   printf '%s runner starting: %s (%s) mode=persistent\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
+  write_runner_runtime_state "${slug}" "${repo}" "starting" "persistent" "Starting GitHub runner process"
+
   ( cd "${runner_dir}" && exec ./run.sh ) >> "${runner_log}" 2>&1 &
   pid=$!
+  printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
+  printf '%s\n' "${log_offset}" > "${STATE_DIR}/runner-${slug}.log-offset"
+  RUNNER_PIDS+=("${pid}")
 
-  # Do not advertise the runner as online until the listener survives startup.
-  sleep 3
+  sleep "${RUNNER_STARTUP_GRACE_SECONDS}"
   if ! kill -0 "${pid}" 2>/dev/null; then
     wait "${pid}" 2>/dev/null || true
-    printf '%s\n' "Runner process exited during startup. Check the per-runner log for the current error." > "${error_file}"
+    rm -f "${STATE_DIR}/runner-${slug}.pid" "${STATE_DIR}/runner-${slug}.online"
+    printf '%s\n' "Runner process exited during startup. Open the runner log for the current error." > "${error_file}"
+    write_runner_runtime_state "${slug}" "${repo}" "error" "persistent" "$(cat "${error_file}")"
     log "runner ${runner_name} exited during startup"
     return 1
   fi
 
-  printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
-  printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
-  RUNNER_PIDS+=("${pid}")
-  activity "runner" "Runner process online: ${repo}"
+  if runner_log_ready_since "${runner_log}" "${log_offset}"; then
+    printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
+    write_runner_runtime_state "${slug}" "${repo}" "online" "persistent" "Listening for GitHub Actions jobs"
+    activity "runner" "Runner online: ${repo}"
+  else
+    rm -f "${STATE_DIR}/runner-${slug}.online"
+    write_runner_runtime_state "${slug}" "${repo}" "connecting" "persistent" "Runner process is alive; waiting for GitHub connection"
+    activity "runner" "Runner connecting: ${repo}"
+  fi
+}
+
+refresh_runner_readiness() {
+  local repo_file slug pid_file pid runner_log offset_file offset repo runtime_file phase
+  shopt -s nullglob
+  local repo_files=("${STATE_DIR}"/runner-*.repo)
+  shopt -u nullglob
+  for repo_file in "${repo_files[@]}"; do
+    slug="${repo_file##*/runner-}"; slug="${slug%.repo}"
+    repo="$(cat "${repo_file}" 2>/dev/null || true)"
+    pid_file="${STATE_DIR}/runner-${slug}.pid"
+    runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
+    offset_file="${STATE_DIR}/runner-${slug}.log-offset"
+    runtime_file="${STATE_DIR}/runner-${slug}.runtime.json"
+    [[ -f "${pid_file}" ]] || continue
+    pid="$(cat "${pid_file}" 2>/dev/null || true)"
+    [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null || continue
+    offset="$(cat "${offset_file}" 2>/dev/null || echo 0)"
+    if [[ ! -f "${STATE_DIR}/runner-${slug}.online" ]] && runner_log_ready_since "${runner_log}" "${offset}"; then
+      printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
+      write_runner_runtime_state "${slug}" "${repo}" "online" "persistent" "Listening for GitHub Actions jobs"
+      activity "runner" "Runner online: ${repo}"
+    fi
+  done
 }
 
 write_status() {
+  refresh_runner_readiness || true
   local docker_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
   local repo_file slug pid_file pid
 
@@ -300,7 +370,7 @@ write_status() {
     pid_file="${STATE_DIR}/runner-${slug}.pid"
     [[ -f "${pid_file}" ]] || continue
     pid="$(cat "${pid_file}" 2>/dev/null || true)"
-    [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null && online=$((online + 1))
+    [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null && [[ -f "${STATE_DIR}/runner-${slug}.online" ]] && online=$((online + 1))
   done
   shopt -u nullglob
 
@@ -385,13 +455,14 @@ shutdown_all() {
 }
 trap shutdown_all TERM INT EXIT
 
+main() {
 prepare_paths
 load_config
 rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
-log "ForgeCore runner manager beta25 started"
-activity "runner" "Runner manager beta25 started"
+log "ForgeCore runner manager validation candidate started"
+activity "runner" "Runner manager validation candidate started"
 status_loop &
 STATUS_PID=$!
 
@@ -430,3 +501,8 @@ while true; do
 
   sleep 2
 done
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
