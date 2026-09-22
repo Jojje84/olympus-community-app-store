@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.9"
+version: "0.1.0-beta.10"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -20,11 +20,10 @@ description: >-
   The dashboard can add or repair GitHub repository runners, restart runners,
   show per-repository status and trigger cleanup without SSH.
 releaseNotes: >-
-  Beta 9 fixes private repository checkout on the self-hosted runner by using
-  a real Actions work directory instead of the beta 8 symlink. It also upgrades
-  the dashboard with repository runner setup, per-runner status, runner restart
-  and manual cleanup controls so normal ForgeCore administration no longer
-  requires terminal access.
+  Beta 10 redesigns the ForgeCore dashboard with a clearer dark control-center
+  layout, larger status cards and more visible runner controls. Repository setup,
+  runner repair/restart and cleanup stay available directly in the dashboard,
+  while the beta 9 private-repository checkout fix remains in place.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
