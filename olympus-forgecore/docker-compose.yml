@@ -81,11 +81,18 @@ services:
   web:
     image: busybox:1.37.0
     restart: unless-stopped
-    user: "65534:65534"
-    depends_on:
-      - runner
-    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        mkdir -p /www;
+        cp -f /static/index.html /www/index.html;
+        if [ ! -f /www/status.json ]; then
+          cp -f /static/status.json /www/status.json;
+        fi;
+        exec httpd -f -p 8080 -h /www
     ports:
       - "8799:8080"
     volumes:
-      - ${APP_DATA_DIR}/data/state/www:/www:ro
+      - ${APP_DATA_DIR}/data/state/www:/www
+      - ./data/www:/static:ro
