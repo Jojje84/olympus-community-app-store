@@ -5,7 +5,8 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 25 fixes the root runner lifecycle issue found during Beelink testing. ForgeCore now rejects one-time/ephemeral runner identities, forces repairs into persistent mode, verifies the saved identity before startup, and uses only the repository-derived label for new jobs. Old queued jobs using the former broad system-label set remain paused.
+Beta 26 hardens the runner lifecycle and Umbrel update path after live Beelink testing. Repair progress is persisted across dashboard refreshes, online state is only set after the GitHub listener confirms it is listening, the manager heartbeat/runtime build is visible, and a versioned Compose marker forces runtime services to be recreated when the app is updated.
+
 
 
 The approved ForgeCore anvil remains unchanged. The canonical raster asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the fallback icon must all match it.
