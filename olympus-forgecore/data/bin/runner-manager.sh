@@ -265,7 +265,8 @@ clear_registration_token() {
 }
 
 runner_identity_mode() {
-  local runner_dir="$1" settings="${runner_dir}/.runner"
+  local runner_dir="$1"
+  local settings="${runner_dir}/.runner"
   if [[ ! -f "${settings}" ]]; then
     printf '%s\n' "unregistered"
     return 0
@@ -378,7 +379,8 @@ runner_watchdog_recycle_reason() {
 }
 
 prepare_real_workdir() {
-  local runner_dir="$1" work_dir="${runner_dir}/_work"
+  local runner_dir="$1"
+  local work_dir="${runner_dir}/_work"
   if [[ -L "${work_dir}" ]]; then
     log "migrating ${work_dir} from symlink to real directory"
     rm -f "${work_dir}"
