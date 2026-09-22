@@ -19,9 +19,12 @@ RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners"
 RUNNER_LAYOUT_MARKER="${STATE_DIR}/runner-layout-standard.initialized"
 LEGACY_RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
 RUNNER_BACKUP_ROOT="${STORAGE_ROOT}/runner-backups"
+DEPENDENCY_READY_FILE="${STATE_DIR}/dependencies.ready"
+DEPENDENCY_ERROR_FILE="${STATE_DIR}/dependencies.error"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
+DEPENDENCY_PID=""
 MANAGER_STARTED_EPOCH="$(date +%s)"
 
 log() {
@@ -212,6 +215,32 @@ install_compose() {
   chmod +x "${plugin}"
 }
 
+dependency_loop() {
+  local announced_ready=false
+  rm -f "${DEPENDENCY_READY_FILE}"
+  while true; do
+    if docker info >/dev/null 2>&1; then
+      if install_compose >/dev/null 2>&1; then
+        : > "${DEPENDENCY_READY_FILE}"
+        rm -f "${DEPENDENCY_ERROR_FILE}"
+        if [[ "${announced_ready}" != true ]]; then
+          log "Docker/Compose dependencies are ready"
+          activity "runner" "Docker/Compose dependencies are ready"
+          announced_ready=true
+        fi
+        sleep 15
+        continue
+      fi
+      printf '%s\n' "Docker is reachable, but Docker Compose is not ready yet. ForgeCore will keep retrying in the background." > "${DEPENDENCY_ERROR_FILE}"
+    else
+      printf '%s\n' "Isolated Docker engine is not ready yet. ForgeCore runner manager remains online and will keep retrying in the background." > "${DEPENDENCY_ERROR_FILE}"
+    fi
+    rm -f "${DEPENDENCY_READY_FILE}"
+    announced_ready=false
+    sleep 5
+  done
+}
+
 slugify() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
 }
@@ -350,6 +379,21 @@ workflow="${GITHUB_WORKFLOW:-}"
 event="${GITHUB_EVENT_NAME:-}"
 ref_name="${GITHUB_REF_NAME:-}"
 runtime="${FORGECORE_RUNTIME_VERSION}"
+
+if [[ "${workflow}" != "ForgeCore runner live check" ]]; then
+  for _ in $(seq 1 60); do
+    [[ -f "${FORGECORE_HOOK_DEPENDENCY_READY_FILE:-}" ]] && break
+    sleep 2
+  done
+  if [[ ! -f "${FORGECORE_HOOK_DEPENDENCY_READY_FILE:-}" ]]; then
+    if [[ -n "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE:-}" && -f "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE}" ]]; then
+      cat "${FORGECORE_HOOK_DEPENDENCY_ERROR_FILE}" >&2
+    else
+      echo "ForgeCore Docker/Compose dependencies are not ready." >&2
+    fi
+    exit 43
+  fi
+fi
 current_beta=""
 if [[ "${runtime}" =~ beta\.([0-9]+)$ ]]; then current_beta="${BASH_REMATCH[1]}"; fi
 stale_beta() {
@@ -657,6 +701,8 @@ start_runner_from_config() {
     export FORGECORE_HOOK_STATE_DIR="${STATE_DIR}"
     export FORGECORE_HOOK_SLUG="${slug}"
     export FORGECORE_RUNTIME_VERSION="${RUNTIME_VERSION}"
+    export FORGECORE_HOOK_DEPENDENCY_READY_FILE="${DEPENDENCY_READY_FILE}"
+    export FORGECORE_HOOK_DEPENDENCY_ERROR_FILE="${DEPENDENCY_ERROR_FILE}"
     export ACTIONS_RUNNER_HOOK_JOB_STARTED="${APP_ROOT}/hooks/job-started-${slug}.sh"
     export ACTIONS_RUNNER_HOOK_JOB_COMPLETED="${APP_ROOT}/hooks/job-completed-${slug}.sh"
     exec ./run.sh
@@ -715,10 +761,11 @@ refresh_runner_readiness() {
 
 write_status() {
   refresh_runner_readiness || true
-  local docker_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
+  local docker_online=false compose_online=false configured=0 online=0 disk_total="—" disk_used="—" disk_pct=0 runner_summary="Runner not configured"
   local repo_file slug pid_file pid
 
   docker info >/dev/null 2>&1 && docker_online=true
+  [[ -f "${DEPENDENCY_READY_FILE}" ]] && compose_online=true
 
   shopt -s nullglob
   local repo_files=("${STATE_DIR}"/runner-*.repo)
@@ -744,7 +791,7 @@ write_status() {
     --argjson runner_online "$([[ "${online}" -gt 0 ]] && echo true || echo false)" \
     --arg runner_name "${runner_summary}" \
     --argjson docker_online "${docker_online}" \
-    --argjson compose_online true \
+    --argjson compose_online "${compose_online}" \
     --arg disk_used "${disk_used}" \
     --arg disk_total "${disk_total}" \
     --argjson disk_used_percent "${disk_pct:-0}" \
@@ -813,24 +860,28 @@ shutdown_all() {
     kill "${STATUS_PID}" 2>/dev/null || true
     wait "${STATUS_PID}" 2>/dev/null || true
   fi
+  if [[ -n "${DEPENDENCY_PID}" ]]; then
+    kill "${DEPENDENCY_PID}" 2>/dev/null || true
+    wait "${DEPENDENCY_PID}" 2>/dev/null || true
+  fi
 }
 trap shutdown_all TERM INT EXIT
 
 main() {
-write_service_error "ForgeCore runner manager is starting; waiting for startup preflight"
+write_service_error "ForgeCore runner manager is starting"
 prepare_paths
 normalize_app_permissions
 log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
 activity "runner" "Runner manager ${RUNTIME_VERSION} booting"
 load_config
 rm -f "${RELOAD_FILE}"
-wait_for_docker
-install_compose
-log "ForgeCore runner manager ${RUNTIME_VERSION} ready"
+log "ForgeCore runner manager ${RUNTIME_VERSION} control plane ready"
 rm -f "${STATE_DIR}/runner-service.error"
-activity "runner" "Runner manager ${RUNTIME_VERSION} ready"
+activity "runner" "Runner manager ${RUNTIME_VERSION} control plane ready"
 status_loop &
 STATUS_PID=$!
+dependency_loop &
+DEPENDENCY_PID=$!
 
 start_all_runners
 

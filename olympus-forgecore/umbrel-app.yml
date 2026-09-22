@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.33"
+version: "0.1.0-beta.34"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.33
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.34
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,14 +37,14 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 33 prevents accidental replacement of an existing GitHub runner identity.
-  A saved runner can no longer be overwritten by merely pasting a new token.
-  The dashboard requires an explicit destructive Repair confirmation before the
-  token field is shown, the API rejects unconfirmed replacements with HTTP 409,
-  and runner-manager independently preserves existing .runner/.credentials files
-  unless REPAIR_EXISTING=true is present. Confirmed Repair is transactional: the
-  current identity is backed up first and automatically restored if GitHub
-  registration fails. New runner registration remains a one-step flow.
+  Beta 34 decouples the ForgeCore control plane and GitHub listener from Docker
+  and Docker Compose startup. A slow or unhealthy isolated Docker engine no
+  longer leaves runner-manager stuck in startup preflight. The manager heartbeat
+  comes online first, Docker/Compose readiness is retried in the background, and
+  job hooks wait for those dependencies before workflows that need them proceed.
+  The dashboard now distinguishes manager/listener health from Docker dependency
+  health and disables the listener restart control while the manager is not live.
+  Beta 33's accidental-Repair protection and transactional rollback remain intact.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
