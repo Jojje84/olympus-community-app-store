@@ -177,7 +177,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.30</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.31</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -498,6 +498,13 @@ def origin_ok(handler):
     parsed = urlparse(origin)
     return parsed.netloc == host and parsed.scheme in ("http", "https")
 
+def inherit_owner(path, parent):
+    try:
+        st = parent.stat()
+        os.chown(path, st.st_uid, st.st_gid)
+    except OSError:
+        pass
+
 def write_env_updates(path, updates):
     lines = []
     seen = set()
@@ -520,6 +527,7 @@ def write_env_updates(path, updates):
     tmp = path.with_name("." + path.name + ".tmp")
     tmp.write_text("\n".join(lines).rstrip() + "\n")
     os.chmod(tmp, 0o600)
+    inherit_owner(tmp, path.parent)
     os.replace(tmp, path)
 
 def save_settings(data):
@@ -564,6 +572,7 @@ def save_runner(data):
         f'REGISTRATION_TOKEN="{token}"\n'
     )
     os.chmod(tmp, 0o600)
+    inherit_owner(tmp, RD)
     os.replace(tmp, dst)
     ST.mkdir(parents=True, exist_ok=True)
     runtime_path = ST / f"runner-{s}.runtime.json"

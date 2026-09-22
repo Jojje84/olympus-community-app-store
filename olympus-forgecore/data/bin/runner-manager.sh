@@ -118,6 +118,13 @@ FORGECORE_RUNNER_CONFIG
   initialize_runner_engine_v2
 }
 
+normalize_app_permissions() {
+  # The dashboard runs in a separate root-based Python container. Any config
+  # file it atomically replaces can otherwise become root:root mode 0600,
+  # which the actions-runner user cannot read.
+  sudo chown -R runner:docker "${CONFIG_DIR}" "${STATE_DIR}"
+}
+
 initialize_runner_engine_v2() {
   local config_file repo slug
   [[ -f "${RUNNER_ENGINE_MARKER}" ]] && return 0
@@ -594,12 +601,14 @@ reload_runners() {
   log "${reason}"
   activity "runner" "${reason}"
   stop_runners
+  normalize_app_permissions
   load_config
   MANAGER_STARTED_EPOCH="$(date +%s)"
   start_all_runners
   write_status || true
   activity "runner" "Runner manager reload completed"
 }
+
 
 shutdown_all() {
   stop_runners
@@ -613,6 +622,7 @@ trap shutdown_all TERM INT EXIT
 main() {
 write_service_error "ForgeCore runner manager is starting; waiting for startup preflight"
 prepare_paths
+normalize_app_permissions
 log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
 activity "runner" "Runner manager ${RUNTIME_VERSION} booting"
 load_config
@@ -634,6 +644,7 @@ while true; do
     sleep 2
     continue
   fi
+
 
   runner_exited=false
   if (( ${#RUNNER_PIDS[@]} > 0 )); then
