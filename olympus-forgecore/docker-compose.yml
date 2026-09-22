@@ -37,7 +37,7 @@ services:
       DOCKER_CONFIG: /forgecore/storage/cache/docker-config
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26-candidate"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -78,7 +78,7 @@ services:
       DOCKER_HOST: tcp://docker:2375
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26-candidate"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
@@ -100,7 +100,7 @@ services:
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26-candidate"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.26"
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage:ro
