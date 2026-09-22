@@ -1,30 +1,39 @@
-# ForgeCore Beta
+# ForgeCore Umbrel package
 
-ForgeCore Beta is the live Umbrel test package for ForgeCore.
+This directory is the self-contained source package that becomes `olympus-forgecore` for live Umbrel testing.
 
-The current Beelink test installation uses the dedicated external HDD:
+Beta 20 keeps this directory as the package source of truth. Olympus is distribution only:
+changes are made and validated here first, then copied to `olympus-forgecore`.
 
-```text
-/home/umbrel/umbrel/external/HDD/ForgeCore
-```
+Beta 20 also fixes the approved ForgeCore anvil at its source. The canonical raster
+asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the
+fallback icon must all match it and are checked by the smoke test.
 
-Before first installation, create the directory and marker:
+The dashboard is the primary control surface instead of SSH:
 
-```bash
-mkdir -p /home/umbrel/umbrel/external/HDD/ForgeCore
-touch /home/umbrel/umbrel/external/HDD/ForgeCore/.forgecore-external
-```
+- Overview with runner, Docker, Compose, disk and cleanup status
+- real last-cleanup and next-cleanup scheduling
+- repository runner setup and repair with short-lived GitHub registration tokens; the repository name becomes both the runner name and the only custom label
+- runner-manager restart with completion feedback
+- editable cleanup interval, cache retention, workspace retention, disk threshold and BuildKit retention
+- persistent runner-manager, cleanup and per-runner logs
+- recent ForgeCore runtime activity
+- About view that documents the package's actual capabilities and security boundaries
 
-The marker prevents ForgeCore from silently redirecting heavy CI data to the system disk when the expected external storage is unavailable.
+The dashboard uses the same ForgeCore logo as the Umbrel app and deliberately does not show optional QEMU support as "running" unless it is actually enabled.
 
-Beta 18 is dashboard-first. The dashboard has Overview, Settings, Logs and About views; runner setup/repair; runner-manager restart; cleanup queued/running/completed feedback; editable cleanup and retention settings; persistent runner/cleanup logs; recent ForgeCore activity; Docker/Compose/storage health; and a complete capability summary.
+Runtime code that must refresh during an Umbrel update is shipped through root-level `*.template` files, because Umbrel's legacy update path refreshes those files while arbitrary nested `data/` files are not update-safe.
 
-Normal runner setup asks only for the GitHub repository and a short-lived registration token. ForgeCore automatically uses the repository name as both the runner name and its single custom label. For example, `Jojje84/ForgeCore` becomes runner `ForgeCore` with the custom label `ForgeCore`.
+Contents:
 
-ForgeCore uses the same glowing orange anvil logo across the Umbrel app and dashboard. Short-lived GitHub registration tokens are cleared from repository config after registration. ForgeCore's isolated CI Docker engine does not mount Umbrel's host Docker socket.
+- `umbrel-app.yml` — Umbrel metadata and capability description
+- `docker-compose.yml` — isolated Docker, runner manager, cleanup and dashboard services
+- `runner-manager.b64.template` — update-safe runner manager payload
+- `cleanup-loop.b64.template` — update-safe cleanup payload
+- `dashboard-server.b64.template` — update-safe dashboard/API payload
+- `data/bin/` — readable source copies of runtime scripts
+- `assets/forgecore-logo.png` — canonical approved ForgeCore anvil artwork
+- `icon.svg` — self-contained Umbrel icon generated from the canonical artwork
+- `data/www/icon.svg` — fallback copy, required to be byte-identical to `icon.svg`
 
-The optional QEMU/binfmt helper exists in the ForgeCore source tree but is not automatically enabled by the Umbrel package.
-
-ForgeCore source development remains on the `feat/forgecore-v1-runtime` branch in `Jojje84/ForgeCore`.
-
-Beta 18 is the reference-UI release. It keeps the exact approved glowing orange anvil across the Umbrel app, dashboard and favicon, aligns the dashboard typography and proportions to the approved mockup, makes the repository-name-only runner label visible in the UI, and keeps cleanup progress observable from queued through completion.
+Heavy CI data remains on the configured external ForgeCore storage root. The runner never mounts Umbrel's host Docker socket.

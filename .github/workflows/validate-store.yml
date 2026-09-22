@@ -51,11 +51,43 @@ jobs:
               if decoded != actual:
                   raise SystemExit(f"{source} is out of sync with {template}")
 
-          dashboard = Path("olympus-forgecore/data/bin/dashboard-server.py").read_text()
+          import binascii
+          import re
+          import struct
+
+          root = Path("olympus-forgecore")
+          icon = (root / "icon.svg").read_text(encoding="utf-8")
+          fallback_icon = (root / "data/www/icon.svg").read_text(encoding="utf-8")
+          if fallback_icon != icon:
+              raise SystemExit("ForgeCore fallback icon is not identical to icon.svg")
+
+          match = re.search(r'data:image/png;base64,([^"]+)', icon)
+          if not match:
+              raise SystemExit("ForgeCore icon is missing its embedded PNG")
+          try:
+              png = base64.b64decode(match.group(1), validate=True)
+          except binascii.Error as exc:
+              raise SystemExit(f"ForgeCore logo base64 is invalid: {exc}")
+          if png[:8] != b"\x89PNG\r\n\x1a\n":
+              raise SystemExit("ForgeCore logo is not a PNG")
+          width, height = struct.unpack(">II", png[16:24])
+          if (width, height) != (126, 126):
+              raise SystemExit(f"Unexpected ForgeCore logo size: {width}x{height}")
+          if png != (root / "assets/forgecore-logo.png").read_bytes():
+              raise SystemExit("Canonical ForgeCore PNG does not match icon.svg")
+
+          dashboard = (root / "data/bin/dashboard-server.py").read_text(encoding="utf-8")
+          dashboard_icon = re.search(r"ICON_SVG = r'''(.*?)'''\n\nHTML =", dashboard, re.S)
+          if not dashboard_icon or dashboard_icon.group(1) != icon:
+              raise SystemExit("Dashboard ICON_SVG is not identical to icon.svg")
           if 'img-src \'self\' data:' not in dashboard:
               raise SystemExit("ForgeCore dashboard CSP must allow the approved embedded logo data")
           if 'src="./icon.svg"' not in dashboard or 'href="./icon.svg"' not in dashboard:
               raise SystemExit("ForgeCore dashboard logo and favicon must use relative app paths")
+          if "⚒" in dashboard or "⚒" in (root / "data/www/index.html").read_text(encoding="utf-8"):
+              raise SystemExit("Legacy ForgeCore emoji logo is still present")
+          if not (root / "SOURCE_COMMIT").is_file():
+              raise SystemExit("ForgeCore distribution package is missing SOURCE_COMMIT provenance")
           PY
 
       - name: Check whitespace errors
