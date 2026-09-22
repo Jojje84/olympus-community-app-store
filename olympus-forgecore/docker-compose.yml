@@ -18,7 +18,7 @@ services:
         --data-root=/forgecore/storage/docker
         --log-level=warn
     volumes:
-      - forgecore-storage:/forgecore/storage
+      - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage
     healthcheck:
       test: ["CMD", "docker", "-H", "tcp://127.0.0.1:2375", "info"]
       interval: 10s
@@ -44,12 +44,18 @@ services:
       PLAYWRIGHT_BROWSERS_PATH: /forgecore/storage/cache/playwright
       RUNNER_TOOL_CACHE: /forgecore/storage/cache/toolcache
     volumes:
-      - forgecore-storage:/forgecore/storage
+      - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ./data/bin:/forgecore/bin:ro
       - ./data/defaults:/forgecore/defaults:ro
       - ./data/www:/forgecore/static-www:ro
-    entrypoint: ["/bin/bash", "/forgecore/bin/runner-manager.sh"]
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - >-
+        test -f /forgecore/storage/.forgecore-external
+        || { echo "ForgeCore external storage marker missing"; exit 1; };
+        exec /forgecore/bin/runner-manager.sh
 
   cleanup:
     image: docker:29.8.1-cli
@@ -61,10 +67,16 @@ services:
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
     volumes:
-      - forgecore-storage:/forgecore/storage
+      - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ./data/bin:/forgecore/bin:ro
-    entrypoint: ["/bin/sh", "/forgecore/bin/cleanup-loop.sh"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        test -f /forgecore/storage/.forgecore-external
+        || { echo "ForgeCore external storage marker missing"; exit 1; };
+        exec /forgecore/bin/cleanup-loop.sh
 
   web:
     image: busybox:1.37.0
@@ -77,11 +89,3 @@ services:
       - "8799:8080"
     volumes:
       - ${APP_DATA_DIR}/data/state/www:/www:ro
-
-volumes:
-  forgecore-storage:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}
