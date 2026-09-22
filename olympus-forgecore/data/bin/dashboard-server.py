@@ -185,7 +185,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null;
+let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null,runnerFormManuallyOpen=false;
 
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
@@ -196,6 +196,7 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setT
 document.querySelectorAll('.open-settings').forEach(b=>b.addEventListener('click',()=>setTab('settings')));
 
 function showRunnerForm(repo='',repair=false){
+  runnerFormManuallyOpen=true;
   $('runnerFormPanel').style.display='block';
   $('runnerFormTitle').textContent=repair?'Repair runner connection':'Connect runner';
   $('runnerFormHelp').textContent=repair?'Use a fresh GitHub registration token only if the existing connection must be rebuilt.':'Add a repository runner with a one-time GitHub registration token.';
@@ -204,7 +205,7 @@ function showRunnerForm(repo='',repair=false){
   updateRepoLink();
   setTimeout(()=>$('token').focus(),0);
 }
-function hideRunnerForm(){$('runnerFormPanel').style.display='none';$('token').value=''}
+function hideRunnerForm(){runnerFormManuallyOpen=false;$('runnerFormPanel').style.display='none';$('token').value=''}
 $('cancelRunnerForm').addEventListener('click',hideRunnerForm);
 
 async function api(path,opts={}){
@@ -286,7 +287,7 @@ function renderStatus(s){
     return '<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+status+'<br>'+detail+'</div></div>'+action+'</div>';
   }).join(''):'<div class="empty">No repository runner configured yet.</div>';
   document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>showRunnerForm(b.dataset.repo,true)));
-  if(first&&first.online&&runnerRepairBaseline===null&&document.activeElement!==$('token')) hideRunnerForm();
+  if(first&&first.online&&runnerRepairBaseline===null&&!runnerFormManuallyOpen) hideRunnerForm();
   else if(!runners.length||!first||!first.online) $('runnerFormPanel').style.display='block';
 
   renderActivity(s.activity||[]);
@@ -323,7 +324,7 @@ $('runnerForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('runnerMsg'),b=$('runnerSubmit');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);b.disabled=true;b.textContent='Connecting…';m.className='msg warn';m.textContent='Saving the one-time token and connecting the runner…';
   try{
     await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';m.className='msg warn';m.textContent='Connection request accepted. Waiting for GitHub registration…';setTimeout(refresh,500)
+    $('token').value='';runnerFormManuallyOpen=false;m.className='msg warn';m.textContent='Connection request accepted. Waiting for GitHub registration…';setTimeout(refresh,500)
   }catch(e){runnerRepairBaseline=null;b.disabled=false;b.textContent='Repair connection';m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
