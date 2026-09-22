@@ -17,11 +17,11 @@ touch /home/umbrel/umbrel/external/HDD/ForgeCore/.forgecore-external
 
 The marker prevents ForgeCore from silently redirecting heavy CI data to the system disk when the expected external storage is unavailable.
 
-Beta 13 is dashboard-first. The dashboard has Overview, Settings, Logs and About views; runner setup/repair; runner-manager restart; real cleanup queued/running/completed feedback; editable cleanup and retention settings; persistent runner/cleanup logs; recent ForgeCore activity; Docker/Compose/storage health; and a complete capability summary.
+Beta 14 is dashboard-first. The dashboard has Overview, Settings, Logs and About views; runner setup/repair; runner-manager restart; cleanup queued/running/completed feedback; editable cleanup and retention settings; persistent runner/cleanup logs; recent ForgeCore activity; Docker/Compose/storage health; and a complete capability summary.
 
-Runner labels are now under Advanced runner options. They are GitHub tags used by workflow `runs-on` matching; the default `beelink,forgecore` is appropriate for normal ForgeCore use.
+Normal runner setup now asks only for the GitHub repository and a short-lived registration token. ForgeCore automatically derives the runner name and labels from the repository. For example, `Jojje84/ForgeCore` becomes runner `beelink-forgecore` with custom labels `beelink`, `forgecore` and `jojje84-forgecore`.
 
-ForgeCore now uses the same glowing orange anvil logo across the Umbrel app and dashboard. Short-lived GitHub registration tokens are cleared from repository config after registration. ForgeCore's isolated CI Docker engine does not mount Umbrel's host Docker socket.
+ForgeCore uses the same glowing orange anvil logo across the Umbrel app and dashboard. Short-lived GitHub registration tokens are cleared from repository config after registration. ForgeCore's isolated CI Docker engine does not mount Umbrel's host Docker socket.
 
 The optional QEMU/binfmt helper exists in the ForgeCore source tree but is not automatically enabled by the Umbrel package.
 
