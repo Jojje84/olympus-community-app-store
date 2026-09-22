@@ -6,7 +6,6 @@ STORAGE_ROOT="${FORGECORE_STORAGE_ROOT:-/forgecore/storage}"
 CONFIG_DIR="${APP_ROOT}/config"
 RUNNER_CONFIG_DIR="${CONFIG_DIR}/runners"
 STATE_DIR="${APP_ROOT}/state"
-WWW_DIR="${STATE_DIR}/www"
 STATIC_WWW="${FORGECORE_STATIC_WWW:-/forgecore/static-www}"
 CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
 DEFAULT_CONFIG="${FORGECORE_DEFAULT_CONFIG:-/forgecore/defaults/forgecore.env.example}"
@@ -20,12 +19,27 @@ log() {
 }
 
 prepare_paths() {
-  sudo mkdir -p "${CONFIG_DIR}" "${RUNNER_CONFIG_DIR}" "${STATE_DIR}" "${WWW_DIR}"
+  sudo mkdir -p "${CONFIG_DIR}" "${RUNNER_CONFIG_DIR}" "${STATE_DIR}"
   sudo mkdir -p "${STORAGE_ROOT}/docker"
-  sudo mkdir -p     "${STORAGE_ROOT}/runners"     "${STORAGE_ROOT}/workspaces"     "${STORAGE_ROOT}/cache/docker-config/cli-plugins"     "${STORAGE_ROOT}/cache/go-build"     "${STORAGE_ROOT}/cache/go-mod"     "${STORAGE_ROOT}/cache/npm"     "${STORAGE_ROOT}/cache/playwright"     "${STORAGE_ROOT}/cache/toolcache"     "${STORAGE_ROOT}/artifacts"     "${STORAGE_ROOT}/logs"
+  sudo mkdir -p \
+    "${STORAGE_ROOT}/runners" \
+    "${STORAGE_ROOT}/workspaces" \
+    "${STORAGE_ROOT}/cache/docker-config/cli-plugins" \
+    "${STORAGE_ROOT}/cache/go-build" \
+    "${STORAGE_ROOT}/cache/go-mod" \
+    "${STORAGE_ROOT}/cache/npm" \
+    "${STORAGE_ROOT}/cache/playwright" \
+    "${STORAGE_ROOT}/cache/toolcache" \
+    "${STORAGE_ROOT}/artifacts" \
+    "${STORAGE_ROOT}/logs"
 
   sudo chown -R runner:docker "${APP_ROOT}"
-  sudo chown -R runner:docker     "${STORAGE_ROOT}/runners"     "${STORAGE_ROOT}/workspaces"     "${STORAGE_ROOT}/cache"     "${STORAGE_ROOT}/artifacts"     "${STORAGE_ROOT}/logs"
+  sudo chown -R runner:docker \
+    "${STORAGE_ROOT}/runners" \
+    "${STORAGE_ROOT}/workspaces" \
+    "${STORAGE_ROOT}/cache" \
+    "${STORAGE_ROOT}/artifacts" \
+    "${STORAGE_ROOT}/logs"
 
   if [[ ! -f "${CONFIG_FILE}" ]]; then
     cp "${DEFAULT_CONFIG}" "${CONFIG_FILE}"
@@ -37,7 +51,6 @@ prepare_paths() {
     chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
   fi
 
-  cp -f "${STATIC_WWW}/index.html" "${WWW_DIR}/index.html"
 }
 
 load_config() {
@@ -96,7 +109,9 @@ install_compose() {
   fi
 
   log "installing Docker Compose v${COMPOSE_VERSION} for ${compose_arch}"
-  curl -fsSL --retry 3     "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${compose_arch}"     -o "${plugin}.tmp"
+  curl -fsSL --retry 3 \
+    "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" \
+    -o "${plugin}.tmp"
 
   printf '%s  %s\n' "${compose_sha}" "${plugin}.tmp" | sha256sum -c -
   mv "${plugin}.tmp" "${plugin}"
@@ -104,7 +119,9 @@ install_compose() {
 }
 
 slugify() {
-  printf '%s' "$1"     | tr '[:upper:]' '[:lower:]'     | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
+  printf '%s' "$1" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's#[^a-z0-9]+#-#g; s#^-+##; s#-+$##'
 }
 
 copy_runner_distribution() {
@@ -172,7 +189,14 @@ start_runner_from_config() {
     log "registering runner for ${repo}"
     (
       cd "${runner_dir}"
-      ./config.sh         --unattended         --replace         --url "https://github.com/${repo}"         --token "${REGISTRATION_TOKEN}"         --name "${runner_name}"         --work "_work"         --labels "${labels}"
+      ./config.sh \
+        --unattended \
+        --replace \
+        --url "https://github.com/${repo}" \
+        --token "${REGISTRATION_TOKEN}" \
+        --name "${runner_name}" \
+        --work "_work" \
+        --labels "${labels}"
     )
 
     clear_registration_token "${config_file}"
@@ -230,7 +254,17 @@ write_status() {
     disk_used="$(df -hP "${STORAGE_ROOT}" | awk 'NR==2 {print $3}')"
   fi
 
-  jq -n     --argjson runner_online "$([[ "${online}" -gt 0 ]] && echo true || echo false)"     --arg runner_name "${runner_summary}"     --argjson docker_online "${docker_online}"     --arg disk_used "${disk_used}"     --arg disk_total "${disk_total}"     --argjson disk_used_percent "${disk_pct:-0}"     --arg disk_path "${STORAGE_ROOT}"     --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))"     --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}"     '{
+  jq -n \
+    --argjson runner_online "$([[ "${online}" -gt 0 ]] && echo true || echo false)" \
+    --arg runner_name "${runner_summary}" \
+    --argjson docker_online "${docker_online}" \
+    --arg disk_used "${disk_used}" \
+    --arg disk_total "${disk_total}" \
+    --argjson disk_used_percent "${disk_pct:-0}" \
+    --arg disk_path "${STORAGE_ROOT}" \
+    --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))" \
+    --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}" \
+    '{
       runner_online: $runner_online,
       runner_name: $runner_name,
       docker_online: $docker_online,
@@ -240,9 +274,9 @@ write_status() {
       disk_path: $disk_path,
       cleanup_interval_days: $cleanup_interval_days,
       cache_max_age_days: $cache_max_age_days
-    }' > "${WWW_DIR}/status.json.tmp"
+    }' > "${STATE_DIR}/status.json.tmp"
 
-  mv "${WWW_DIR}/status.json.tmp" "${WWW_DIR}/status.json"
+  mv "${STATE_DIR}/status.json.tmp" "${STATE_DIR}/status.json"
 }
 
 status_loop() {
