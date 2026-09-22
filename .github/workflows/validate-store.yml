@@ -119,9 +119,26 @@ jobs:
           test "$FORGECORE_STORAGE_RESOLUTION" = "external-discovery"
 
           export APP_DATA_DIR="$app_dir"
-          docker compose -f olympus-forgecore/docker-compose.yml config > "$tmp/compose.yml"
-          grep -Fq "$storage:/forgecore/storage" "$tmp/compose.yml"
-          grep -Fq 'FORGECORE_STORAGE_RESOLUTION: external-discovery' "$tmp/compose.yml"
+          docker compose -f olympus-forgecore/docker-compose.yml config --format json > "$tmp/compose.json"
+          python3 - "$tmp/compose.json" "$storage" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          compose = json.loads(Path(sys.argv[1]).read_text())
+          expected = sys.argv[2]
+          mounts = []
+          for name, service in compose.get("services", {}).items():
+              for volume in service.get("volumes", []) or []:
+                  if isinstance(volume, dict) and volume.get("target") == "/forgecore/storage":
+                      mounts.append((name, volume.get("source")))
+          if len(mounts) < 4:
+              raise SystemExit(f"missing ForgeCore storage mounts: {mounts!r}")
+          wrong = [(name, source) for name, source in mounts if source != expected]
+          if wrong:
+              raise SystemExit(f"storage binds do not use resolved external path: {wrong!r}")
+          PY
+          grep -Fq '"FORGECORE_STORAGE_RESOLUTION": "external-discovery"' "$tmp/compose.json"
 
           # Simulate an app update replacing docker-compose.yml. Because the
           # host path is now owned by exports.sh/app data, resolving again must
