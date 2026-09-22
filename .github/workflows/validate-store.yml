@@ -94,6 +94,30 @@ jobs:
         shell: bash
         run: bash olympus-forgecore/tests/runtime/umbrel-storage-resolution.sh
 
+      - name: Validate ForgeCore runner lifecycle
+        shell: bash
+        run: bash olympus-forgecore/tests/runtime/runner-lifecycle.sh
+
+      - name: Validate ForgeCore runtime inside official Actions runner image
+        shell: bash
+        run: |
+          docker pull ghcr.io/actions/actions-runner:2.337.0
+          docker run --rm \
+            -v "$PWD/olympus-forgecore:/work:ro" \
+            -w /work \
+            ghcr.io/actions/actions-runner:2.337.0 \
+            /bin/bash -lc '
+              set -euo pipefail
+              command -v bash
+              command -v jq
+              command -v sudo
+              command -v curl
+              command -v sha256sum
+              command -v python3
+              test -x /home/runner/run.sh
+              bash tests/runtime/runner-lifecycle.sh
+            '
+
       - name: Validate ForgeCore storage resolution inside Umbrel update contract
         shell: bash
         run: |
