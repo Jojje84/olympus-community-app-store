@@ -128,7 +128,12 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
       <div class="section-head"><div><h2>GitHub runners</h2><p>Add or repair repository runners without SSH. Tokens are cleared from config after registration.</p></div><div><button id="restartRunners">Restart runners</button><div id="restartMsg" class="msg"></div></div></div>
       <div id="runnerList"></div>
       <div id="runnerFormPanel" style="margin-top:16px">
-        <div class="section-head"><div><h2 id="runnerFormTitle">Connect runner</h2><p id="runnerFormHelp">Use a GitHub registration token only when adding or repairing a runner.</p></div><button id="cancelRunnerForm" type="button">Cancel</button></div>
+        <div class="section-head"><div><h2 id="runnerFormTitle">Connect runner</h2><p id="runnerFormHelp">Use a GitHub registration token only when adding a runner.</p></div><button id="cancelRunnerForm" type="button">Cancel</button></div>
+        <div id="runnerRepairConfirm" class="note" style="display:none">
+          <b>Repair replaces the saved GitHub runner identity.</b><br>
+          Do not use Repair for a normal restart or an online runner. Continue only when the connection must be rebuilt.
+          <div class="form-actions" style="margin-top:12px"><button id="confirmRunnerRepair" type="button" class="danger">I understand · continue to Repair</button></div>
+        </div>
         <form id="runnerForm">
           <label class="full">GitHub repository<input id="repo" placeholder="Jojje84/ForgeCore" required></label>
           <label class="full">Registration token<input id="token" type="password" placeholder="Paste a fresh short-lived token from GitHub" autocomplete="off" required></label>
@@ -180,12 +185,12 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.32</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.33</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null,runnerFormManuallyOpen=false;
+let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null,runnerFormManuallyOpen=false,runnerRepairConfirmed=false;
 
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
@@ -197,16 +202,33 @@ document.querySelectorAll('.open-settings').forEach(b=>b.addEventListener('click
 
 function showRunnerForm(repo='',repair=false){
   runnerFormManuallyOpen=true;
+  runnerRepairConfirmed=false;
   $('runnerFormPanel').style.display='block';
   $('runnerFormTitle').textContent=repair?'Repair runner connection':'Connect runner';
-  $('runnerFormHelp').textContent=repair?'Use a fresh GitHub registration token only if the existing connection must be rebuilt.':'Add a repository runner with a one-time GitHub registration token.';
+  $('runnerFormHelp').textContent=repair?'Repair is destructive and requires an explicit confirmation before a token can be entered.':'Add a repository runner with a one-time GitHub registration token.';
   if(repo)$('repo').value=repo;
-  $('runnerSubmit').textContent=repair?'Repair connection':'Connect runner';
+  $('runnerRepairConfirm').style.display=repair?'block':'none';
+  $('runnerForm').style.display=repair?'none':'grid';
+  $('runnerSubmit').textContent=repair?'Replace runner connection':'Connect runner';
   updateRepoLink();
-  setTimeout(()=>$('token').focus(),0);
+  if(!repair)setTimeout(()=>$('token').focus(),0);
 }
-function hideRunnerForm(){runnerFormManuallyOpen=false;$('runnerFormPanel').style.display='none';$('token').value=''}
+function hideRunnerForm(){
+  runnerFormManuallyOpen=false;
+  runnerRepairConfirmed=false;
+  $('runnerFormPanel').style.display='none';
+  $('runnerRepairConfirm').style.display='none';
+  $('runnerForm').style.display='grid';
+  $('token').value='';
+}
 $('cancelRunnerForm').addEventListener('click',hideRunnerForm);
+$('confirmRunnerRepair').addEventListener('click',()=>{
+  runnerRepairConfirmed=true;
+  $('runnerRepairConfirm').style.display='none';
+  $('runnerForm').style.display='grid';
+  $('runnerFormHelp').textContent='Confirmed Repair. A successful submission will replace the saved GitHub runner identity.';
+  setTimeout(()=>$('token').focus(),0);
+});
 
 async function api(path,opts={}){
   const r=await fetch(path,{cache:'no-store',headers:{'Content-Type':'application/json'},...opts});
@@ -323,8 +345,8 @@ $('restartRunners').addEventListener('click',async()=>{
 $('runnerForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('runnerMsg'),b=$('runnerSubmit');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);b.disabled=true;b.textContent='Connecting…';m.className='msg warn';m.textContent='Saving the one-time token and connecting the runner…';
   try{
-    await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';runnerFormManuallyOpen=false;m.className='msg warn';m.textContent='Connection request accepted. Waiting for GitHub registration…';setTimeout(refresh,500)
+    await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim(),repair_existing:runnerRepairConfirmed})});
+    $('token').value='';runnerFormManuallyOpen=false;runnerRepairConfirmed=false;m.className='msg warn';m.textContent='Connection request accepted. Waiting for GitHub registration…';setTimeout(refresh,500)
   }catch(e){runnerRepairBaseline=null;b.disabled=false;b.textContent='Repair connection';m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
@@ -531,6 +553,21 @@ def origin_ok(handler):
     parsed = urlparse(origin)
     return parsed.netloc == host and parsed.scheme in ("http", "https")
 
+class RunnerConflictError(Exception):
+    pass
+
+def stored_runner_identity_mode(repo):
+    settings_file = RUNNER_ENGINE / slug(repo) / ".runner"
+    if not settings_file.exists():
+        return "unregistered"
+    try:
+        identity = json.loads(settings_file.read_text(encoding="utf-8-sig", errors="strict"))
+        if not isinstance(identity, dict):
+            return "invalid"
+        return "ephemeral" if bool(identity.get("Ephemeral", identity.get("ephemeral", False))) else "persistent"
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+        return "invalid"
+
 def inherit_owner(path, parent):
     try:
         st = parent.stat()
@@ -589,10 +626,17 @@ def save_settings(data):
 def save_runner(data):
     repo = str(data.get("repository", "")).strip()
     token = str(data.get("token", "")).strip()
+    repair_existing = data.get("repair_existing") is True
     if not REPO.fullmatch(repo):
         raise ValueError("Repository must look like owner/repository.")
     if not TOKEN.fullmatch(token):
         raise ValueError("Enter a fresh GitHub self-hosted runner registration token.")
+    identity_mode = stored_runner_identity_mode(repo)
+    if identity_mode != "unregistered" and not repair_existing:
+        raise RunnerConflictError(
+            "Runner identity already exists. No changes were made. "
+            "Open Repair connection and explicitly confirm replacement first."
+        )
     s = slug(repo)
     dst = RD / f"{s}.env"
     for candidate in RD.glob("*.env"):
@@ -603,6 +647,7 @@ def save_runner(data):
     tmp.write_text(
         f'REPOSITORY="{repo}"\n'
         f'REGISTRATION_TOKEN="{token}"\n'
+        f'REPAIR_EXISTING="{"true" if repair_existing else "false"}"\n'
     )
     os.chmod(tmp, 0o600)
     inherit_owner(tmp, RD)
@@ -781,6 +826,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(404, {"error": "Not found"})
                 return
             self.send_json(202, {"ok": True})
+        except RunnerConflictError as exc:
+            self.send_json(409, {"error": str(exc)})
         except ValueError as exc:
             self.send_json(400, {"error": str(exc)})
         except OSError:

@@ -97,6 +97,7 @@ jobs:
           bash olympus-forgecore/tests/runtime/runner-watchdog.sh
           bash olympus-forgecore/tests/runtime/runner-layout-standard.sh
           bash olympus-forgecore/tests/runtime/runner-hooks.sh
+          bash olympus-forgecore/tests/runtime/runner-repair-guard.sh
 
       - name: Boot ForgeCore runner container
         shell: bash

@@ -73,18 +73,36 @@ curl -fsS http://127.0.0.1:8799/health >/dev/null
 
 # Reproduce the live Umbrel Repair handoff exactly: the web container is root,
 # while runner-manager runs as the actions-runner user. Pause the manager so it
-# cannot repair ownership before we inspect the file created by the dashboard.
+# cannot consume the request while we validate the web/API safety contract.
 "${compose[@]}" pause runner
-curl -fsS -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"repository":"Jojje84/ForgeCore","token":"invalid-ci-registration-token-1234567890"}' \
-  http://127.0.0.1:8799/api/runners >/dev/null
 
 config_dir="${app_dir}/data/config/runners"
 config_file="${config_dir}/jojje84-forgecore.env"
+runner_dir="${storage_dir}/runners/jojje84-forgecore"
+mkdir -p "${runner_dir}"
+printf '%s\n' '{"AgentId":777,"Ephemeral":false}' > "${runner_dir}/.runner"
+printf '%s\n' 'protected-ci-credentials' > "${runner_dir}/.credentials"
+
+status="$(curl -sS -o "${tmp}/guard-response.json" -w '%{http_code}' -X POST \
+  -H 'Content-Type: application/json' \
+  --data '{"repository":"Jojje84/ForgeCore","token":"accidental-ci-registration-token-1234567890"}' \
+  http://127.0.0.1:8799/api/runners)"
+test "${status}" = "409"
+grep -Fq 'No changes were made' "${tmp}/guard-response.json"
+jq -e '.AgentId == 777' "${runner_dir}/.runner" >/dev/null
+grep -Fq 'protected-ci-credentials' "${runner_dir}/.credentials"
+test ! -f "${config_file}"
+echo "ForgeCore dashboard accidental Repair guard: OK"
+
+curl -fsS -X POST \
+  -H 'Content-Type: application/json' \
+  --data '{"repository":"Jojje84/ForgeCore","token":"invalid-ci-registration-token-1234567890","repair_existing":true}' \
+  http://127.0.0.1:8799/api/runners >/dev/null
+
 test -f "${config_file}"
 test "$(stat -c %a "${config_file}")" = "600"
 test "$(stat -c %u:%g "${config_file}")" = "$(stat -c %u:%g "${config_dir}")"
+grep -Fq 'REPAIR_EXISTING="true"' "${config_file}"
 echo "ForgeCore dashboard preserved runner config ownership: OK"
 
 "${compose[@]}" unpause runner
@@ -93,7 +111,7 @@ registration_log="${storage_dir}/logs/registration-jojje84-forgecore.log"
 for _ in $(seq 1 30); do
   if [[ -s "${registration_log}" ]] && grep -Fq 'registration started for Jojje84/ForgeCore' "${registration_log}"; then
     grep -Fq 'Dashboard requested runner reload' "${storage_dir}/logs/runner-manager.log"
-    echo "ForgeCore cross-container Repair handoff: OK"
+    echo "ForgeCore cross-container confirmed Repair handoff: OK"
     exit 0
   fi
   sleep 1
