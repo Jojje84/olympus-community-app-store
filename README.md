@@ -17,7 +17,10 @@ Add this repository as a Community App Store in umbrelOS:
 ### Gaming & Servers
 - **Crafty Controller** — manage Minecraft servers from a web dashboard
 
-This Community App Store uses custom category labels so the Umbrel UI groups the apps as **Health & Fitness** and **Gaming & Servers**.
+### Developer Tools
+- **GitHub CI Runner** — run trusted GitHub Actions builds on an Umbrel/Beelink server using an isolated CI Docker engine
+
+This Community App Store uses custom category labels so the Umbrel UI groups apps by purpose.
 
 ## Automatic update discovery
 
