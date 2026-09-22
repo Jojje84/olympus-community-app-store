@@ -36,6 +36,12 @@ printf '%s\n' 'old-credentials' > "${FORGECORE_STORAGE_ROOT}/runners/jojje84-for
 printf '%s\n' "2" > "${FORGECORE_APP_ROOT}/state/runner-engine-v2.initialized"
 
 source "${MANAGER}"
+
+direct="${tmp}/direct-runner"
+mkdir -p "${direct}"
+prepare_real_workdir "${direct}"
+test -d "${direct}/_work"
+
 initialize_runner_layout
 
 target="${FORGECORE_STORAGE_ROOT}/runners/jojje84-forgecore"
