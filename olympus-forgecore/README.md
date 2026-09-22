@@ -40,3 +40,6 @@ Contents:
 - `data/www/icon.svg` — fallback copy, required to be byte-identical to `icon.svg`
 
 Heavy CI data remains on the configured external ForgeCore storage root. The runner never mounts Umbrel's host Docker socket.
+
+
+Beta 34 keeps ForgeCore's manager and GitHub listener alive even when the isolated Docker/Compose dependency is slow or unavailable. Docker readiness is retried in the background, the dashboard separates listener health from dependency health, and a dedicated degraded-start integration test proves the manager heartbeat and listener reload remain available without Docker.

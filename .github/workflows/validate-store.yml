@@ -99,6 +99,10 @@ jobs:
           bash olympus-forgecore/tests/runtime/runner-hooks.sh
           bash olympus-forgecore/tests/runtime/runner-repair-guard.sh
 
+      - name: Test ForgeCore degraded manager startup
+        shell: bash
+        run: bash olympus-forgecore/tests/runtime/manager-degraded-startup.sh
+
       - name: Boot ForgeCore runner container
         shell: bash
         run: bash olympus-forgecore/tests/runtime/runner-container-boot.sh

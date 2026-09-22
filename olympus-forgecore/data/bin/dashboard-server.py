@@ -125,7 +125,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
 
   <section id="settings" class="pane">
     <article class="wide">
-      <div class="section-head"><div><h2>GitHub runners</h2><p>Add or repair repository runners without SSH. Tokens are cleared from config after registration.</p></div><div><button id="restartRunners">Restart runners</button><div id="restartMsg" class="msg"></div></div></div>
+      <div class="section-head"><div><h2>GitHub runners</h2><p>Add or repair repository runners without SSH. Tokens are cleared from config after registration.</p></div><div><button id="restartRunners">Restart listener</button><div id="restartMsg" class="msg"></div></div></div>
       <div id="runnerList"></div>
       <div id="runnerFormPanel" style="margin-top:16px">
         <div class="section-head"><div><h2 id="runnerFormTitle">Connect runner</h2><p id="runnerFormHelp">Use a GitHub registration token only when adding a runner.</p></div><button id="cancelRunnerForm" type="button">Cancel</button></div>
@@ -185,7 +185,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.33</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.34</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -264,9 +264,9 @@ function renderStatus(s){
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
   $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):(s.storage_error?'Blocked by storage':'Offline / stale');
   $('svcManager').className=s.manager_alive?'status-ok':(s.storage_error?'status-bad':'status-muted');
-  $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
+  $('svcDocker').textContent=s.docker_online?'Running':(s.manager_alive?'Starting / retrying':'Offline');$('svcDocker').className=s.docker_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
   $('version').textContent=(s.web_runtime_version||'dev').replace(/^0\.1\.0-/,'');
-  $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):'Unavailable';$('svcCompose').className=s.compose_online?'status-ok':'status-muted';
+  $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):(s.manager_alive?'Waiting for Docker':'Unavailable');$('svcCompose').className=s.compose_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
 
   const used=Number(s.disk_used_percent||0);
   $('diskBig').textContent=(s.disk_used||'—')+' / '+(s.disk_total||'—');
@@ -314,8 +314,9 @@ function renderStatus(s){
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
-  if(restartBaseline!==null&&ms>restartBaseline&&s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted and heartbeat is live.';restartBaseline=null}
-  else if(!s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg badtext';rm.textContent=s.storage_error||'Runner manager heartbeat is stale. The runner service needs recovery.'}
+  if(restartBaseline!==null&&ms>restartBaseline&&s.manager_alive){rb.disabled=false;rb.textContent='Restart listener';rm.className='msg ok';rm.textContent='Runner listener reloaded and manager heartbeat is live.';restartBaseline=null}
+  else if(!s.manager_alive){rb.disabled=true;rb.textContent='Manager starting…';rm.className='msg badtext';rm.textContent=s.storage_error||'Runner manager is not live yet. Listener restart is unavailable until manager heartbeat is active.'}
+  else{rb.disabled=false;rb.textContent='Restart listener';if(s.dependency_error){rm.className='msg warn';rm.textContent=s.dependency_error}else if(restartBaseline===null){rm.className='msg';rm.textContent=''}}
   {
     const m=$('runnerMsg');
     const phase=first&&first.phase?first.phase:'';
@@ -338,9 +339,10 @@ $('cleanupNow').addEventListener('click',async()=>{
 });
 $('restartRunners').addEventListener('click',async()=>{
   const b=$('restartRunners'),m=$('restartMsg');restartBaseline=Number(lastStatus?.manager_started_epoch||0);
-  b.disabled=true;b.textContent='Restarting…';m.className='msg warn';m.textContent='Waiting for runner manager…';
+  if(!lastStatus?.manager_alive){m.className='msg badtext';m.textContent='Runner manager is not live yet, so the listener cannot be restarted.';return}
+  b.disabled=true;b.textContent='Restarting listener…';m.className='msg warn';m.textContent='Reloading the GitHub listener…';
   try{await api('/api/reload',{method:'POST',body:'{}'})}
-  catch(e){restartBaseline=null;b.disabled=false;b.textContent='Restart runners';m.className='msg badtext';m.textContent=e.message}
+  catch(e){restartBaseline=null;b.disabled=false;b.textContent='Restart listener';m.className='msg badtext';m.textContent=e.message}
 });
 $('runnerForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('runnerMsg'),b=$('runnerSubmit');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);b.disabled=true;b.textContent='Connecting…';m.className='msg warn';m.textContent='Saving the one-time token and connecting the runner…';
@@ -535,6 +537,10 @@ def status():
         if message and message not in storage_messages:
             storage_messages.append(message)
     x["storage_error"] = " ".join(storage_messages)
+    try:
+        x["dependency_error"] = (ST / "dependencies.error").read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        x["dependency_error"] = ""
     x["runners"] = runners()
     x["activity"] = activity()
     try:
