@@ -14,8 +14,11 @@ RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
-RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
-RUNNER_ENGINE_MARKER="${STATE_DIR}/runner-engine-v2.initialized"
+RUNNER_IDLE_RECYCLE_SECONDS="${FORGECORE_RUNNER_IDLE_RECYCLE_SECONDS:-300}"
+RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners"
+RUNNER_LAYOUT_MARKER="${STATE_DIR}/runner-layout-standard.initialized"
+LEGACY_RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
+RUNNER_BACKUP_ROOT="${STORAGE_ROOT}/runner-backups"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
@@ -115,7 +118,7 @@ REGISTRATION_TOKEN=""
 FORGECORE_RUNNER_CONFIG
   chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
 
-  initialize_runner_engine_v2
+  initialize_runner_layout
 }
 
 normalize_app_permissions() {
@@ -125,11 +128,13 @@ normalize_app_permissions() {
   sudo chown -R runner:docker "${CONFIG_DIR}" "${STATE_DIR}"
 }
 
-initialize_runner_engine_v2() {
-  local config_file repo slug
-  [[ -f "${RUNNER_ENGINE_MARKER}" ]] && return 0
+initialize_runner_layout() {
+  local config_file repo slug source_dir target_dir backup_dir stamp source_mode
+  [[ -f "${RUNNER_LAYOUT_MARKER}" ]] && return 0
 
-  log "initializing clean runner engine v2; legacy runner identities will not be reused"
+  mkdir -p "${RUNNER_BACKUP_ROOT}"
+  log "normalizing runner storage to standard runners/<repository> layout"
+
   shopt -s nullglob
   local configs=("${RUNNER_CONFIG_DIR}"/*.env)
   shopt -u nullglob
@@ -137,18 +142,32 @@ initialize_runner_engine_v2() {
   for config_file in "${configs[@]}"; do
     [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
     repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
-    sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${config_file}"
-    chmod 600 "${config_file}"
-    if [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
-      slug="$(slugify "${repo}")"
-      rm -f "${STATE_DIR}/runner-${slug}.pid" "${STATE_DIR}/runner-${slug}.online"
-      printf '%s\n' "ForgeCore rebuilt the runner engine. Paste one fresh GitHub registration token to create a clean runner identity." > "${STATE_DIR}/runner-${slug}.error"
-      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "rebuilt" "Clean runner engine ready; one fresh registration token is required"
+    [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || continue
+    slug="$(slugify "${repo}")"
+    source_dir="${LEGACY_RUNNER_ENGINE_ROOT}/${slug}"
+    target_dir="${RUNNER_ENGINE_ROOT}/${slug}"
+
+    if [[ -d "${source_dir}" ]]; then
+      source_mode="$(runner_identity_mode "${source_dir}")"
+      if [[ "${source_mode}" == "persistent" ]]; then
+        if [[ -e "${target_dir}" ]]; then
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-standard-${stamp}"
+          mv "${target_dir}" "${backup_dir}"
+          log "archived previous runner directory for ${repo}: ${backup_dir}"
+        fi
+        mv "${source_dir}" "${target_dir}"
+        log "migrated active runner identity to standard path for ${repo}"
+        activity "runner" "Runner storage normalized for ${repo}; persistent identity preserved"
+      elif [[ ! -e "${target_dir}" ]]; then
+        mv "${source_dir}" "${target_dir}"
+      fi
     fi
   done
 
-  printf '%s\n' "2" > "${RUNNER_ENGINE_MARKER}"
-  activity "runner" "Clean runner engine v2 initialized; legacy credentials preserved as backup only"
+  rmdir "${LEGACY_RUNNER_ENGINE_ROOT}" 2>/dev/null || true
+  rm -f "${STATE_DIR}/runner-engine-v2.initialized"
+  printf '%s\n' "1" > "${RUNNER_LAYOUT_MARKER}"
 }
 
 load_config() {
@@ -274,6 +293,85 @@ runner_worker_active() {
   done
   return 1
 }
+runner_diag_watchdog_reason() {
+  local slug="$1" runner_dir="$2" listener_start="$3"
+  local diag mtime segment seen_file seen now age
+  diag="$(ls -1t "${runner_dir}"/_diag/Runner_*.log 2>/dev/null | head -n 1 || true)"
+  [[ -n "${diag}" ]] || return 1
+  mtime="$(stat -c %Y "${diag}" 2>/dev/null || echo 0)"
+  (( mtime >= listener_start )) || return 1
+  segment="$(tail -n 500 "${diag}" 2>/dev/null || true)"
+  if grep -Eq 'RunnerSessionInvalid|session (is )?invalid|session has been deleted|session conflict' <<< "${segment}"; then
+    printf '%s\n' "session-invalid"
+    return 0
+  fi
+  seen_file="${STATE_DIR}/runner-${slug}.acquire-seen-epoch"
+  if grep -Fq 'Acknowledging runner request' <<< "${segment}"; then
+    now="$(date +%s)"
+    if [[ ! -f "${seen_file}" ]]; then
+      printf '%s\n' "${now}" > "${seen_file}"
+      return 1
+    fi
+    seen="$(cat "${seen_file}" 2>/dev/null || echo "${now}")"
+    [[ "${seen}" =~ ^[0-9]+$ ]] || seen="${now}"
+    age=$((now - seen))
+    if (( age >= RUNNER_ACQUIRE_STALL_SECONDS )); then
+      printf '%s\n' "acquire-stall"
+      return 0
+    fi
+  else
+    rm -f "${seen_file}"
+  fi
+  return 1
+}
+
+prepare_runner_hooks() {
+  local slug="$1" hook_dir start_hook complete_hook
+  hook_dir="${APP_ROOT}/hooks"
+  mkdir -p "${hook_dir}"
+  start_hook="${hook_dir}/job-started-${slug}.sh"
+  complete_hook="${hook_dir}/job-completed-${slug}.sh"
+
+  cat > "${start_hook}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.job-started-epoch"
+workflow="${GITHUB_WORKFLOW:-}"
+event="${GITHUB_EVENT_NAME:-}"
+ref_name="${GITHUB_REF_NAME:-}"
+runtime="${RUNTIME_VERSION}"
+current_beta=""
+if [[ "${runtime}" =~ beta\.([0-9]+)$ ]]; then current_beta="${BASH_REMATCH[1]}"; fi
+stale_beta() {
+  local value="$1" n=""
+  if [[ "${value}" =~ beta\.([0-9]+)$ ]]; then
+    n="${BASH_REMATCH[1]}"
+    [[ -n "${current_beta}" ]] && (( n < current_beta ))
+    return
+  fi
+  return 1
+}
+if [[ "${workflow}" == "Release channel preflight" && "${event}" != "workflow_dispatch" ]]; then
+  echo "ForgeCore rejected stale preflight event: ${event}" >&2
+  exit 42
+fi
+if [[ "${workflow}" == "Release" ]] && stale_beta "${ref_name}"; then
+  echo "ForgeCore rejected stale release ${ref_name}; runner runtime is ${runtime}" >&2
+  exit 42
+fi
+if [[ "${workflow}" == "Publish prerelease request" ]] && stale_beta "${ref_name}"; then
+  echo "ForgeCore rejected stale prerelease request ${ref_name}; runner runtime is ${runtime}" >&2
+  exit 42
+fi
+EOF
+
+  cat > "${complete_hook}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.job-completed-epoch"
+EOF
+  chmod 700 "${start_hook}" "${complete_hook}"
+}
 
 runner_log_watchdog_reason() {
   local runner_log="$1" offset="$2"
@@ -299,7 +397,7 @@ runner_log_watchdog_reason() {
 }
 
 runner_watchdog_recycle_reason() {
-  local repo_file slug repo pid_file pid runner_log offset_file offset reason
+  local repo_file slug repo pid_file pid runner_log offset_file offset reason runner_dir start_file listener_start now
   runner_worker_active && return 1
 
   shopt -s nullglob
@@ -313,24 +411,42 @@ runner_watchdog_recycle_reason() {
     [[ -f "${pid_file}" ]] || continue
     pid="$(cat "${pid_file}" 2>/dev/null || true)"
     [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null || continue
+    runner_dir="${RUNNER_ENGINE_ROOT}/${slug}"
     runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
     offset_file="${STATE_DIR}/runner-${slug}.log-offset"
+    start_file="${STATE_DIR}/runner-${slug}.listener-start-epoch"
     offset="$(cat "${offset_file}" 2>/dev/null || echo 0)"
+    listener_start="$(cat "${start_file}" 2>/dev/null || echo 0)"
+    [[ "${listener_start}" =~ ^[0-9]+$ ]] || listener_start=0
+
     reason="$(runner_log_watchdog_reason "${runner_log}" "${offset}" || true)"
+    if [[ -z "${reason}" ]]; then
+      reason="$(runner_diag_watchdog_reason "${slug}" "${runner_dir}" "${listener_start}" || true)"
+    fi
+
     case "${reason}" in
       post-job)
         printf '%s\n' "Runner watchdog recycling listener after completed job: ${repo}"
         return 0
         ;;
       acquire-stall)
-        printf '%s\n' "Runner watchdog recovering stalled GitHub job acquisition: ${repo}"
+        printf '%s\n' "Runner watchdog recovering stalled GitHub broker acquisition: ${repo}"
+        return 0
+        ;;
+      session-invalid)
+        printf '%s\n' "Runner watchdog recovering invalid GitHub listener session: ${repo}"
         return 0
         ;;
     esac
+
+    now="$(date +%s)"
+    if (( listener_start > 0 && now - listener_start >= RUNNER_IDLE_RECYCLE_SECONDS )); then
+      printf '%s\n' "Runner watchdog refreshing idle GitHub listener session: ${repo}"
+      return 0
+    fi
   done
   return 1
 }
-
 prepare_real_workdir() {
   local runner_dir="$1" work_dir="${runner_dir}/_work"
   if [[ -L "${work_dir}" ]]; then
@@ -373,6 +489,7 @@ start_runner_from_config() {
   fi
 
   prepare_real_workdir "${runner_dir}"
+  prepare_runner_hooks "${slug}"
   rm -f "${error_file}"
   printf '%s\n' "${runner_name}" > "${STATE_DIR}/runner-${slug}.name"
   printf '%s\n' "${repo}" > "${STATE_DIR}/runner-${slug}.repo"
@@ -411,7 +528,7 @@ start_runner_from_config() {
     log "registering persistent runner for ${repo}"
     {
       printf '%s registration started for %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${repo}"
-      printf 'Runner engine: v2 clean registration\n'
+      printf 'Runner layout: standard registration\n'
     } > "${registration_log}"
 
     if ! (
@@ -465,10 +582,17 @@ start_runner_from_config() {
   printf '%s runner starting: %s (%s) mode=persistent\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
   write_runner_runtime_state "${slug}" "${repo}" "starting" "persistent" "Starting GitHub runner process"
 
-  ( cd "${runner_dir}" && exec ./run.sh ) >> "${runner_log}" 2>&1 &
+  (
+    cd "${runner_dir}"
+    export ACTIONS_RUNNER_HOOK_JOB_STARTED="${APP_ROOT}/hooks/job-started-${slug}.sh"
+    export ACTIONS_RUNNER_HOOK_JOB_COMPLETED="${APP_ROOT}/hooks/job-completed-${slug}.sh"
+    exec ./run.sh
+  ) >> "${runner_log}" 2>&1 &
   pid=$!
   printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
   printf '%s\n' "${log_offset}" > "${STATE_DIR}/runner-${slug}.log-offset"
+  printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.listener-start-epoch"
+  rm -f "${STATE_DIR}/runner-${slug}.acquire-seen-epoch"
   RUNNER_PIDS+=("${pid}")
 
   sleep "${RUNNER_STARTUP_GRACE_SECONDS}"
@@ -575,7 +699,7 @@ stop_runners() {
     done
   fi
   RUNNER_PIDS=()
-  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.online
+  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.online "${STATE_DIR}"/runner-*.listener-start-epoch "${STATE_DIR}"/runner-*.acquire-seen-epoch
 }
 
 start_all_runners() {

@@ -45,6 +45,7 @@ for _ in $(seq 1 60); do
         exit 1
       fi
       echo "ForgeCore runner container boot heartbeat: OK"
+      grep -Fq 'RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners"' "${PACKAGE_ROOT}/data/bin/runner-manager.sh"
       boot_ok=true
       break
     fi

@@ -16,7 +16,7 @@ STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
 STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLAY)
 STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
-RUNNER_ENGINE = STORAGE / "runners" / "v2"
+RUNNER_ENGINE = STORAGE / "runners"
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -127,12 +127,15 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     <article class="wide">
       <div class="section-head"><div><h2>GitHub runners</h2><p>Add or repair repository runners without SSH. Tokens are cleared from config after registration.</p></div><div><button id="restartRunners">Restart runners</button><div id="restartMsg" class="msg"></div></div></div>
       <div id="runnerList"></div>
-      <form id="runnerForm" style="margin-top:16px">
-        <label class="full">GitHub repository<input id="repo" placeholder="Jojje84/ForgeCore" required></label>
-        <label class="full">Registration token<input id="token" type="password" placeholder="Paste the short-lived token from GitHub" autocomplete="off" required></label>
-        <div class="small full">ForgeCore uses the repository name automatically for both the runner name and its single custom label.</div>
-        <div class="form-actions"><button class="primary">Connect / repair runner</button><a id="setupLink" class="btn" href="https://github.com/" target="_blank" rel="noopener">Open GitHub runner setup ↗</a></div>
-      </form>
+      <div id="runnerFormPanel" style="margin-top:16px">
+        <div class="section-head"><div><h2 id="runnerFormTitle">Connect runner</h2><p id="runnerFormHelp">Use a GitHub registration token only when adding or repairing a runner.</p></div><button id="cancelRunnerForm" type="button">Cancel</button></div>
+        <form id="runnerForm">
+          <label class="full">GitHub repository<input id="repo" placeholder="Jojje84/ForgeCore" required></label>
+          <label class="full">Registration token<input id="token" type="password" placeholder="Paste a fresh short-lived token from GitHub" autocomplete="off" required></label>
+          <div class="small full">The token is used once for registration and removed from ForgeCore after a successful connection.</div>
+          <div class="form-actions"><button id="runnerSubmit" class="primary">Connect runner</button><a id="setupLink" class="btn" href="https://github.com/" target="_blank" rel="noopener">Open GitHub runner setup ↗</a></div>
+        </form>
+      </div>
       <div id="runnerMsg" class="msg"></div>
     </article>
 
@@ -177,7 +180,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.31</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.32</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -191,6 +194,18 @@ function setTab(name){
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 document.querySelectorAll('.open-settings').forEach(b=>b.addEventListener('click',()=>setTab('settings')));
+
+function showRunnerForm(repo='',repair=false){
+  $('runnerFormPanel').style.display='block';
+  $('runnerFormTitle').textContent=repair?'Repair runner connection':'Connect runner';
+  $('runnerFormHelp').textContent=repair?'Use a fresh GitHub registration token only if the existing connection must be rebuilt.':'Add a repository runner with a one-time GitHub registration token.';
+  if(repo)$('repo').value=repo;
+  $('runnerSubmit').textContent=repair?'Repair connection':'Connect runner';
+  updateRepoLink();
+  setTimeout(()=>$('token').focus(),0);
+}
+function hideRunnerForm(){$('runnerFormPanel').style.display='none';$('token').value=''}
+$('cancelRunnerForm').addEventListener('click',hideRunnerForm);
 
 async function api(path,opts={}){
   const r=await fetch(path,{cache:'no-store',headers:{'Content-Type':'application/json'},...opts});
@@ -245,7 +260,7 @@ function renderStatus(s){
   else{cb.disabled=false;cb.textContent='Run cleanup now'}
 
   const root=s.storage_display||'External ForgeCore storage';
-  $('pathRunners').textContent=root+'/runners/v2';
+  $('pathRunners').textContent=root+'/runners';
   $('pathDocker').textContent=root+'/docker';
   $('pathArtifacts').textContent=root+'/artifacts';
   $('pathCache').textContent=root+'/cache';
@@ -261,8 +276,18 @@ function renderStatus(s){
   $('setThreshold').value=s.disk_cleanup_threshold_percent||85;
   $('setBuildkit').value=s.buildkit_keep_storage_gb||50;
 
-  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+' · Phase: '+esc(r.phase||'idle')+((r.message||r.error)?' · '+esc(r.message||r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
-  document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>{setTab('settings');$('repo').value=b.dataset.repo;updateRepoLink();$('token').focus()}));
+  $('runnerList').innerHTML=runners.length?runners.map(r=>{
+    const runnerName=esc(r.name||r.repository.split('/').pop()),label=esc(r.label||r.repository.split('/').pop());
+    const status=r.online?'Online · Listener connected':(r.error?'Needs attention':'Offline');
+    const completed=Number(r.last_job_completed_epoch||0),started=Number(r.last_job_started_epoch||0);
+    const jobState=completed?('Last job completed '+rel(completed)):(started?('Job execution detected '+rel(started)):'Waiting for a GitHub job to verify execution');
+    const detail=r.online?('Runner: '+runnerName+' · Label: '+label+' · Persistent connection · '+jobState):('Runner: '+runnerName+' · Label: '+label+' · '+esc(r.message||r.error||('Phase: '+(r.phase||'idle'))));
+    const action=r.online?'<button class="repair" data-repo="'+esc(r.repository)+'">Connection settings</button>':'<button class="repair" data-repo="'+esc(r.repository)+'">Repair connection</button>';
+    return '<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+status+'<br>'+detail+'</div></div>'+action+'</div>';
+  }).join(''):'<div class="empty">No repository runner configured yet.</div>';
+  document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>showRunnerForm(b.dataset.repo,true)));
+  if(first&&first.online&&runnerRepairBaseline===null&&document.activeElement!==$('token')) hideRunnerForm();
+  else if(!runners.length||!first||!first.online) $('runnerFormPanel').style.display='block';
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
@@ -272,9 +297,9 @@ function renderStatus(s){
     const m=$('runnerMsg');
     const phase=first&&first.phase?first.phase:'';
     const message=first&&(first.message||first.error)?(first.message||first.error):'';
-    if(first&&first.online){m.className='msg ok';m.textContent='Runner is online in persistent mode.';runnerRepairBaseline=null}
-    else if(phase==='error'||phase==='needs-repair'){m.className='msg badtext';m.textContent=message||'Runner needs repair.';runnerRepairBaseline=null}
-    else if(['queued','checking','registering','starting','connecting'].includes(phase)){m.className='msg warn';m.textContent=message||('Runner phase: '+phase)}
+    if(first&&first.online){m.className='msg ok';m.textContent=Number(first.last_job_completed_epoch||0)?'Connected. GitHub job execution has been verified.':'Listener connected. Waiting for a GitHub job to verify execution.';runnerRepairBaseline=null;$('runnerSubmit').disabled=false;$('runnerSubmit').textContent='Connect runner'}
+    else if(phase==='error'||phase==='needs-repair'){m.className='msg badtext';m.textContent=message||'Runner needs repair.';runnerRepairBaseline=null;$('runnerSubmit').disabled=false;$('runnerSubmit').textContent='Repair connection';$('runnerFormPanel').style.display='block'}
+    else if(['queued','checking','registering','starting','connecting'].includes(phase)){m.className='msg warn';m.textContent=message||('Runner phase: '+phase);$('runnerSubmit').disabled=true;$('runnerSubmit').textContent='Connecting…'}
     else if(runnerRepairBaseline!==null&&ms>runnerRepairBaseline){m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for runner state…'}
   }
   $('updated').textContent='Last updated: '+new Date().toLocaleTimeString();
@@ -295,11 +320,11 @@ $('restartRunners').addEventListener('click',async()=>{
   catch(e){restartBaseline=null;b.disabled=false;b.textContent='Restart runners';m.className='msg badtext';m.textContent=e.message}
 });
 $('runnerForm').addEventListener('submit',async ev=>{
-  ev.preventDefault();const m=$('runnerMsg');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);m.className='msg warn';m.textContent='Saving token and reloading runner manager…';
+  ev.preventDefault();const m=$('runnerMsg'),b=$('runnerSubmit');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);b.disabled=true;b.textContent='Connecting…';m.className='msg warn';m.textContent='Saving the one-time token and connecting the runner…';
   try{
     await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';m.className='msg warn';m.textContent='Repair request saved. Status will persist after refresh.';setTimeout(refresh,500)
-  }catch(e){runnerRepairBaseline=null;m.className='msg badtext';m.textContent=e.message}
+    $('token').value='';m.className='msg warn';m.textContent='Connection request accepted. Waiting for GitHub registration…';setTimeout(refresh,500)
+  }catch(e){runnerRepairBaseline=null;b.disabled=false;b.textContent='Repair connection';m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('settingsMsg');m.className='msg warn';m.textContent='Saving configuration…';
@@ -323,7 +348,7 @@ async function loadLog(){
 }
 $('refreshLog').addEventListener('click',loadLog);
 
-updateRepoLink();refresh();setInterval(refresh,5000);
+updateRepoLink();$('runnerFormPanel').style.display='none';refresh();setInterval(refresh,5000);
 </script>
 </body>
 </html>'''
@@ -411,6 +436,11 @@ def runners():
                 phase = "error"
 
         online = (ST / f"runner-{s}.online").exists() and phase == "online"
+        def read_epoch(suffix):
+            try:
+                return int((ST / f"runner-{s}.{suffix}").read_text().strip())
+            except (OSError, ValueError):
+                return 0
         out.append({
             "repository": repo,
             "name": name,
@@ -420,6 +450,8 @@ def runners():
             "message": message,
             "online": online,
             "error": er,
+            "last_job_started_epoch": read_epoch("job-started-epoch"),
+            "last_job_completed_epoch": read_epoch("job-completed-epoch"),
         })
     return out
 

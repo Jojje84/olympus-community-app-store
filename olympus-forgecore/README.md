@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 31 fixes the cross-container Repair handoff. The root-based dashboard now preserves the runner-owned UID/GID on 0600 repository/token config files, and runner-manager normalizes config/state ownership before every reload. CI now reproduces the exact dashboard POST -> reload signal -> Registration log flow.
+Beta 32 uses the standard `runners/<repository>` layout and migrates the working beta31 identity automatically without asking for another token. The Settings page now hides registration controls while a runner is healthy, separates listener connectivity from verified job execution, and the runner manager watches the real Actions diagnostic log for broker/session stalls.
 
 
 

@@ -12,6 +12,8 @@ source "${PACKAGE_ROOT}/data/bin/runner-manager.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
 log="${tmp}/runner.log"
+diag_dir="${tmp}/runner/_diag"
+mkdir -p "${diag_dir}"
 
 printf '%s\n' "runner starting" > "${log}"
 ! runner_log_watchdog_reason "${log}" 0 >/dev/null
@@ -29,5 +31,14 @@ test "$(runner_log_watchdog_reason "${log}" 0)" = "post-job"
 offset="$(wc -c < "${log}")"
 printf '%s\n' "fresh listener session" >> "${log}"
 ! runner_log_watchdog_reason "${log}" "${offset}" >/dev/null
+
+listener_start="$(date +%s)"
+printf '%s\n' "[RUNNER] Acknowledging runner request 'diag-job'." > "${diag_dir}/Runner_test.log"
+! runner_diag_watchdog_reason "test" "${tmp}/runner" "${listener_start}" >/dev/null
+sleep 2
+test "$(runner_diag_watchdog_reason "test" "${tmp}/runner" "${listener_start}")" = "acquire-stall"
+
+printf '%s\n' "RunnerSessionInvalid" > "${diag_dir}/Runner_test.log"
+test "$(runner_diag_watchdog_reason "test" "${tmp}/runner" "${listener_start}")" = "session-invalid"
 
 echo "ForgeCore runner watchdog tests: OK"
