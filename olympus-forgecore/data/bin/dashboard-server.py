@@ -216,7 +216,7 @@ function renderStatus(s){
   const allOnline=runners.length>0&&online===runners.length;
   $('runnerBig').textContent=runners.length?(online+'/'+runners.length+' online'):'Not configured';
   $('runnerBig').className='big'+(allOnline?' good':'');
-  $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')):'Add a GitHub repository in Settings.';
+  $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')+'<br>Phase: '+esc(first.phase||'idle')):'Add a GitHub repository in Settings.';
   setDot('runnerDot',online>0,!!(first&&first.error));
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
   $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
@@ -253,17 +253,20 @@ function renderStatus(s){
   $('setThreshold').value=s.disk_cleanup_threshold_percent||85;
   $('setBuildkit').value=s.buildkit_keep_storage_gb||50;
 
-  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+(r.error?' · '+esc(r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
+  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+' · Phase: '+esc(r.phase||'idle')+((r.message||r.error)?' · '+esc(r.message||r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
   document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>{setTab('settings');$('repo').value=b.dataset.repo;updateRepoLink();$('token').focus()}));
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
   if(restartBaseline!==null&&ms>restartBaseline){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted.';restartBaseline=null}
-  if(runnerRepairBaseline!==null){
+  {
     const m=$('runnerMsg');
-    if(online>0){m.className='msg ok';m.textContent='Runner repair completed. Runner is online in persistent mode.';runnerRepairBaseline=null}
-    else if(first&&first.error){m.className='msg badtext';m.textContent=first.error;runnerRepairBaseline=null}
-    else if(ms>runnerRepairBaseline){m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for the persistent GitHub runner to come online…'}
+    const phase=first&&first.phase?first.phase:'';
+    const message=first&&(first.message||first.error)?(first.message||first.error):'';
+    if(first&&first.online){m.className='msg ok';m.textContent='Runner is online in persistent mode.';runnerRepairBaseline=null}
+    else if(phase==='error'||phase==='needs-repair'){m.className='msg badtext';m.textContent=message||'Runner needs repair.';runnerRepairBaseline=null}
+    else if(['queued','checking','registering','starting','connecting'].includes(phase)){m.className='msg warn';m.textContent=message||('Runner phase: '+phase)}
+    else if(runnerRepairBaseline!==null&&ms>runnerRepairBaseline){m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for runner state…'}
   }
   $('updated').textContent='Last updated: '+new Date().toLocaleTimeString();
 }
@@ -286,7 +289,7 @@ $('runnerForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('runnerMsg');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);m.className='msg warn';m.textContent='Saving token and reloading runner manager…';
   try{
     await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';m.className='msg warn';m.textContent='Saved. ForgeCore is reloading and registering the runner.';setTimeout(refresh,900)
+    $('token').value='';m.className='msg warn';m.textContent='Repair request saved. Status will persist after refresh.';setTimeout(refresh,500)
   }catch(e){runnerRepairBaseline=null;m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
@@ -362,29 +365,51 @@ def runners():
         s = slug(repo)
         ep = ST / f"runner-{s}.error"
         np = ST / f"runner-{s}.name"
+        runtime_path = ST / f"runner-{s}.runtime.json"
         runner_dir = STORAGE / "runners" / s
         settings_file = runner_dir / ".runner"
-        er = ep.read_text().strip() if ep.exists() else ""
+        er = ep.read_text(encoding="utf-8", errors="replace").strip() if ep.exists() else ""
         name = c.get("NAME", "")
         if np.exists():
-            name = np.read_text().strip()
+            name = np.read_text(encoding="utf-8", errors="replace").strip()
 
         mode = "unregistered"
-        if settings_file.exists():
-            mode = "persistent"
-            try:
-                identity = json.loads(settings_file.read_text(encoding="utf-8", errors="replace"))
-                if bool(identity.get("Ephemeral", identity.get("ephemeral", False))):
-                    mode = "ephemeral"
-            except (OSError, json.JSONDecodeError):
-                mode = "unknown"
+        phase = "idle"
+        message = ""
+        runtime = {}
+        try:
+            runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            runtime = {}
 
+        if isinstance(runtime, dict):
+            phase = str(runtime.get("phase", phase))
+            message = str(runtime.get("message", ""))
+            runtime_mode = str(runtime.get("mode", "")).strip()
+            if runtime_mode:
+                mode = runtime_mode
+
+        if mode in ("", "unregistered", "unknown") and settings_file.exists():
+            try:
+                identity = json.loads(settings_file.read_text(encoding="utf-8-sig", errors="strict"))
+                mode = "ephemeral" if bool(identity.get("Ephemeral", identity.get("ephemeral", False))) else "persistent"
+            except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+                mode = "unreadable"
+
+        if er:
+            message = er
+            if phase not in ("registering", "starting", "connecting"):
+                phase = "error"
+
+        online = (ST / f"runner-{s}.online").exists() and phase == "online"
         out.append({
             "repository": repo,
             "name": name,
             "label": repo.rsplit("/", 1)[-1],
             "mode": mode,
-            "online": (ST / f"runner-{s}.online").exists(),
+            "phase": phase,
+            "message": message,
+            "online": online,
             "error": er,
         })
     return out
@@ -512,6 +537,24 @@ def save_runner(data):
     )
     os.chmod(tmp, 0o600)
     os.replace(tmp, dst)
+    ST.mkdir(parents=True, exist_ok=True)
+    runtime_path = ST / f"runner-{s}.runtime.json"
+    runtime_tmp = runtime_path.with_name("." + runtime_path.name + ".tmp")
+    runtime_tmp.write_text(
+        json.dumps(
+            {
+                "epoch": int(__import__("time").time()),
+                "repository": repo,
+                "phase": "queued",
+                "mode": "unknown",
+                "message": "Repair request saved; waiting for runner manager",
+            },
+            separators=(",", ":"),
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    os.replace(runtime_tmp, runtime_path)
     append_activity("runner", f"Runner registration requested for {repo}")
     (ST / "reload-runners.request").touch()
 
