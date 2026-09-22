@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.12"
+version: "0.1.0-beta.13"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -37,12 +37,10 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 12 rebuilds the dashboard around the earlier ForgeCore control-center design:
-  Overview, Settings, Logs and About tabs; larger status cards; real cleanup scheduling;
-  editable cleanup/retention settings; persistent runner and cleanup logs; recent
-  ForgeCore activity; and a single consistent ForgeCore logo. The dashboard reports
-  only capabilities that the runtime can actually verify, while optional QEMU support
-  is clearly marked as not automatically enabled.
+  Beta 13 unifies ForgeCore branding around the glowing orange anvil logo from the
+  control-center design. The same logo is used by the Umbrel app and dashboard.
+  Runner labels are now treated as an advanced option and explained in the dashboard,
+  so normal runner setup only needs the repository and short-lived GitHub token.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
