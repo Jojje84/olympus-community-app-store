@@ -14,6 +14,8 @@ RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
+RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runner-engine-v2"
+RUNNER_ENGINE_MARKER="${STATE_DIR}/runner-engine-v2.initialized"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
@@ -36,6 +38,7 @@ prepare_paths() {
   sudo mkdir -p "${STORAGE_ROOT}/docker"
   sudo mkdir -p \
     "${STORAGE_ROOT}/runners" \
+    "${RUNNER_ENGINE_ROOT}" \
     "${STORAGE_ROOT}/workspaces" \
     "${STORAGE_ROOT}/cache/docker-config/cli-plugins" \
     "${STORAGE_ROOT}/cache/go-build" \
@@ -49,6 +52,7 @@ prepare_paths() {
   sudo chown -R runner:docker "${APP_ROOT}"
   sudo chown -R runner:docker \
     "${STORAGE_ROOT}/runners" \
+    "${RUNNER_ENGINE_ROOT}" \
     "${STORAGE_ROOT}/workspaces" \
     "${STORAGE_ROOT}/cache" \
     "${STORAGE_ROOT}/artifacts" \
@@ -80,6 +84,34 @@ REPOSITORY=""
 REGISTRATION_TOKEN=""
 FORGECORE_RUNNER_CONFIG
   chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
+
+  initialize_runner_engine_v2
+}
+
+initialize_runner_engine_v2() {
+  local config_file repo slug
+  [[ -f "${RUNNER_ENGINE_MARKER}" ]] && return 0
+
+  log "initializing clean runner engine v2; legacy runner identities will not be reused"
+  shopt -s nullglob
+  local configs=("${RUNNER_CONFIG_DIR}"/*.env)
+  shopt -u nullglob
+
+  for config_file in "${configs[@]}"; do
+    [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
+    repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
+    sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${config_file}"
+    chmod 600 "${config_file}"
+    if [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+      slug="$(slugify "${repo}")"
+      rm -f "${STATE_DIR}/runner-${slug}.pid" "${STATE_DIR}/runner-${slug}.online"
+      printf '%s\n' "ForgeCore rebuilt the runner engine. Paste one fresh GitHub registration token to create a clean runner identity." > "${STATE_DIR}/runner-${slug}.error"
+      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "rebuilt" "Clean runner engine ready; one fresh registration token is required"
+    fi
+  done
+
+  printf '%s\n' "2" > "${RUNNER_ENGINE_MARKER}"
+  activity "runner" "Clean runner engine v2 initialized; legacy credentials preserved as backup only"
 }
 
 load_config() {
@@ -134,6 +166,13 @@ copy_runner_distribution() {
     [[ "$(basename "${item}")" == ".docker" ]] && continue
     cp -a "${item}" "${destination}/"
   done
+}
+
+reset_runner_install() {
+  local runner_dir="$1"
+  rm -rf "${runner_dir}"
+  mkdir -p "${runner_dir}"
+  copy_runner_distribution "${runner_dir}"
 }
 
 clear_registration_token() {
@@ -267,7 +306,7 @@ prepare_real_workdir() {
 start_runner_from_config() {
   local config_file="$1"
   local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log identity_mode log_offset
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary
 
   source "${config_file}"
   repo="${REPOSITORY}"
@@ -279,15 +318,21 @@ start_runner_from_config() {
   repo_label="${repo##*/}"
   labels="${repo_label}"
 
-  runner_dir="${STORAGE_ROOT}/runners/${slug}"
+  runner_dir="${RUNNER_ENGINE_ROOT}/${slug}"
   runner_name="${repo_label:0:63}"
   error_file="${STATE_DIR}/runner-${slug}.error"
   runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
+  registration_log="${STORAGE_ROOT}/logs/registration-${slug}.log"
 
-  mkdir -p "${runner_dir}"
-  if [[ ! -x "${runner_dir}/run.sh" ]]; then
-    log "initializing runner files for ${repo}"
-    copy_runner_distribution "${runner_dir}"
+  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
+    log "building a clean runner install for ${repo}"
+    reset_runner_install "${runner_dir}"
+  else
+    mkdir -p "${runner_dir}"
+    if [[ ! -x "${runner_dir}/run.sh" ]]; then
+      log "initializing clean runner files for ${repo}"
+      copy_runner_distribution "${runner_dir}"
+    fi
   fi
 
   prepare_real_workdir "${runner_dir}"
@@ -327,6 +372,11 @@ start_runner_from_config() {
     fi
 
     log "registering persistent runner for ${repo}"
+    {
+      printf '%s registration started for %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${repo}"
+      printf 'Runner engine: v2 clean registration\n'
+    } > "${registration_log}"
+
     if ! (
       cd "${runner_dir}"
       ./config.sh \
@@ -339,9 +389,11 @@ start_runner_from_config() {
         --name "${runner_name}" \
         --work "_work" \
         --labels "${labels}"
-    ); then
-      printf '%s\n' "Registration failed. The token was kept so you can retry without losing the request." > "${error_file}"
+    ) >> "${registration_log}" 2>&1; then
+      registration_summary="$(tail -n 12 "${registration_log}" 2>/dev/null | tr '\n' ' ' | cut -c1-1600)"
+      printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
       write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
+      activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
       return 1
     fi
 

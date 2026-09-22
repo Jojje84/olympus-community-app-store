@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 28 hardens the live GitHub listener after the Beelink reproduced a runner process that stayed alive while GitHub jobs remained queued. ForgeCore now recycles the persistent listener after completed jobs and detects broker-acquisition stalls where a request is acknowledged but no Runner.Worker starts. Persistent identity, external storage, workspaces and caches are preserved during recovery.
+Beta 29 rebuilds the runner engine around a clean `runner-engine-v2` state root. Existing repository configuration is kept, legacy credentials are preserved only as backup, and one fresh GitHub registration token creates a completely new runner identity. Registration output is persisted so GitHub/config.sh failures are visible instead of being hidden.
 
 
 
