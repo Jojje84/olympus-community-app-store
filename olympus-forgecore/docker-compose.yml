@@ -7,11 +7,16 @@ services:
     privileged: true
     environment:
       DOCKER_TLS_CERTDIR: ""
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - --host=tcp://0.0.0.0:2375
-      - --host=unix:///var/run/docker.sock
-      - --data-root=/forgecore/storage/docker
-      - --log-level=warn
+      - >-
+        test -f /forgecore/storage/.forgecore-external
+        || { echo "ForgeCore external storage marker missing"; exit 1; };
+        exec dockerd
+        --host=tcp://0.0.0.0:2375
+        --host=unix:///var/run/docker.sock
+        --data-root=/forgecore/storage/docker
+        --log-level=warn
     volumes:
       - forgecore-storage:/forgecore/storage
     healthcheck:
