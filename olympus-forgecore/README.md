@@ -2,12 +2,12 @@
 
 This directory is the self-contained source package that becomes `olympus-forgecore` for live Umbrel testing.
 
-Beta 20 keeps this directory as the package source of truth. Olympus is distribution only:
-changes are made and validated here first, then copied to `olympus-forgecore`.
+ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
+Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 20 also fixes the approved ForgeCore anvil at its source. The canonical raster
-asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the
-fallback icon must all match it and are checked by the smoke test.
+Beta 24 fixes runner supervision and repair. Runner reloads and listener exits are recovered inside the long-lived manager instead of depending on the container restart policy, while credentials, workspaces and caches remain persistent.
+
+The approved ForgeCore anvil remains unchanged. The canonical raster asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the fallback icon must all match it.
 
 The dashboard is the primary control surface instead of SSH:
 
