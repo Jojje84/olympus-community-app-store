@@ -10,6 +10,7 @@ CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
 RELOAD_FILE="${STATE_DIR}/reload-runners.request"
 LOG_FILE="${STORAGE_ROOT}/logs/runner-manager.log"
 ACTIVITY_FILE="${STATE_DIR}/activity.log"
+RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 
@@ -397,9 +398,10 @@ write_status() {
     --arg disk_path "${STORAGE_ROOT}" \
     --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))" \
     --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}" \
+    --arg runtime_version "${RUNTIME_VERSION}" \
     --argjson manager_started_epoch "${MANAGER_STARTED_EPOCH}" \
     --argjson status_epoch "$(date +%s)" \
-    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,compose_online:$compose_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days,manager_started_epoch:$manager_started_epoch,status_epoch:$status_epoch}' \
+    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,compose_online:$compose_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days,runtime_version:$runtime_version,manager_started_epoch:$manager_started_epoch,status_epoch:$status_epoch}' \
     > "${STATE_DIR}/status.json.tmp"
   mv "${STATE_DIR}/status.json.tmp" "${STATE_DIR}/status.json"
 }
@@ -461,12 +463,14 @@ trap shutdown_all TERM INT EXIT
 
 main() {
 prepare_paths
+log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
+activity "runner" "Runner manager ${RUNTIME_VERSION} booting"
 load_config
 rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
-log "ForgeCore runner manager validation candidate started"
-activity "runner" "Runner manager validation candidate started"
+log "ForgeCore runner manager ${RUNTIME_VERSION} ready"
+activity "runner" "Runner manager ${RUNTIME_VERSION} ready"
 status_loop &
 STATUS_PID=$!
 
