@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.3"
+version: "0.1.0-beta.4"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -20,9 +20,8 @@ description: >-
   This beta intentionally keeps the dashboard small: runner status, storage
   usage, Docker status and cleanup settings.
 releaseNotes: >-
-  Beta 3 simplifies the external-disk mount path and adds the storage-marker
-  guard directly to Docker, runner and cleanup services to avoid containers
-  getting stuck during installation.
+  Beta 4 fixes the dashboard web root so ForgeCore serves its UI immediately,
+  even before the runner has finished initializing.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
