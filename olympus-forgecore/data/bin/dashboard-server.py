@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 import json
 import os
 import re
@@ -17,6 +18,8 @@ STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLA
 STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
+MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
+WEB_BUILD = "0.1.0-beta.36"
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -185,7 +188,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.35</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.36</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -262,8 +265,22 @@ function renderStatus(s){
   $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')+'<br>Phase: '+esc(first.phase||'idle')):'Add a GitHub repository in Settings.';
   setDot('runnerDot',online>0,!!(first&&first.error));
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
-  $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):(s.storage_error?'Blocked by storage':'Offline / stale');
-  $('svcManager').className=s.manager_alive?'status-ok':(s.storage_error?'status-bad':'status-muted');
+  if(s.manager_alive){
+    $('svcManager').textContent='Running · '+(s.manager_build||s.manager_runtime_version||'unknown');
+    $('svcManager').className='status-ok';
+  }else if(s.storage_error){
+    $('svcManager').textContent='Blocked · '+s.storage_error;
+    $('svcManager').className='status-bad';
+  }else if(!s.manager_artifact_ok){
+    $('svcManager').textContent='Runtime mismatch · '+(s.manager_artifact_build||'unknown');
+    $('svcManager').className='status-bad';
+  }else if(!s.bootstrap_beta36_seen){
+    $('svcManager').textContent='Runner container has not bootstrapped beta36';
+    $('svcManager').className='status-bad';
+  }else{
+    $('svcManager').textContent='Bootstrap ran · manager offline';
+    $('svcManager').className='status-bad';
+  }
   $('svcDocker').textContent=s.docker_online?'Running':(s.manager_alive?'Starting / retrying':'Offline');$('svcDocker').className=s.docker_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
   $('version').textContent=(s.web_runtime_version||'dev').replace(/^0\.1\.0-/,'');
   $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):(s.manager_alive?'Waiting for Docker':'Unavailable');$('svcCompose').className=s.compose_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
@@ -501,6 +518,379 @@ def activity(limit=12):
         except json.JSONDecodeError:
             continue
     return list(reversed(out))
+
+def inspect_manager_artifact():
+    result = {"manager_artifact_ok": False, "manager_artifact_build": "missing", "manager_artifact_error": ""}
+    try:
+        encoded = MANAGER_ARTIFACT.read_bytes()
+        decoded = base64.b64decode(encoded, validate=True).decode("utf-8", errors="strict")
+        match = re.search(r'^FORGECORE_MANAGER_BUILD="([^"]+)"
+        "runner_online": False,
+        "runner_name": "Runner not configured",
+        "docker_online": False,
+        "compose_online": False,
+        "disk_used": "—",
+        "disk_total": "—",
+        "disk_used_percent": 0,
+    }
+    try:
+        x.update(json.loads((ST / "status.json").read_text()))
+    except (OSError, json.JSONDecodeError):
+        pass
+    x.update(settings())
+    now = int(__import__("time").time())
+    try:
+        status_epoch = int(x.get("status_epoch", 0))
+    except (TypeError, ValueError):
+        status_epoch = 0
+    x["manager_alive"] = status_epoch > 0 and (now - status_epoch) <= 20
+    x["manager_runtime_version"] = str(x.get("runtime_version", "unknown"))
+    x["manager_build"] = str(x.get("manager_build", "unknown"))
+    x["web_runtime_version"] = RUNTIME_VERSION
+    x["web_build"] = WEB_BUILD
+    x.update(inspect_manager_artifact())
+    bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
+    x["bootstrap_present"] = bool(bootstrap_text.strip())
+    x["bootstrap_beta36_seen"] = "ForgeCore 0.1.0-beta.36 runner bootstrap started" in bootstrap_text
+    x["storage_display"] = STORAGE_DISPLAY
+    x["storage_host_path"] = STORAGE_HOST_PATH
+    x["storage_resolution"] = STORAGE_RESOLUTION
+    storage_messages = []
+    for error_path in (ST / "storage-resolution.error", ST / "runner-service.error"):
+        try:
+            message = error_path.read_text(encoding="utf-8", errors="replace").strip()
+        except OSError:
+            message = ""
+        if message and message not in storage_messages:
+            storage_messages.append(message)
+    x["storage_error"] = " ".join(storage_messages)
+    try:
+        x["dependency_error"] = (ST / "dependencies.error").read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        x["dependency_error"] = ""
+    x["runners"] = runners()
+    x["activity"] = activity()
+    try:
+        x["last_cleanup_epoch"] = int((ST / "last-cleanup-epoch").read_text().strip())
+    except (OSError, ValueError):
+        x["last_cleanup_epoch"] = 0
+    x["cleanup_pending"] = (ST / "cleanup-now.request").exists()
+    x["cleanup_running"] = (ST / "cleanup-running").exists()
+    return x
+
+def origin_ok(handler):
+    origin = handler.headers.get("Origin")
+    host = handler.headers.get("Host", "")
+    if not origin:
+        return True
+    parsed = urlparse(origin)
+    return parsed.netloc == host and parsed.scheme in ("http", "https")
+
+class RunnerConflictError(Exception):
+    pass
+
+def stored_runner_identity_mode(repo):
+    settings_file = RUNNER_ENGINE / slug(repo) / ".runner"
+    if not settings_file.exists():
+        return "unregistered"
+    try:
+        identity = json.loads(settings_file.read_text(encoding="utf-8-sig", errors="strict"))
+        if not isinstance(identity, dict):
+            return "invalid"
+        return "ephemeral" if bool(identity.get("Ephemeral", identity.get("ephemeral", False))) else "persistent"
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+        return "invalid"
+
+def inherit_owner(path, parent):
+    try:
+        st = parent.stat()
+        os.chown(path, st.st_uid, st.st_gid)
+    except OSError:
+        pass
+
+def write_env_updates(path, updates):
+    lines = []
+    seen = set()
+    try:
+        original = path.read_text().splitlines()
+    except OSError:
+        original = []
+    for raw in original:
+        stripped = raw.strip()
+        if "=" in stripped and not stripped.startswith("#"):
+            key = stripped.split("=", 1)[0].strip()
+            if key in updates:
+                lines.append(f"{key}={updates[key]}")
+                seen.add(key)
+                continue
+        lines.append(raw)
+    for key, value in updates.items():
+        if key not in seen:
+            lines.append(f"{key}={value}")
+    tmp = path.with_name("." + path.name + ".tmp")
+    tmp.write_text("\n".join(lines).rstrip() + "\n")
+    os.chmod(tmp, 0o600)
+    inherit_owner(tmp, path.parent)
+    os.replace(tmp, path)
+
+def save_settings(data):
+    def bounded(key, lo, hi):
+        try:
+            value = int(data.get(key))
+        except (TypeError, ValueError):
+            raise ValueError(f"{key} must be a number.")
+        if value < lo or value > hi:
+            raise ValueError(f"{key} must be between {lo} and {hi}.")
+        return value
+    cleanup_days = bounded("cleanup_interval_days", 1, 365)
+    cache_days = bounded("cache_max_age_days", 1, 365)
+    workspace_days = bounded("workspace_max_age_days", 1, 365)
+    threshold = bounded("disk_cleanup_threshold_percent", 50, 99)
+    keep_gb = bounded("buildkit_keep_storage_gb", 1, 1000)
+    write_env_updates(GC, {
+        "CLEANUP_INTERVAL_HOURS": cleanup_days * 24,
+        "CACHE_MAX_AGE_DAYS": cache_days,
+        "WORKSPACE_MAX_AGE_DAYS": workspace_days,
+        "DISK_CLEANUP_THRESHOLD_PERCENT": threshold,
+        "BUILDKIT_KEEP_STORAGE_GB": keep_gb,
+    })
+    append_activity("settings", "ForgeCore configuration updated")
+
+def save_runner(data):
+    repo = str(data.get("repository", "")).strip()
+    token = str(data.get("token", "")).strip()
+    repair_existing = data.get("repair_existing") is True
+    if not REPO.fullmatch(repo):
+        raise ValueError("Repository must look like owner/repository.")
+    if not TOKEN.fullmatch(token):
+        raise ValueError("Enter a fresh GitHub self-hosted runner registration token.")
+    identity_mode = stored_runner_identity_mode(repo)
+    if identity_mode != "unregistered" and not repair_existing:
+        raise RunnerConflictError(
+            "Runner identity already exists. No changes were made. "
+            "Open Repair connection and explicitly confirm replacement first."
+        )
+    s = slug(repo)
+    dst = RD / f"{s}.env"
+    for candidate in RD.glob("*.env"):
+        if candidate.name != "runner.env.example" and env(candidate).get("REPOSITORY", "") == repo:
+            dst = candidate
+            break
+    tmp = dst.with_name("." + dst.name + ".tmp")
+    tmp.write_text(
+        f'REPOSITORY="{repo}"\n'
+        f'REGISTRATION_TOKEN="{token}"\n'
+        f'REPAIR_EXISTING="{"true" if repair_existing else "false"}"\n'
+    )
+    os.chmod(tmp, 0o600)
+    inherit_owner(tmp, RD)
+    os.replace(tmp, dst)
+    ST.mkdir(parents=True, exist_ok=True)
+    runtime_path = ST / f"runner-{s}.runtime.json"
+    runtime_tmp = runtime_path.with_name("." + runtime_path.name + ".tmp")
+    runtime_tmp.write_text(
+        json.dumps(
+            {
+                "epoch": int(__import__("time").time()),
+                "repository": repo,
+                "phase": "queued",
+                "mode": "unknown",
+                "message": "Repair request saved; waiting for runner manager",
+            },
+            separators=(",", ":"),
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    os.replace(runtime_tmp, runtime_path)
+    append_activity("runner", f"Runner registration requested for {repo}")
+    (ST / "reload-runners.request").touch()
+
+def tail_text(path, max_bytes=65536):
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            if size > max_bytes:
+                f.seek(-max_bytes, 2)
+            return f.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+def log_sources():
+    sources = []
+    mapping = [
+        ("startup", "Startup / storage", ST / "runner-service.error"),
+        ("storage", "Storage resolution", ST / "storage-resolution.error"),
+        ("bootstrap", "Runner bootstrap", ST / "runner-bootstrap.log"),
+        ("runner-manager", "Runner manager", STORAGE / "logs" / "runner-manager.log"),
+        ("cleanup", "Cleanup", STORAGE / "logs" / "cleanup.log"),
+    ]
+    for ident, label, path in mapping:
+        if path.exists():
+            sources.append({"id": ident, "label": label})
+    for p in sorted((STORAGE / "logs").glob("registration-*.log")):
+        ident = "registration:" + p.stem[len("registration-"):]
+        sources.append({"id": ident, "label": "Registration · " + p.stem[len("registration-"):].replace("-", "/")})
+    for p in sorted((STORAGE / "logs").glob("runner-*.log")):
+        if p.name == "runner-manager.log":
+            continue
+        ident = "runner:" + p.stem[len("runner-"):]
+        sources.append({"id": ident, "label": "Runner · " + p.stem[len("runner-"):].replace("-", "/")})
+    return sources
+
+def resolve_log(kind):
+    if kind == "startup":
+        return ST / "runner-service.error"
+    if kind == "storage":
+        return ST / "storage-resolution.error"
+    if kind == "bootstrap":
+        return ST / "runner-bootstrap.log"
+    if kind == "runner-manager":
+        return STORAGE / "logs" / "runner-manager.log"
+    if kind == "cleanup":
+        return STORAGE / "logs" / "cleanup.log"
+    if kind.startswith("registration:"):
+        slug_value = kind.split(":", 1)[1]
+        if re.fullmatch(r"[a-z0-9-]+", slug_value):
+            return STORAGE / "logs" / f"registration-{slug_value}.log"
+    if kind.startswith("runner:"):
+        slug_value = kind.split(":", 1)[1]
+        if re.fullmatch(r"[a-z0-9-]+", slug_value):
+            return STORAGE / "logs" / f"runner-{slug_value}.log"
+    return None
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "ForgeCoreDashboard/0.2"
+
+    def log_message(self, fmt, *args):
+        print("[forgecore-web] " + fmt % args, flush=True)
+
+    def send_json(self, code, data):
+        payload = json.dumps(data, separators=(",", ":")).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def send_svg(self):
+        payload = ICON_SVG.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def send_html(self):
+        payload = HTML.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/":
+            self.send_html()
+        elif parsed.path == "/icon.svg":
+            self.send_svg()
+        elif parsed.path == "/api/status":
+            self.send_json(200, status())
+        elif parsed.path == "/api/logs":
+            kind = parse_qs(parsed.query).get("kind", [""])[0]
+            if not kind:
+                self.send_json(200, {"sources": log_sources()})
+                return
+            path = resolve_log(kind)
+            if not path:
+                self.send_json(404, {"error": "Unknown log source"})
+                return
+            self.send_json(200, {"kind": kind, "text": tail_text(path)})
+        elif parsed.path == "/health":
+            current = status()
+            self.send_json(200, {
+                "ok": True,
+                "web_runtime_version": RUNTIME_VERSION,
+                "web_build": WEB_BUILD,
+                "manager_alive": bool(current.get("manager_alive")),
+                "manager_runtime_version": current.get("manager_runtime_version", "unknown"),
+                "manager_build": current.get("manager_build", "unknown"),
+                "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
+                "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
+                "bootstrap_beta36_seen": bool(current.get("bootstrap_beta36_seen")),
+            })
+        else:
+            self.send_json(404, {"error": "Not found"})
+
+    def do_POST(self):
+        if not origin_ok(self):
+            self.send_json(403, {"error": "Origin rejected"})
+            return
+        if self.headers.get("Content-Type", "").split(";", 1)[0].strip() != "application/json":
+            self.send_json(415, {"error": "JSON required"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        if length < 0 or length > 8192:
+            self.send_json(413, {"error": "Request too large"})
+            return
+        try:
+            data = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_json(400, {"error": "Invalid JSON"})
+            return
+        try:
+            path = urlparse(self.path).path
+            if path == "/api/runners":
+                save_runner(data)
+            elif path == "/api/settings":
+                save_settings(data)
+            elif path == "/api/reload":
+                append_activity("runner", "Runner manager restart requested")
+                (ST / "reload-runners.request").touch()
+            elif path == "/api/cleanup":
+                append_activity("cleanup", "Cleanup requested")
+                (ST / "cleanup-now.request").touch()
+            else:
+                self.send_json(404, {"error": "Not found"})
+                return
+            self.send_json(202, {"ok": True})
+        except RunnerConflictError as exc:
+            self.send_json(409, {"error": str(exc)})
+        except ValueError as exc:
+            self.send_json(400, {"error": str(exc)})
+        except OSError:
+            self.send_json(500, {"error": "ForgeCore could not write its app data."})
+
+def main():
+    RD.mkdir(parents=True, exist_ok=True)
+    ST.mkdir(parents=True, exist_ok=True)
+    print("[forgecore-web] dashboard listening on :8080", flush=True)
+    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+
+if __name__ == "__main__":
+    main()
+, decoded, re.MULTILINE)
+        build = match.group(1) if match else "unknown"
+        result["manager_artifact_build"] = build
+        result["manager_artifact_ok"] = build == WEB_BUILD
+        if not result["manager_artifact_ok"]:
+            result["manager_artifact_error"] = f"Installed runner-manager build is {build}; dashboard build is {WEB_BUILD}."
+    except (OSError, ValueError, UnicodeError) as exc:
+        result["manager_artifact_error"] = f"Runner-manager artifact could not be verified: {exc}"
+    return result
 
 def status():
     x = {

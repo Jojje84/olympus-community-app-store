@@ -37,7 +37,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.36"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -46,20 +46,50 @@ services:
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro
+      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro
     entrypoint:
       - /bin/bash
       - -lc
       - >-
-        mkdir -p /forgecore/app/state;
+        set -u;
+        uid=$(id -u);
+        gid=$(id -g);
+        sudo mkdir -p /forgecore/app/state /forgecore/app/config/runners;
+        sudo chown -R "$uid:$gid" /forgecore/app;
+        sudo mkdir -p /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
+        sudo chown -R "$uid:$gid" /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
+        exec >> /forgecore/app/state/runner-bootstrap.log 2>&1;
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] ForgeCore 0.1.0-beta.36 runner bootstrap started uid=$uid gid=$gid";
         if ! test -f /forgecore/storage/.forgecore-external; then
           printf '%s\n' "ForgeCore external storage is not mounted at the resolved host path. Update/storage binding must be repaired before the runner can start." > /forgecore/app/state/runner-service.error;
-          echo "ForgeCore external storage marker missing";
+          echo "[bootstrap] external storage marker missing";
+          exit 1;
+        fi;
+        if ! test -r /forgecore/runtime/runner-manager.b64 || test -d /forgecore/runtime/runner-manager.b64; then
+          printf '%s\n' "Runner runtime artifact is missing or unreadable." > /forgecore/app/state/runner-service.error;
+          echo "[bootstrap] runner-manager.b64 missing or unreadable";
+          ls -ld /forgecore/runtime /forgecore/runtime/runner-manager.b64 2>/dev/null || true;
+          exit 1;
+        fi;
+        if ! base64 -d /forgecore/runtime/runner-manager.b64 > /tmp/runner-manager.sh; then
+          printf '%s\n' "Runner runtime artifact could not be decoded." > /forgecore/app/state/runner-service.error;
+          echo "[bootstrap] base64 decode failed";
+          exit 1;
+        fi;
+        if ! grep -Fq 'FORGECORE_MANAGER_BUILD="0.1.0-beta.36"' /tmp/runner-manager.sh; then
+          printf '%s\n' "Runner runtime build does not match ForgeCore beta36." > /forgecore/app/state/runner-service.error;
+          echo "[bootstrap] decoded manager build mismatch";
+          grep -m1 'FORGECORE_MANAGER_BUILD=' /tmp/runner-manager.sh || true;
+          exit 1;
+        fi;
+        if ! /bin/bash -n /tmp/runner-manager.sh; then
+          printf '%s\n' "Runner runtime script failed syntax validation." > /forgecore/app/state/runner-service.error;
+          echo "[bootstrap] manager syntax validation failed";
           exit 1;
         fi;
         rm -f /forgecore/app/state/runner-service.error;
-        base64 -d /forgecore/runtime/runner-manager.b64 > /tmp/runner-manager.sh;
         chmod 700 /tmp/runner-manager.sh;
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] manager artifact verified; launching";
         exec /bin/bash /tmp/runner-manager.sh
     healthcheck:
       test:
@@ -85,11 +115,11 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.36"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro
+      - ${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro
     entrypoint:
       - /bin/sh
       - -c
@@ -109,11 +139,12 @@ services:
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.35"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.36"
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage:ro
-      - ${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro
+      - ${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro
+      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/inspect/runner-manager.b64:ro
     entrypoint:
       - /bin/sh
       - -c

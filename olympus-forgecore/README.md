@@ -42,4 +42,4 @@ Contents:
 Heavy CI data remains on the configured external ForgeCore storage root. The runner never mounts Umbrel's host Docker socket.
 
 
-Beta 35 fixes the Umbrel package/runtime mismatch that could show a new ForgeCore version while the containers still executed stale persisted runtime files. Compose now mounts the packaged `.b64.template` files directly for runner-manager, dashboard and cleanup, and the runner service starts independently of Docker. Olympus CI now validates those exact production mount paths.
+Beta 36 adds a pre-manager bootstrap that repairs Umbrel-created root-owned app data before the uid-1001 GitHub runner starts, validates the rendered runner runtime artifact, and writes a persistent Runner bootstrap log before manager startup. The integration tests now reproduce Umbrel's real template rendering and root-owned app-data state.

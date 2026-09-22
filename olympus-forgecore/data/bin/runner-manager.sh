@@ -11,6 +11,7 @@ RELOAD_FILE="${STATE_DIR}/reload-runners.request"
 LOG_FILE="${STORAGE_ROOT}/logs/runner-manager.log"
 ACTIVITY_FILE="${STATE_DIR}/activity.log"
 RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
+FORGECORE_MANAGER_BUILD="0.1.0-beta.36"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
@@ -799,9 +800,10 @@ write_status() {
     --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))" \
     --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}" \
     --arg runtime_version "${RUNTIME_VERSION}" \
+    --arg manager_build "${FORGECORE_MANAGER_BUILD}" \
     --argjson manager_started_epoch "${MANAGER_STARTED_EPOCH}" \
     --argjson status_epoch "$(date +%s)" \
-    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,compose_online:$compose_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days,runtime_version:$runtime_version,manager_started_epoch:$manager_started_epoch,status_epoch:$status_epoch}' \
+    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,compose_online:$compose_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days,runtime_version:$runtime_version,manager_build:$manager_build,manager_started_epoch:$manager_started_epoch,status_epoch:$status_epoch}' \
     > "${STATE_DIR}/status.json.tmp"
   mv "${STATE_DIR}/status.json.tmp" "${STATE_DIR}/status.json"
 }
@@ -868,9 +870,9 @@ shutdown_all() {
 trap shutdown_all TERM INT EXIT
 
 main() {
-write_service_error "ForgeCore runner manager is starting"
 prepare_paths
 normalize_app_permissions
+write_service_error "ForgeCore runner manager is starting"
 log "ForgeCore runner manager ${RUNTIME_VERSION} booting"
 activity "runner" "Runner manager ${RUNTIME_VERSION} booting"
 load_config

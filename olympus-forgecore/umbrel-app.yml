@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.35"
+version: "0.1.0-beta.36"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.35
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.36
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,13 +37,15 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 35 fixes the production package/runtime mismatch that allowed Umbrel to
-  display a new ForgeCore version while runner-manager, dashboard and cleanup
-  could still execute stale persisted .b64 copies from older betas. Compose now
-  mounts the versioned packaged .b64.template files directly for every runtime
-  component, and the runner service no longer depends on Docker container startup.
-  CI now uses the same template filenames as production and fails if Compose ever
-  references a runtime file that is not actually shipped in the package.
+  Beta 36 adds a production-first runner bootstrap that executes before
+  runner-manager. It repairs Umbrel-created root-owned app/state directories,
+  validates and fingerprints the rendered runner runtime, writes a persistent
+  Runner bootstrap log before manager startup, and exposes the installed manager
+  artifact/build in the dashboard. CI now reproduces Umbrel's real template
+  rendering (.template -> rendered .b64) and root-owned app-data before starting
+  the official actions-runner image. This closes the gap that allowed previous
+  container tests to pass while the Beelink runner could die before its first
+  manager log line.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore

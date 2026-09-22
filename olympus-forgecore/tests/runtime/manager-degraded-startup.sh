@@ -11,9 +11,11 @@ fi
 tmp="$(mktemp -d)"
 app_dir="${tmp}/app"
 storage_dir="${tmp}/storage"
-mkdir -p "${app_dir}/data/state" "${storage_dir}"
+mkdir -p "${app_dir}/data/state" "${storage_dir}/logs" "${storage_dir}/runners" "${storage_dir}/cache" "${storage_dir}/workspaces" "${storage_dir}/artifacts" "${storage_dir}/runner-backups"
 touch "${storage_dir}/.forgecore-external"
-cp "${PACKAGE_ROOT}/runner-manager.b64.template" "${app_dir}/runner-manager.b64.template"
+cp "${PACKAGE_ROOT}/runner-manager.b64.template" "${app_dir}/runner-manager.b64"
+sudo chown -R root:root "${app_dir}/data" "${storage_dir}/logs" "${storage_dir}/runners" "${storage_dir}/cache" "${storage_dir}/workspaces" "${storage_dir}/artifacts" "${storage_dir}/runner-backups"
+sudo chmod -R u+rwX,go+rX "${app_dir}/data" "${storage_dir}/logs" "${storage_dir}/runners" "${storage_dir}/cache" "${storage_dir}/workspaces" "${storage_dir}/artifacts" "${storage_dir}/runner-backups"
 
 export APP_DATA_DIR="${app_dir}"
 export FORGECORE_STORAGE_ROOT="${storage_dir}"
@@ -52,7 +54,10 @@ fi
 
 test ! -f "${app_dir}/data/state/runner-service.error"
 test -s "${app_dir}/data/state/dependencies.error"
-jq -e '.docker_online == false and .compose_online == false' "${app_dir}/data/state/status.json" >/dev/null
+jq -e '.docker_online == false and .compose_online == false and .manager_build == "0.1.0-beta.36"' "${app_dir}/data/state/status.json" >/dev/null
+grep -Fq 'ForgeCore 0.1.0-beta.36 runner bootstrap started' "${app_dir}/data/state/runner-bootstrap.log"
+grep -Fq 'manager artifact verified; launching' "${app_dir}/data/state/runner-bootstrap.log"
+test "$(stat -c %u "${app_dir}/data/state")" = "1001"
 grep -Fq 'control plane ready' "${storage_dir}/logs/runner-manager.log"
 echo "ForgeCore manager starts independently of Docker preflight: OK"
 

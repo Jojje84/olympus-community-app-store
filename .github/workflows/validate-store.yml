@@ -93,22 +93,28 @@ jobs:
           compose_path = root / "docker-compose.yml"
           compose_text = compose_path.read_text(encoding="utf-8")
           expected_mounts = (
+              "${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro",
+              "${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro",
+              "${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro",
+              "${APP_DATA_DIR}/runner-manager.b64:/forgecore/inspect/runner-manager.b64:ro",
+          )
+          for mount in expected_mounts:
+              if mount not in compose_text:
+                  raise SystemExit(f"ForgeCore compose is not consuming Umbrel-rendered runtime output: {mount}")
+
+          forbidden_mounts = (
               "${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro",
               "${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro",
               "${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro",
           )
-          for mount in expected_mounts:
-              if mount not in compose_text:
-                  raise SystemExit(f"ForgeCore compose is not mounting packaged runtime template directly: {mount}")
-
-          forbidden_mounts = (
-              "${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro",
-              "${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro",
-              "${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro",
-          )
           for mount in forbidden_mounts:
               if mount in compose_text:
-                  raise SystemExit(f"ForgeCore compose still references stale persistent runtime file: {mount}")
+                  raise SystemExit(f"ForgeCore compose incorrectly consumes template source at runtime: {mount}")
+
+          if 'runner-bootstrap.log' not in compose_text:
+              raise SystemExit("ForgeCore runner bootstrap log is missing from compose")
+          if 'FORGECORE_MANAGER_BUILD="0.1.0-beta.36"' not in (root / "data/bin/runner-manager.sh").read_text(encoding="utf-8"):
+              raise SystemExit("ForgeCore manager build marker is not beta36")
 
           compose = yaml.safe_load(compose_text)
           runner = compose["services"]["runner"]
