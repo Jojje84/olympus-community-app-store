@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.35"
+version: "0.1.0-beta.37"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.35
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.37
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,13 +37,13 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 35 fixes the production package/runtime mismatch that allowed Umbrel to
-  display a new ForgeCore version while runner-manager, dashboard and cleanup
-  could still execute stale persisted .b64 copies from older betas. Compose now
-  mounts the versioned packaged .b64.template files directly for every runtime
-  component, and the runner service no longer depends on Docker container startup.
-  CI now uses the same template filenames as production and fails if Compose ever
-  references a runtime file that is not actually shipped in the package.
+  Beta 37 deliberately restores the live-verified beta31 ForgeCore core after
+  beta32 changed the active runner layout and surrounding queue/runtime flow.
+  Runner-manager, Compose startup, dashboard Repair handoff, Docker dependency
+  behavior and the runners/v2 engine are based on the exact beta31 baseline.
+  One compatibility bridge safely copies a verified persistent identity from
+  the beta32+ runners/<repository> location back into beta31's runners/v2 path
+  without deleting the newer copy or requiring a fresh GitHub token.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
