@@ -16,7 +16,7 @@ STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
 STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLAY)
 STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
-RUNNER_ENGINE = STORAGE / "runner-engine-v2"
+RUNNER_ENGINE = STORAGE / "runners" / "v2"
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -177,7 +177,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.29</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.30</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -245,7 +245,7 @@ function renderStatus(s){
   else{cb.disabled=false;cb.textContent='Run cleanup now'}
 
   const root=s.storage_display||'External ForgeCore storage';
-  $('pathRunners').textContent=root+'/runner-engine-v2';
+  $('pathRunners').textContent=root+'/runners/v2';
   $('pathDocker').textContent=root+'/docker';
   $('pathArtifacts').textContent=root+'/artifacts';
   $('pathCache').textContent=root+'/cache';

@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.29"
+version: "0.1.0-beta.30"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.29
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.30
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,14 +37,14 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 29 rebuilds the ForgeCore runner engine instead of reusing the previous
-  runner state. Existing repository configuration is kept, but old .runner and
-  credential files are no longer loaded. The new engine creates a clean runner
-  install under runner-engine-v2 and requires one fresh GitHub registration token
-  after the upgrade. Legacy runner files remain untouched as backup. Registration
-  output is now persisted and surfaced in Logs so GitHub/config.sh errors are no
-  longer hidden. The listener watchdog from Beta 28 remains in place to recover
-  upstream broker stalls without interrupting an active Runner.Worker.
+  Beta 30 hardens runner-manager startup after a live Umbrel install showed the
+  dashboard updating while the runner manager never reached its first heartbeat.
+  The clean runner engine now lives under the established external runners
+  directory at runners/v2 instead of requiring a new top-level storage directory.
+  Startup failures are persisted to runner-service.error with the failing command
+  and line instead of degrading into an unexplained stale heartbeat. Existing
+  ForgeCore storage, repository configuration, caches and legacy runner data are
+  preserved.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
