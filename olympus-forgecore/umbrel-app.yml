@@ -2,42 +2,47 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.11"
+version: "0.1.0-beta.12"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
-  It can run one persistent self-hosted runner per trusted repository and supports
-  multiple repositories, including private repository checkout.
+  It runs persistent repository-level runners for multiple trusted repositories,
+  including authenticated checkout of private repositories.
 
 
-  CI jobs use ForgeCore's own isolated Docker engine instead of Umbrel's host
-  Docker socket. Docker Compose is available to workflows, while persistent Go,
+  CI jobs use ForgeCore's isolated Docker engine instead of Umbrel's host Docker
+  socket. Docker Compose is installed for workflows, while persistent Go build,
   Go module, npm, Playwright, Docker CLI and runner tool caches reduce repeated
   downloads between builds.
 
 
-  Heavy CI data such as Docker images, workspaces, caches, artifacts and logs is
-  kept on the configured external ForgeCore storage root. A storage marker guard
-  prevents ForgeCore from silently creating heavy CI data on the system disk.
+  Heavy CI data such as Docker images, runner workspaces, caches, artifacts and
+  logs is kept on the configured external ForgeCore storage root. A storage marker
+  guard prevents ForgeCore from silently redirecting heavy CI data to the system disk.
 
 
-  The dashboard shows runner, Docker and storage health; adds or repairs repository
-  runners; opens the correct GitHub runner-token page; restarts the runner manager;
-  and starts manual cleanup with queued, running and completed feedback. Automatic
-  cleanup also removes stale data on schedule and performs additional pruning when
-  disk usage crosses the configured threshold.
+  The dashboard is the normal administration surface: it shows runner, Docker,
+  Compose and disk health; manages repository runner setup and repair; edits cleanup
+  and storage-retention settings; restarts the runner manager; triggers manual cleanup
+  with queued, running and completed feedback; shows the next cleanup schedule; and
+  exposes persistent ForgeCore logs and recent runtime activity without requiring SSH.
 
 
   ForgeCore uses short-lived GitHub runner registration tokens and clears the token
   from its local repository config after registration. Persistent runner credentials
-  remain on the external disk so normal restarts do not require a new token.
+  remain on the external disk, so normal restarts do not require a new token.
+
+
+  The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
+  emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 11 audits the dashboard and runtime controls. Cleanup now reports queued,
-  running and completed states instead of only acknowledging the request. Runner
-  restart also confirms when the manager has restarted. The dashboard now uses the
-  same ForgeCore logo as the Umbrel app and includes a complete capability summary.
-  Package validation and documentation were refreshed to match the actual beta runtime.
+  Beta 12 rebuilds the dashboard around the earlier ForgeCore control-center design:
+  Overview, Settings, Logs and About tabs; larger status cards; real cleanup scheduling;
+  editable cleanup/retention settings; persistent runner and cleanup logs; recent
+  ForgeCore activity; and a single consistent ForgeCore logo. The dashboard reports
+  only capabilities that the runtime can actually verify, while optional QEMU support
+  is clearly marked as not automatically enabled.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
