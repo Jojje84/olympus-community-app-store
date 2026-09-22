@@ -97,5 +97,46 @@ jobs:
           bash olympus-forgecore/tests/runtime/runner-watchdog.sh
           bash olympus-forgecore/tests/runtime/runner-engine-v2.sh
 
+      - name: Boot ForgeCore runner container
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          app_dir="${tmp}/app"
+          storage_dir="${tmp}/storage"
+          mkdir -p "${app_dir}/data/state" "${storage_dir}"
+          touch "${storage_dir}/.forgecore-external"
+          cp olympus-forgecore/runner-manager.b64.template "${app_dir}/runner-manager.b64"
+          export APP_DATA_DIR="${app_dir}"
+          export FORGECORE_STORAGE_ROOT="${storage_dir}"
+          export FORGECORE_STORAGE_RESOLUTION="ci-container-boot"
+          compose=(docker compose -f olympus-forgecore/docker-compose.yml -p forgecore-boot-test)
+
+          cleanup() {
+            "${compose[@]}" logs --no-color runner || true
+            "${compose[@]}" down -v || true
+            rm -rf "${tmp}"
+          }
+          trap cleanup EXIT
+
+          "${compose[@]}" up -d docker runner
+
+          for _ in $(seq 1 60); do
+            if [[ -s "${app_dir}/data/state/status.json" ]]; then
+              now="$(date +%s)"
+              last="$(jq -r '.status_epoch // 0' "${app_dir}/data/state/status.json")"
+              if [[ "${last}" =~ ^[0-9]+$ ]] && (( now - last < 20 )); then
+                jq -e '.runtime_version == "0.1.0-beta.29"' "${app_dir}/data/state/status.json" >/dev/null
+                echo "ForgeCore runner container boot heartbeat: OK"
+                exit 0
+              fi
+            fi
+            sleep 2
+          done
+
+          echo "ForgeCore runner container never produced a live heartbeat" >&2
+          "${compose[@]}" ps >&2 || true
+          exit 1
+
       - name: Check whitespace errors
         run: git diff --check
