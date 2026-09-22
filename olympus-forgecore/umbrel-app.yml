@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.1"
+version: "0.1.0-beta.2"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -12,17 +12,17 @@ description: >-
 
 
   Heavy CI data such as Docker images, build cache, workspaces and artifacts
-  is stored on the configured ForgeCore storage root. ForgeCore refuses to
-  create a missing storage root automatically, preventing accidental CI data
-  from filling the Umbrel system disk.
+  is stored on the configured ForgeCore storage root. ForgeCore requires a
+  storage marker before Docker starts, preventing accidental CI data from
+  filling the Umbrel system disk if the external drive is unavailable.
 
 
   This beta intentionally keeps the dashboard small: runner status, storage
   usage, Docker status and cleanup settings.
 releaseNotes: >-
-  First live beta for Umbrel testing. Includes GitHub self-hosted runners,
-  isolated Docker, external-storage protection, configurable cleanup and a
-  minimal status dashboard.
+  Beta 2 binds ForgeCore to the dedicated external HDD path and adds a mount
+  guard that prevents the CI Docker engine from starting unless the external
+  storage marker is present.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
