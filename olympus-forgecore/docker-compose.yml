@@ -37,7 +37,6 @@ services:
       DOCKER_CONFIG: /forgecore/storage/cache/docker-config
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_STATIC_WWW: /forgecore/static-www
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -46,16 +45,16 @@ services:
     volumes:
       - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ./data/bin:/forgecore/bin:ro
-      - ./data/defaults:/forgecore/defaults:ro
-      - ./data/www:/forgecore/static-www:ro
+      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro
     entrypoint:
       - /bin/bash
       - -lc
       - >-
         test -f /forgecore/storage/.forgecore-external
         || { echo "ForgeCore external storage marker missing"; exit 1; };
-        exec /forgecore/bin/runner-manager.sh
+        base64 -d /forgecore/runtime/runner-manager.b64 > /tmp/runner-manager.sh;
+        chmod 700 /tmp/runner-manager.sh;
+        exec /bin/bash /tmp/runner-manager.sh
 
   cleanup:
     image: docker:29.8.1-cli
@@ -69,14 +68,16 @@ services:
     volumes:
       - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ./data/bin:/forgecore/bin:ro
+      - ${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro
     entrypoint:
       - /bin/sh
       - -c
       - >-
         test -f /forgecore/storage/.forgecore-external
         || { echo "ForgeCore external storage marker missing"; exit 1; };
-        exec /forgecore/bin/cleanup-loop.sh
+        base64 -d /forgecore/runtime/cleanup-loop.b64 > /tmp/cleanup-loop.sh;
+        chmod 700 /tmp/cleanup-loop.sh;
+        exec /bin/sh /tmp/cleanup-loop.sh
 
   web:
     image: busybox:1.37.0
