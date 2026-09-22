@@ -84,8 +84,11 @@ services:
     restart: unless-stopped
     environment:
       FORGECORE_APP_ROOT: /forgecore/app
+      FORGECORE_STORAGE_ROOT: /forgecore/storage
+      FORGECORE_STORAGE_DISPLAY: ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
+      - ${APP_OLYMPUS_FORGECORE_STORAGE_ROOT}:/forgecore/storage:ro
       - ${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro
     entrypoint:
       - /bin/sh
