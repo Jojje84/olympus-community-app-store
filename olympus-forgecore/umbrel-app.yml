@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.6"
+version: "0.1.0-beta.7"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -20,9 +20,9 @@ description: >-
   This beta intentionally keeps the dashboard small: runner status, storage
   usage, Docker status and cleanup settings.
 releaseNotes: >-
-  Beta 6 fixes the Umbrel update hang caused by mounting dashboard state
-  inside a read-only web root. Static dashboard files and live state now use
-  separate mounts, with BusyBox serving a small writable runtime web root.
+  Beta 7 removes the external dashboard-file mount entirely. The minimal UI is
+  generated inside the web container and live status is copied independently,
+  eliminating the remaining source of 404 pages.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
