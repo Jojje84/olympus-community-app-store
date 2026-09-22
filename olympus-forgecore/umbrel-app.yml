@@ -2,28 +2,42 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.10"
+version: "0.1.0-beta.11"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
-  ForgeCore is a lightweight self-hosted CI runner for Umbrel. It connects
-  trusted GitHub repositories to your own hardware and runs jobs through an
-  isolated Docker engine instead of Umbrel's host Docker socket.
+  ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
+  It can run one persistent self-hosted runner per trusted repository and supports
+  multiple repositories, including private repository checkout.
 
 
-  Heavy CI data such as Docker images, build cache, workspaces and artifacts
-  is stored on the configured ForgeCore storage root. ForgeCore refuses to
-  create a missing storage root automatically, preventing accidental CI data
-  from filling the Umbrel system disk.
+  CI jobs use ForgeCore's own isolated Docker engine instead of Umbrel's host
+  Docker socket. Docker Compose is available to workflows, while persistent Go,
+  Go module, npm, Playwright, Docker CLI and runner tool caches reduce repeated
+  downloads between builds.
 
 
-  The dashboard can add or repair GitHub repository runners, restart runners,
-  show per-repository status and trigger cleanup without SSH.
+  Heavy CI data such as Docker images, workspaces, caches, artifacts and logs is
+  kept on the configured external ForgeCore storage root. A storage marker guard
+  prevents ForgeCore from silently creating heavy CI data on the system disk.
+
+
+  The dashboard shows runner, Docker and storage health; adds or repairs repository
+  runners; opens the correct GitHub runner-token page; restarts the runner manager;
+  and starts manual cleanup with queued, running and completed feedback. Automatic
+  cleanup also removes stale data on schedule and performs additional pruning when
+  disk usage crosses the configured threshold.
+
+
+  ForgeCore uses short-lived GitHub runner registration tokens and clears the token
+  from its local repository config after registration. Persistent runner credentials
+  remain on the external disk so normal restarts do not require a new token.
 releaseNotes: >-
-  Beta 10 redesigns the ForgeCore dashboard with a clearer dark control-center
-  layout, larger status cards and more visible runner controls. Repository setup,
-  runner repair/restart and cleanup stay available directly in the dashboard,
-  while the beta 9 private-repository checkout fix remains in place.
+  Beta 11 audits the dashboard and runtime controls. Cleanup now reports queued,
+  running and completed states instead of only acknowledging the request. Runner
+  restart also confirms when the manager has restarted. The dashboard now uses the
+  same ForgeCore logo as the Umbrel app and includes a complete capability summary.
+  Package validation and documentation were refreshed to match the actual beta runtime.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
