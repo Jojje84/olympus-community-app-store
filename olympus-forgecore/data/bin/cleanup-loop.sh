@@ -8,8 +8,17 @@ STATE_DIR="${APP_ROOT}/state"
 LOG_FILE="${STORAGE_ROOT}/logs/cleanup.log"
 LAST_RUN_FILE="${STATE_DIR}/last-cleanup-epoch"
 RUN_NOW_FILE="${STATE_DIR}/cleanup-now.request"
+RUNNING_FILE="${STATE_DIR}/cleanup-running"
+ACTIVITY_FILE="${STATE_DIR}/activity.log"
 
 log() { printf '[forgecore-cleanup] %s\n' "$*" | tee -a "${LOG_FILE}"; }
+
+activity() {
+  kind="$1"
+  message="$2"
+  epoch="$(date +%s)"
+  printf '{"epoch":%s,"type":"%s","message":"%s"}\n' "${epoch}" "${kind}" "${message}" >> "${ACTIVITY_FILE}" || true
+}
 
 load_config() {
   CLEANUP_INTERVAL_HOURS=168
@@ -53,10 +62,11 @@ prune_artifacts() {
 
 run_cleanup() {
   load_config
-  now="$(date +%s)"
   age_hours=$((CACHE_MAX_AGE_DAYS * 24))
+  : > "${RUNNING_FILE}"
 
   log "cleanup started"
+  activity "cleanup" "Cleanup started"
   docker container prune -f --filter "until=${age_hours}h" >>"${LOG_FILE}" 2>&1 || true
   docker image prune -f --filter "until=${age_hours}h" >>"${LOG_FILE}" 2>&1 || true
   docker builder prune -f --filter "until=${age_hours}h" --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
@@ -70,12 +80,19 @@ run_cleanup() {
     docker builder prune -f --filter "until=${age_hours}h" --keep-storage "${BUILDKIT_KEEP_STORAGE_GB}GB" >>"${LOG_FILE}" 2>&1 || true
   fi
 
-  printf '%s\n' "${now}" > "${LAST_RUN_FILE}"
-  rm -f "${RUN_NOW_FILE}"
+  finished="$(date +%s)"
+  printf '%s\n' "${finished}" > "${LAST_RUN_FILE}"
+  rm -f "${RUN_NOW_FILE}" "${RUNNING_FILE}"
   log "cleanup completed"
+  activity "cleanup" "Cleanup completed"
 }
 
+cleanup_exit() { rm -f "${RUNNING_FILE}"; }
+trap cleanup_exit EXIT
+trap 'exit 0' INT TERM
+
 mkdir -p "${STATE_DIR}" "${STORAGE_ROOT}/logs"
+rm -f "${RUNNING_FILE}"
 wait_for_docker
 
 while true; do

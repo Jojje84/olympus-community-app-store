@@ -8,11 +8,24 @@ RUNNER_CONFIG_DIR="${CONFIG_DIR}/runners"
 STATE_DIR="${APP_ROOT}/state"
 CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
 RELOAD_FILE="${STATE_DIR}/reload-runners.request"
+LOG_FILE="${STORAGE_ROOT}/logs/runner-manager.log"
+ACTIVITY_FILE="${STATE_DIR}/activity.log"
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
+MANAGER_STARTED_EPOCH="$(date +%s)"
 
-log() { printf '[forgecore] %s\n' "$*"; }
+log() {
+  printf '[forgecore] %s\n' "$*"
+  if [[ -d "${STORAGE_ROOT}/logs" ]]; then
+    printf '%s [forgecore] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "${LOG_FILE}" || true
+  fi
+}
+
+activity() {
+  local kind="$1" message="$2"
+  jq -cn --argjson epoch "$(date +%s)" --arg type "${kind}" --arg message "${message}"     '{epoch:$epoch,type:$type,message:$message}' >> "${ACTIVITY_FILE}" || true
+}
 
 prepare_paths() {
   sudo mkdir -p "${CONFIG_DIR}" "${RUNNER_CONFIG_DIR}" "${STATE_DIR}"
@@ -40,8 +53,6 @@ prepare_paths() {
   if [[ ! -f "${CONFIG_FILE}" ]]; then
     cat > "${CONFIG_FILE}" <<'FORGECORE_CONFIG'
 # ForgeCore v1 global settings.
-RUNNER_NAME_PREFIX="beelink"
-RUNNER_LABELS="beelink,forgecore"
 CLEANUP_INTERVAL_HOURS=168
 CACHE_MAX_AGE_DAYS=14
 WORKSPACE_MAX_AGE_DAYS=30
@@ -60,18 +71,15 @@ FORGECORE_CONFIG
 # One file per GitHub repository.
 # Prefer the ForgeCore dashboard for normal setup.
 # Manual fallback: copy this file to a new .env file in this directory.
+# ForgeCore derives runner name and its single custom label from REPOSITORY.
 REPOSITORY=""
 REGISTRATION_TOKEN=""
-NAME=""
-LABELS="beelink,forgecore"
 FORGECORE_RUNNER_CONFIG
   chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
 }
 
 load_config() {
   source "${CONFIG_FILE}"
-  : "${RUNNER_NAME_PREFIX:=beelink}"
-  : "${RUNNER_LABELS:=beelink,forgecore}"
   : "${COMPOSE_VERSION:=5.5.1}"
   : "${COMPOSE_SHA256_X86_64:=db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576}"
   : "${COMPOSE_SHA256_AARCH64:=732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7}"
@@ -142,22 +150,22 @@ prepare_real_workdir() {
 start_runner_from_config() {
   local config_file="$1"
   local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
-  local repo slug runner_dir runner_name labels pid error_file
+  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log
 
   source "${config_file}"
   repo="${REPOSITORY}"
-  labels="${LABELS:-${RUNNER_LABELS}}"
 
   [[ -n "${repo}" ]] || return 0
   [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { log "invalid repository in ${config_file}: ${repo}"; return 1; }
-  [[ -z "${NAME}" || "${NAME}" =~ ^[A-Za-z0-9_.-]+$ ]] || { log "invalid runner name in ${config_file}"; return 1; }
-  [[ "${labels}" =~ ^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$ ]] || { log "invalid labels in ${config_file}"; return 1; }
 
   slug="$(slugify "${repo}")"
+  repo_label="${repo##*/}"
+  labels="${repo_label}"
+
   runner_dir="${STORAGE_ROOT}/runners/${slug}"
-  runner_name="${NAME:-${RUNNER_NAME_PREFIX}-${slug}}"
-  runner_name="${runner_name:0:63}"
+  runner_name="${repo_label:0:63}"
   error_file="${STATE_DIR}/runner-${slug}.error"
+  runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
 
   mkdir -p "${runner_dir}"
   if [[ ! -x "${runner_dir}/run.sh" ]]; then
@@ -198,16 +206,19 @@ start_runner_from_config() {
       return 1
     fi
     clear_registration_token "${config_file}"
+    activity "runner" "Runner registered for ${repo}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
     clear_registration_token "${config_file}"
   fi
 
   log "starting ${runner_name}"
-  ( cd "${runner_dir}" && ./run.sh ) &
+  printf '%s runner starting: %s (%s)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
+  ( cd "${runner_dir}" && exec ./run.sh ) >> "${runner_log}" 2>&1 &
   pid=$!
   printf '%s\n' "${pid}" > "${STATE_DIR}/runner-${slug}.pid"
   printf '%s\n' "1" > "${STATE_DIR}/runner-${slug}.online"
   RUNNER_PIDS+=("${pid}")
+  activity "runner" "Runner online: ${repo}"
 }
 
 write_status() {
@@ -240,13 +251,16 @@ write_status() {
     --argjson runner_online "$([[ "${online}" -gt 0 ]] && echo true || echo false)" \
     --arg runner_name "${runner_summary}" \
     --argjson docker_online "${docker_online}" \
+    --argjson compose_online true \
     --arg disk_used "${disk_used}" \
     --arg disk_total "${disk_total}" \
     --argjson disk_used_percent "${disk_pct:-0}" \
     --arg disk_path "${STORAGE_ROOT}" \
     --argjson cleanup_interval_days "$((CLEANUP_INTERVAL_HOURS / 24))" \
     --argjson cache_max_age_days "${CACHE_MAX_AGE_DAYS}" \
-    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days}' \
+    --argjson manager_started_epoch "${MANAGER_STARTED_EPOCH}" \
+    --argjson status_epoch "$(date +%s)" \
+    '{runner_online:$runner_online,runner_name:$runner_name,docker_online:$docker_online,compose_online:$compose_online,disk_used:$disk_used,disk_total:$disk_total,disk_used_percent:$disk_used_percent,disk_path:$disk_path,cleanup_interval_days:$cleanup_interval_days,cache_max_age_days:$cache_max_age_days,manager_started_epoch:$manager_started_epoch,status_epoch:$status_epoch}' \
     > "${STATE_DIR}/status.json.tmp"
   mv "${STATE_DIR}/status.json.tmp" "${STATE_DIR}/status.json"
 }
@@ -281,6 +295,7 @@ while true; do
   if [[ -f "${RELOAD_FILE}" ]]; then
     rm -f "${RELOAD_FILE}"
     log "dashboard requested runner reload"
+    activity "runner" "Runner manager restarting"
     exit 0
   fi
   for pid in "${RUNNER_PIDS[@]:-}"; do

@@ -30,5 +30,27 @@ jobs:
       - name: Validate store packages
         run: python3 .github/scripts/validate_store.py
 
+      - name: Validate ForgeCore runtime sources
+        shell: bash
+        run: |
+          python3 -m py_compile olympus-forgecore/data/bin/dashboard-server.py
+          bash -n olympus-forgecore/data/bin/runner-manager.sh
+          sh -n olympus-forgecore/data/bin/cleanup-loop.sh
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+
+          pairs = (
+              ("olympus-forgecore/dashboard-server.b64.template", "olympus-forgecore/data/bin/dashboard-server.py"),
+              ("olympus-forgecore/runner-manager.b64.template", "olympus-forgecore/data/bin/runner-manager.sh"),
+              ("olympus-forgecore/cleanup-loop.b64.template", "olympus-forgecore/data/bin/cleanup-loop.sh"),
+          )
+          for template, source in pairs:
+              decoded = base64.b64decode(Path(template).read_text().strip())
+              actual = Path(source).read_bytes()
+              if decoded != actual:
+                  raise SystemExit(f"{source} is out of sync with {template}")
+          PY
+
       - name: Check whitespace errors
         run: git diff --check
