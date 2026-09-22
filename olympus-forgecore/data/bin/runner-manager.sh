@@ -300,7 +300,11 @@ start_runner_from_config() {
   fi
 
   log "starting persistent runner ${runner_name}"
-  log_offset="$(wc -c < "${runner_log}" 2>/dev/null || echo 0)"
+  if [[ -f "${runner_log}" ]]; then
+    log_offset="$(wc -c < "${runner_log}")"
+  else
+    log_offset=0
+  fi
   printf '%s runner starting: %s (%s) mode=persistent\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${runner_name}" "${repo}" >> "${runner_log}"
   write_runner_runtime_state "${slug}" "${repo}" "starting" "persistent" "Starting GitHub runner process"
 
