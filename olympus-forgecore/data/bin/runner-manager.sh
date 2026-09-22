@@ -267,42 +267,95 @@ write_status() {
 
 status_loop() { while true; do write_status || true; sleep 5; done; }
 
-stop_all() {
+stop_runners() {
   local pid
-  for pid in "${RUNNER_PIDS[@]:-}"; do kill "${pid}" 2>/dev/null || true; done
-  rm -f "${STATE_DIR}"/runner-*.online
-  [[ -z "${STATUS_PID}" ]] || kill "${STATUS_PID}" 2>/dev/null || true
+  if (( ${#RUNNER_PIDS[@]} > 0 )); then
+    for pid in "${RUNNER_PIDS[@]}"; do
+      [[ -n "${pid}" ]] && kill "${pid}" 2>/dev/null || true
+    done
+    for pid in "${RUNNER_PIDS[@]}"; do
+      [[ -n "${pid}" ]] && wait "${pid}" 2>/dev/null || true
+    done
+  fi
+  RUNNER_PIDS=()
+  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.online
 }
-trap stop_all TERM INT EXIT
+
+start_all_runners() {
+  local config_file
+  rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.name "${STATE_DIR}"/runner-*.repo "${STATE_DIR}"/runner-*.online
+
+  shopt -s nullglob
+  local runner_configs=("${RUNNER_CONFIG_DIR}"/*.env)
+  shopt -u nullglob
+
+  for config_file in "${runner_configs[@]}"; do
+    [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
+    start_runner_from_config "${config_file}" || true
+  done
+
+  if (( ${#RUNNER_PIDS[@]} == 0 )); then
+    log "No runner is ready. Add or repair one from the ForgeCore dashboard."
+  fi
+}
+
+reload_runners() {
+  local reason="${1:-runner reload requested}"
+  log "${reason}"
+  activity "runner" "${reason}"
+  stop_runners
+  load_config
+  MANAGER_STARTED_EPOCH="$(date +%s)"
+  start_all_runners
+  write_status || true
+  activity "runner" "Runner manager reload completed"
+}
+
+shutdown_all() {
+  stop_runners
+  if [[ -n "${STATUS_PID}" ]]; then
+    kill "${STATUS_PID}" 2>/dev/null || true
+    wait "${STATUS_PID}" 2>/dev/null || true
+  fi
+}
+trap shutdown_all TERM INT EXIT
 
 prepare_paths
 load_config
-rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.name "${STATE_DIR}"/runner-*.repo "${STATE_DIR}"/runner-*.online
 rm -f "${RELOAD_FILE}"
 wait_for_docker
 install_compose
 status_loop &
 STATUS_PID=$!
 
-shopt -s nullglob
-runner_configs=("${RUNNER_CONFIG_DIR}"/*.env)
-shopt -u nullglob
-for config_file in "${runner_configs[@]}"; do start_runner_from_config "${config_file}" || true; done
-
-(( ${#RUNNER_PIDS[@]} > 0 )) || log "No runner is ready. Add or repair one from the ForgeCore dashboard."
+start_all_runners
 
 while true; do
   if [[ -f "${RELOAD_FILE}" ]]; then
     rm -f "${RELOAD_FILE}"
-    log "dashboard requested runner reload"
-    activity "runner" "Runner manager restarting"
-    exit 0
+    reload_runners "Dashboard requested runner reload"
+    sleep 2
+    continue
   fi
-  for pid in "${RUNNER_PIDS[@]:-}"; do
-    if ! kill -0 "${pid}" 2>/dev/null; then
-      log "a runner process exited; restarting ForgeCore runner manager"
-      exit 1
-    fi
-  done
+
+  runner_exited=false
+  if (( ${#RUNNER_PIDS[@]} > 0 )); then
+    for pid in "${RUNNER_PIDS[@]}"; do
+      if [[ -z "${pid}" ]] || ! kill -0 "${pid}" 2>/dev/null; then
+        runner_exited=true
+        break
+      fi
+    done
+  fi
+
+  if [[ "${runner_exited}" == true ]]; then
+    log "A runner process exited; recovering configured runners in-process"
+    activity "runner" "Runner process exited; automatic recovery started"
+    sleep 3
+    reload_runners "Recovering configured runners"
+    sleep 5
+    continue
+  fi
+
   sleep 2
 done
