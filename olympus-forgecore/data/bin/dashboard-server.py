@@ -13,6 +13,7 @@ ST = APP / "state"
 GC = CFG / "forgecore.env"
 STORAGE = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/forgecore/storage"))
 STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
+RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -87,6 +88,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
       <article class="wide">
         <h2>Services</h2>
         <div class="service"><span>GitHub Runner</span><b id="svcRunner" class="status-muted">Checking…</b></div>
+        <div class="service"><span>Runner manager</span><b id="svcManager" class="status-muted">Checking…</b></div>
         <div class="service"><span>Docker Engine</span><b id="svcDocker" class="status-muted">Checking…</b></div>
         <div class="service"><span>Docker Compose</span><b id="svcCompose" class="status-muted">Checking…</b></div>
         <div class="service"><span>QEMU / binfmt</span><b class="status-muted">Optional · not enabled</b></div>
@@ -172,7 +174,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.25</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">candidate</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -219,7 +221,10 @@ function renderStatus(s){
   $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')+'<br>Phase: '+esc(first.phase||'idle')):'Add a GitHub repository in Settings.';
   setDot('runnerDot',online>0,!!(first&&first.error));
   $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
+  $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):'Offline / stale';
+  $('svcManager').className=s.manager_alive?'status-ok':'status-muted';
   $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
+  $('version').textContent=(s.web_runtime_version||'dev').replace(/^0\.1\.0-/,'');
   $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):'Unavailable';$('svcCompose').className=s.compose_online?'status-ok':'status-muted';
 
   const used=Number(s.disk_used_percent||0);
@@ -258,7 +263,8 @@ function renderStatus(s){
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
-  if(restartBaseline!==null&&ms>restartBaseline){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted.';restartBaseline=null}
+  if(restartBaseline!==null&&ms>restartBaseline&&s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted and heartbeat is live.';restartBaseline=null}
+  else if(!s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg badtext';rm.textContent='Runner manager heartbeat is stale. The runner service needs recovery.'}
   {
     const m=$('runnerMsg');
     const phase=first&&first.phase?first.phase:'';
@@ -451,6 +457,14 @@ def status():
     except (OSError, json.JSONDecodeError):
         pass
     x.update(settings())
+    now = int(__import__("time").time())
+    try:
+        status_epoch = int(x.get("status_epoch", 0))
+    except (TypeError, ValueError):
+        status_epoch = 0
+    x["manager_alive"] = status_epoch > 0 and (now - status_epoch) <= 20
+    x["manager_runtime_version"] = str(x.get("runtime_version", "unknown"))
+    x["web_runtime_version"] = RUNTIME_VERSION
     x["runners"] = runners()
     x["storage_display"] = STORAGE_DISPLAY
     x["activity"] = activity()
@@ -653,7 +667,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.send_json(200, {"kind": kind, "text": tail_text(path)})
         elif parsed.path == "/health":
-            self.send_json(200, {"ok": True})
+            current = status()
+            self.send_json(200, {
+                "ok": True,
+                "web_runtime_version": RUNTIME_VERSION,
+                "manager_alive": bool(current.get("manager_alive")),
+                "manager_runtime_version": current.get("manager_runtime_version", "unknown"),
+            })
         else:
             self.send_json(404, {"error": "Not found"})
 
