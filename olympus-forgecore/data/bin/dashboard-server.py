@@ -16,6 +16,7 @@ STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
 STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLAY)
 STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
+RUNNER_ENGINE = STORAGE / "runner-engine-v2"
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -176,7 +177,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.27</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.29</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -244,7 +245,7 @@ function renderStatus(s){
   else{cb.disabled=false;cb.textContent='Run cleanup now'}
 
   const root=s.storage_display||'External ForgeCore storage';
-  $('pathRunners').textContent=root+'/runners';
+  $('pathRunners').textContent=root+'/runner-engine-v2';
   $('pathDocker').textContent=root+'/docker';
   $('pathArtifacts').textContent=root+'/artifacts';
   $('pathCache').textContent=root+'/cache';
@@ -374,7 +375,7 @@ def runners():
         ep = ST / f"runner-{s}.error"
         np = ST / f"runner-{s}.name"
         runtime_path = ST / f"runner-{s}.runtime.json"
-        runner_dir = STORAGE / "runners" / s
+        runner_dir = RUNNER_ENGINE / s
         settings_file = runner_dir / ".runner"
         er = ep.read_text(encoding="utf-8", errors="replace").strip() if ep.exists() else ""
         name = c.get("NAME", "")
@@ -606,6 +607,9 @@ def log_sources():
     for ident, label, path in mapping:
         if path.exists():
             sources.append({"id": ident, "label": label})
+    for p in sorted((STORAGE / "logs").glob("registration-*.log")):
+        ident = "registration:" + p.stem[len("registration-"):]
+        sources.append({"id": ident, "label": "Registration · " + p.stem[len("registration-"):].replace("-", "/")})
     for p in sorted((STORAGE / "logs").glob("runner-*.log")):
         if p.name == "runner-manager.log":
             continue
@@ -622,6 +626,10 @@ def resolve_log(kind):
         return STORAGE / "logs" / "runner-manager.log"
     if kind == "cleanup":
         return STORAGE / "logs" / "cleanup.log"
+    if kind.startswith("registration:"):
+        slug_value = kind.split(":", 1)[1]
+        if re.fullmatch(r"[a-z0-9-]+", slug_value):
+            return STORAGE / "logs" / f"registration-{slug_value}.log"
     if kind.startswith("runner:"):
         slug_value = kind.split(":", 1)[1]
         if re.fullmatch(r"[a-z0-9-]+", slug_value):

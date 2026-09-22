@@ -90,5 +90,12 @@ jobs:
               raise SystemExit("ForgeCore distribution package is missing SOURCE_COMMIT provenance")
           PY
 
+      - name: Test ForgeCore clean runner engine
+        shell: bash
+        run: |
+          bash olympus-forgecore/tests/runtime/runner-lifecycle.sh
+          bash olympus-forgecore/tests/runtime/runner-watchdog.sh
+          bash olympus-forgecore/tests/runtime/runner-engine-v2.sh
+
       - name: Check whitespace errors
         run: git diff --check
