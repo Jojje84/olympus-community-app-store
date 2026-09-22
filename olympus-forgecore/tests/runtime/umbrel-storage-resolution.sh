@@ -37,8 +37,25 @@ test ! -e "${app_dir}/data/state/storage-resolution.error"
 # Compose must bind every ForgeCore storage consumer to the resolved host path.
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
   export APP_DATA_DIR="${app_dir}"
-  docker compose -f "${COMPOSE_FILE}" config > "${tmp}/compose-resolved.yml"
-  grep -Fq "${external_root}:/forgecore/storage" "${tmp}/compose-resolved.yml"
+  docker compose -f "${COMPOSE_FILE}" config --format json > "${tmp}/compose-resolved.json"
+  python3 - "${tmp}/compose-resolved.json" "${external_root}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+compose = json.loads(Path(sys.argv[1]).read_text())
+expected = sys.argv[2]
+seen = []
+for service_name, service in compose.get("services", {}).items():
+    for volume in service.get("volumes", []) or []:
+        if isinstance(volume, dict) and volume.get("target") == "/forgecore/storage":
+            source = volume.get("source")
+            seen.append((service_name, source))
+            if source != expected:
+                raise SystemExit(f"{service_name} storage source {source!r} != {expected!r}")
+if len(seen) < 4:
+    raise SystemExit(f"expected ForgeCore storage bind in docker/runner/cleanup/web, saw: {seen!r}")
+PY
 fi
 
 # A saved verified path must survive package updates without rediscovery.
