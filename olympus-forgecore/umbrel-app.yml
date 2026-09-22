@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.15"
+version: "0.1.0-beta.16"
 tagline: Run GitHub Actions on your own Umbrel hardware
 icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg
 description: >-
@@ -37,10 +37,10 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 15 is a recovery release for beta 14. It publishes the already validated
-  repaired dashboard as a new Umbrel version so installations that received the
-  broken early beta 14 package can update normally. Runner names and repository
-  labels remain automatic: normal setup only needs repository and registration token.
+  Beta 16 simplifies runner identity. ForgeCore adds exactly one custom label:
+  the repository name itself. Jojje84/ForgeCore therefore uses runner name ForgeCore
+  and custom label ForgeCore. No beelink, forgecore or owner-prefixed custom labels
+  are added. GitHub's own default self-hosted, OS and architecture labels remain.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
