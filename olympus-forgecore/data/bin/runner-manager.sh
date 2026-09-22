@@ -115,6 +115,7 @@ FORGECORE_CONFIG
 # ForgeCore derives runner name and its single custom label from REPOSITORY.
 REPOSITORY=""
 REGISTRATION_TOKEN=""
+REPAIR_EXISTING="false"
 FORGECORE_RUNNER_CONFIG
   chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
 
@@ -231,9 +232,14 @@ reset_runner_install() {
   copy_runner_distribution "${runner_dir}"
 }
 
-clear_registration_token() {
+clear_registration_request() {
   local file="$1"
   sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${file}"
+  if grep -Eq '^[[:space:]]*REPAIR_EXISTING=' "${file}"; then
+    sed -i -E 's/^[[:space:]]*REPAIR_EXISTING=.*/REPAIR_EXISTING="false"/' "${file}"
+  else
+    printf '%s\n' 'REPAIR_EXISTING="false"' >> "${file}"
+  fi
   chmod 600 "${file}"
 }
 
@@ -464,7 +470,7 @@ prepare_real_workdir() {
 
 start_runner_from_config() {
   local config_file="$1"
-  local REPOSITORY="" REGISTRATION_TOKEN="" NAME="" LABELS=""
+  local REPOSITORY="" REGISTRATION_TOKEN="" REPAIR_EXISTING="false" NAME="" LABELS=""
   local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary
 
   source "${config_file}"
@@ -483,15 +489,31 @@ start_runner_from_config() {
   runner_log="${STORAGE_ROOT}/logs/runner-${slug}.log"
   registration_log="${STORAGE_ROOT}/logs/registration-${slug}.log"
 
-  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    log "building a clean runner install for ${repo}"
-    reset_runner_install "${runner_dir}"
-  else
-    mkdir -p "${runner_dir}"
-    if [[ ! -x "${runner_dir}/run.sh" ]]; then
-      log "initializing clean runner files for ${repo}"
-      copy_runner_distribution "${runner_dir}"
+  mkdir -p "${runner_dir}"
+  identity_mode="$(runner_identity_mode "${runner_dir}")"
+
+  if [[ -n "${REGISTRATION_TOKEN}" && "${identity_mode}" != "unregistered" && "${REPAIR_EXISTING}" != "true" ]]; then
+    log "blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
+    activity "runner" "Blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
+    clear_registration_request "${config_file}"
+    REGISTRATION_TOKEN=""
+    REPAIR_EXISTING="false"
+    if [[ "${identity_mode}" == "persistent" ]]; then
+      write_runner_runtime_state "${slug}" "${repo}" "checking" "persistent" "Ignored unconfirmed registration token; existing runner identity preserved"
+    else
+      printf '%s\n' "Runner identity needs repair, but replacement was not explicitly confirmed. Open Repair connection and confirm replacement first." > "${error_file}"
+      write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
+      return 0
     fi
+  fi
+
+  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
+    log "explicit runner replacement authorized for ${repo}; building a clean runner install"
+    reset_runner_install "${runner_dir}"
+    identity_mode="unregistered"
+  elif [[ ! -x "${runner_dir}/run.sh" ]]; then
+    log "initializing clean runner files for ${repo}"
+    copy_runner_distribution "${runner_dir}"
   fi
 
   prepare_real_workdir "${runner_dir}"
@@ -517,10 +539,9 @@ start_runner_from_config() {
     fi
   fi
 
-  if [[ -n "${REGISTRATION_TOKEN}" ]]; then
+  if [[ -n "${REGISTRATION_TOKEN}" && "${REPAIR_EXISTING}" == "true" ]]; then
     log "repairing persistent runner registration for ${repo}"
     write_runner_runtime_state "${slug}" "${repo}" "registering" "${identity_mode}" "Registering persistent runner"
-    clear_runner_identity "${runner_dir}"
     identity_mode="unregistered"
   fi
 
@@ -566,10 +587,10 @@ start_runner_from_config() {
       return 1
     fi
 
-    clear_registration_token "${config_file}"
+    clear_registration_request "${config_file}"
     activity "runner" "Persistent runner registered for ${repo}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    clear_registration_token "${config_file}"
+    clear_registration_request "${config_file}"
   fi
 
   identity_mode="$(runner_identity_mode "${runner_dir}")"

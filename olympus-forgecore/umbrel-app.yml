@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.32"
+version: "0.1.0-beta.33"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.32
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.33
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,15 +37,14 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 32 promotes the repaired runner implementation to the standard ForgeCore
-  layout. A working beta31 identity under runners/v2 is migrated automatically
-  to runners/<repository> without requiring a new GitHub token. The Settings
-  flow now treats an online runner as a connected listener and hides the
-  registration form until repair is actually requested. ForgeCore now watches
-  the Actions runner diagnostic log for broker/session stalls, refreshes idle
-  listener sessions, records real job execution, and safely rejects stale beta
-  release jobs before any release steps can run. Release workflows also use
-  concurrency controls to prevent duplicate future queues.
+  Beta 33 prevents accidental replacement of an existing GitHub runner identity.
+  A saved runner can no longer be overwritten by merely pasting a new token.
+  The dashboard requires an explicit destructive Repair confirmation before the
+  token field is shown, the API rejects unconfirmed replacements with HTTP 409,
+  and runner-manager independently preserves existing .runner/.credentials files
+  unless REPAIR_EXISTING=true is present. New runner registration remains a
+  one-step flow. Confirmed Repair is still supported and clears its authorization
+  after use.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
