@@ -125,6 +125,7 @@ printf '%s\n' 'not-json' > "${runner_dir}/.runner"
 cat > "${config_file}" <<'EOF'
 REPOSITORY="Jojje84/ForgeCore"
 REGISTRATION_TOKEN="keep-this-token"
+REPAIR_EXISTING="true"
 EOF
 export FAKE_CONFIG_FAIL=1
 if start_runner_from_config "${config_file}"; then
@@ -182,9 +183,21 @@ assert len(items) == 1, items
 assert items[0]["mode"] == "persistent", items
 assert items[0]["phase"] == "idle", items
 
+try:
+    module.save_runner({
+        "repository": "Jojje84/ForgeCore",
+        "token": "fresh-dashboard-token",
+    })
+except module.RunnerConflictError:
+    pass
+else:
+    raise AssertionError("unconfirmed Repair unexpectedly replaced a persistent identity")
+assert not (st / "reload-runners.request").exists()
+
 module.save_runner({
     "repository": "Jojje84/ForgeCore",
     "token": "fresh-dashboard-token",
+    "repair_existing": True,
 })
 items = module.runners()
 assert items[0]["phase"] == "queued", items
