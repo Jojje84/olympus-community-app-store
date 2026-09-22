@@ -174,7 +174,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">candidate</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.26</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
