@@ -332,14 +332,17 @@ prepare_runner_hooks() {
   start_hook="${hook_dir}/job-started-${slug}.sh"
   complete_hook="${hook_dir}/job-completed-${slug}.sh"
 
-  cat > "${start_hook}" <<EOF
+  cat > "${start_hook}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.job-started-epoch"
+: "${FORGECORE_HOOK_STATE_DIR:?}"
+: "${FORGECORE_HOOK_SLUG:?}"
+: "${FORGECORE_RUNTIME_VERSION:?}"
+printf '%s\n' "$(date +%s)" > "${FORGECORE_HOOK_STATE_DIR}/runner-${FORGECORE_HOOK_SLUG}.job-started-epoch"
 workflow="${GITHUB_WORKFLOW:-}"
 event="${GITHUB_EVENT_NAME:-}"
 ref_name="${GITHUB_REF_NAME:-}"
-runtime="${RUNTIME_VERSION}"
+runtime="${FORGECORE_RUNTIME_VERSION}"
 current_beta=""
 if [[ "${runtime}" =~ beta\.([0-9]+)$ ]]; then current_beta="${BASH_REMATCH[1]}"; fi
 stale_beta() {
@@ -365,14 +368,15 @@ if [[ "${workflow}" == "Publish prerelease request" ]] && stale_beta "${ref_name
 fi
 EOF
 
-  cat > "${complete_hook}" <<EOF
+  cat > "${complete_hook}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "$(date +%s)" > "${STATE_DIR}/runner-${slug}.job-completed-epoch"
+: "${FORGECORE_HOOK_STATE_DIR:?}"
+: "${FORGECORE_HOOK_SLUG:?}"
+printf '%s\n' "$(date +%s)" > "${FORGECORE_HOOK_STATE_DIR}/runner-${FORGECORE_HOOK_SLUG}.job-completed-epoch"
 EOF
   chmod 700 "${start_hook}" "${complete_hook}"
 }
-
 runner_log_watchdog_reason() {
   local runner_log="$1" offset="$2"
   local segment now mtime age
@@ -584,6 +588,9 @@ start_runner_from_config() {
 
   (
     cd "${runner_dir}"
+    export FORGECORE_HOOK_STATE_DIR="${STATE_DIR}"
+    export FORGECORE_HOOK_SLUG="${slug}"
+    export FORGECORE_RUNTIME_VERSION="${RUNTIME_VERSION}"
     export ACTIONS_RUNNER_HOOK_JOB_STARTED="${APP_ROOT}/hooks/job-started-${slug}.sh"
     export ACTIONS_RUNNER_HOOK_JOB_COMPLETED="${APP_ROOT}/hooks/job-completed-${slug}.sh"
     exec ./run.sh
