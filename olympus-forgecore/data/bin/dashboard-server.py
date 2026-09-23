@@ -32,7 +32,7 @@ STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
-WEB_BUILD = "0.1.0-beta.41"
+WEB_BUILD = "0.1.0-beta.42"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -622,8 +622,8 @@ function renderStatus(s){
   }else if(!s.manager_artifact_ok){
     $('svcManager').textContent='Runtime mismatch · '+(s.manager_artifact_build||'unknown');
     $('svcManager').className='status-bad';
-  }else if(!s.bootstrap_beta41_seen){
-    $('svcManager').textContent='Runner container has not bootstrapped beta41';
+  }else if(!s.bootstrap_beta42_seen){
+    $('svcManager').textContent='Runner container has not bootstrapped beta42';
     $('svcManager').className='status-bad';
   }else{
     $('svcManager').textContent='Bootstrap ran · manager offline';
@@ -1227,6 +1227,8 @@ def settings():
         "compose_version": c.get("COMPOSE_VERSION", "5.5.1"),
         "global_settings_source": "global.json" if GLOBAL_CONFIG.exists() else "legacy-defaults",
         "global_settings_migrated": GLOBAL_MIGRATION_MARKER.exists(),
+        "runtime": dict(global_config.get("runtime") or {}),
+        "security": dict(global_config.get("security") or {}),
         "olympus_releases": olympus_releases_integration(global_config),
         "community_app_store": community_app_store_integration(global_config),
     }
@@ -2307,7 +2309,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta41_seen"] = "ForgeCore 0.1.0-beta.41 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta42_seen"] = "ForgeCore 0.1.0-beta.42 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2325,7 +2327,7 @@ def status():
     except OSError:
         x["dependency_error"] = ""
     x["runners"] = runners()
-    x["activity"] = activity()
+    x["activity"] = activity(100)
     try:
         x["last_cleanup_epoch"] = int((ST / "last-cleanup-epoch").read_text().strip())
     except (OSError, ValueError):
@@ -2619,7 +2621,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta41_seen": bool(current.get("bootstrap_beta41_seen")),
+                "bootstrap_beta42_seen": bool(current.get("bootstrap_beta42_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
