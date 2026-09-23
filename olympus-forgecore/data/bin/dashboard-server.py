@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import base64
+import binascii
 import fcntl
 import hashlib
 import json
@@ -14,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 APP = Path(os.environ.get("FORGECORE_APP_ROOT", "/forgecore/app"))
-DASHBOARD_HTML = APP / "www" / "index.html"
+DASHBOARD_ARTIFACT = Path(os.environ.get("FORGECORE_DASHBOARD_B64", "/forgecore/runtime/dashboard-v2.b64"))
 CFG = APP / "config"
 RD = CFG / "runners"
 AD = CFG / "apps"
@@ -31,7 +32,14 @@ STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
-WEB_BUILD = "0.1.0-beta.39"
+WEB_BUILD = "0.1.0-beta.40"
+
+def current_dashboard_payload():
+    encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
+    payload = base64.b64decode(encoded, validate=True)
+    payload.decode("utf-8")
+    return payload
+
 
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 NAME = re.compile(r"^[A-Za-z0-9_.-]{0,63}$")
@@ -614,8 +622,8 @@ function renderStatus(s){
   }else if(!s.manager_artifact_ok){
     $('svcManager').textContent='Runtime mismatch · '+(s.manager_artifact_build||'unknown');
     $('svcManager').className='status-bad';
-  }else if(!s.bootstrap_beta39_seen){
-    $('svcManager').textContent='Runner container has not bootstrapped beta36';
+  }else if(!s.bootstrap_beta40_seen){
+    $('svcManager').textContent='Runner container has not bootstrapped beta40';
     $('svcManager').className='status-bad';
   }else{
     $('svcManager').textContent='Bootstrap ran · manager offline';
@@ -2299,7 +2307,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta39_seen"] = "ForgeCore 0.1.0-beta.39 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta40_seen"] = "ForgeCore 0.1.0-beta.40 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2544,9 +2552,10 @@ class Handler(BaseHTTPRequestHandler):
             payload = HTML.encode()
         else:
             try:
-                payload = DASHBOARD_HTML.read_bytes()
-            except OSError:
-                payload = HTML.encode()
+                payload = current_dashboard_payload()
+            except (OSError, binascii.Error, UnicodeDecodeError):
+                self.send_error(503, "ForgeCore v2 dashboard runtime unavailable")
+                return
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
@@ -2610,7 +2619,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta39_seen": bool(current.get("bootstrap_beta39_seen")),
+                "bootstrap_beta40_seen": bool(current.get("bootstrap_beta40_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
