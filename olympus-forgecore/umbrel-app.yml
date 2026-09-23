@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.38"
+version: "0.1.0-beta.39"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.38
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.39
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,14 +37,11 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 38 keeps the live-verified beta37 runner engine and runners/v2 storage
-  layout unchanged while making the dashboard substantially clearer and safer.
-  The overview now has one primary Ready / Starting / Needs attention state,
-  multi-runner health is aggregated correctly, warning and error states are
-  visually distinct, and runner setup no longer dominates Settings. Repair is
-  now an explicit destructive flow: entering a fresh token cannot silently
-  replace an existing runner identity unless Repair is deliberately confirmed.
-  Cleanup feedback is also reset cleanly after completion.
+  Beta 39 integrates the complete ForgeCore v2 Phase 0-9 stack and finalized
+  dashboard, fixes prerelease ancestry validation to use main/dev instead of the
+  removed v1 runtime branch, and aligns the Umbrel runtime, package metadata and
+  validation fixtures on 0.1.0-beta.39. Prerelease publication remains isolated
+  from the stable Olympus release channel.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
