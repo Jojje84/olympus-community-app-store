@@ -452,6 +452,18 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 #settings:not(.live-ready) .grid2,
 #settings:not(.live-ready) #backup-restore{visibility:hidden}
 .live-empty{padding:16px;color:var(--muted);font-size:10px;text-align:center}
+
+/* consolidated live-dashboard fixes */
+.app-empty-detail{min-height:340px;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px}
+.app-empty-detail .state-glyph{margin:0 auto 10px}
+.app-empty-detail b{display:block;font-size:13px}
+.app-empty-detail p{margin:5px auto 0;color:var(--muted);font-size:10px;max-width:430px;line-height:1.55}
+.inactive-setting{color:var(--muted2)!important;font-weight:600!important}
+@media(min-width:1000px){
+  .app-lifecycle .lifecycle-strip,.delivery-flow{overflow:visible}
+  .app-lifecycle .life-step,.delivery-flow .delivery-node{min-width:0}
+  .architecture .mini-flow{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px}
+}
 </style>
 </head>
 <body>
@@ -1328,12 +1340,12 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
           <button type="button" data-settings-anchor="settings-security">Security</button>
           <button type="button" data-settings-anchor="backup-restore">Backup</button>
         </div>
-        <div class="scope-banner">
+        <div id="settings-general" class="scope-banner">
           <div><strong>Global scope</strong><small>Connections, credentials, runtime, storage and security live here. Changes can affect every app that inherits these values.</small></div>
           <div class="scope-path"><span class="scope-chip active">Global Settings</span><span class="scope-arrow">→</span><span class="scope-chip">Publish Presets</span><span class="scope-arrow">→</span><span class="scope-chip">Apps</span></div>
         </div>
         <div class="source-note">
-          <div><b>Changing Olympus Releases here affects all 7 managed apps</b><small>For example, moving from <span class="mono">Jojje84/Olympus-Releases</span> to another release repository updates the shared integration. Existing immutable jobs keep their original snapshot.</small><div style="margin-top:9px"><button id="simulateGlobalChange" class="btn">Simulate repository change</button></div></div>
+          <div><b>Changing Olympus Releases here affects all 7 managed apps</b><small>For example, moving from <span class="mono">Jojje84/Olympus-Releases</span> to another release repository updates the shared integration. Existing immutable jobs keep their original snapshot.</small></div>
           <span class="impact-pill"><strong>7 apps</strong> affected</span>
         </div>
         <div class="grid2">
@@ -1442,13 +1454,13 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
             <div class="audit-row" data-audit-category="config"><time>Yesterday</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Updated app configuration</b><small>Build configuration changed; future jobs only</small></span><code>app/olympus-core</code><span class="status-pill">Applied</span></div>
           </div>
           <div id="auditEmpty" class="state-preview hidden"><div class="state-icon">∅</div><b>No audit events match these filters</b><p>Try another category or clear the search.</p></div>
-          <div class="audit-foot"><span>Audit events are append-only in production</span><span>Retention: 180 days</span></div>
+          <div class="audit-foot"><span>Source: persisted ForgeCore activity events</span><span>Runtime heartbeat noise is excluded</span></div>
         </div>
       </section>
 
       <section id="logs" class="view">
         <div class="page-head">
-          <div><h1>Logs</h1><p>Platform and job logs with stage-level filtering, fast search, live following and secret redaction.</p></div>
+          <div><h1>Logs</h1><p>Persistent platform and runner logs with filtering, fast search and live following.</p></div>
           <div class="actions"><button class="btn demo">Download log</button></div>
         </div>
 
@@ -1491,7 +1503,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
           <div class="logs-footer">
             <span><span class="live-dot"></span> Live stream connected</span>
-            <span>Secrets are redacted before persistence · stage logs retained 30d</span>
+            <span>Persistent runtime logs · selected stream refreshes while Follow live is enabled</span>
           </div>
         </div>
       </section>
@@ -1754,19 +1766,34 @@ const releaseSearch=document.getElementById("releaseSearch");
 const releaseChannel=document.getElementById("releaseChannel");
 const releaseState=document.getElementById("releaseState");
 function filterReleases(){
-  const q=releaseSearch?releaseSearch.value.trim().toLowerCase():"";
+  const query=releaseSearch?releaseSearch.value.trim().toLowerCase():"";
   const ch=releaseChannel?releaseChannel.value:"all";
   const st=releaseState?releaseState.value:"all";
+  const rows=Array.from(document.querySelectorAll("[data-release-row]"));
   let count=0;
-  document.querySelectorAll("[data-release-row]").forEach(function(row){
-    const show=(!q||row.dataset.text.includes(q))&&(ch==="all"||row.dataset.channel===ch)&&(st==="all"||row.dataset.state===st);
-    row.classList.toggle("hidden",!show); if(show) count++;
+  rows.forEach(function(row){
+    const show=(!query||row.dataset.text.includes(query))&&(ch==="all"||row.dataset.channel===ch)&&(st==="all"||row.dataset.state===st);
+    row.classList.toggle("hidden",!show);if(show) count++;
   });
   const table=document.querySelector(".release-table");
   const empty=document.getElementById("releaseEmpty");
-  if(table) table.classList.toggle("hidden",count===0);
-  if(empty) empty.classList.toggle("hidden",count!==0);
+  const filtered=Boolean(query)||ch!=="all"||st!=="all";
+  if(table)table.classList.toggle("hidden",count===0);
+  if(empty){
+    empty.classList.toggle("hidden",count!==0);
+    const title=empty.querySelector("b"),copy=empty.querySelector("p"),clear=document.getElementById("clearReleaseFilters");
+    if(rows.length===0){
+      if(title)title.textContent="No release outputs yet";
+      if(copy)copy.textContent="Release history appears here after a job persists package or publishing outputs.";
+      if(clear)clear.classList.add("hidden");
+    }else{
+      if(title)title.textContent="No releases match these filters";
+      if(copy)copy.textContent="Change the search, channel or state filter to see other releases.";
+      if(clear)clear.classList.toggle("hidden",!filtered);
+    }
+  }
 }
+
 [releaseSearch,releaseChannel,releaseState].forEach(function(el){if(el) el.addEventListener(el.tagName==="INPUT"?"input":"change",filterReleases)});
 const clearReleaseFilters=document.getElementById("clearReleaseFilters");
 if(clearReleaseFilters) clearReleaseFilters.addEventListener("click",function(){releaseSearch.value="";releaseChannel.value="all";releaseState.value="all";filterReleases()});
@@ -1996,16 +2023,32 @@ const jobsTable=document.getElementById("jobsTable");
 const jobsEmpty=document.getElementById("jobsEmpty");
 function filterJobs(){
   if(!jobsTable) return;
-  const q=jobsSearch?jobsSearch.value.trim().toLowerCase():"";
-  const st=jobsStatus?jobsStatus.value:"all";let count=0;
-  jobsTable.querySelectorAll("tbody tr").forEach(function(row){
+  const query=jobsSearch?jobsSearch.value.trim().toLowerCase():"";
+  const st=jobsStatus?jobsStatus.value:"all";
+  const rows=Array.from(jobsTable.querySelectorAll("tbody tr"));
+  let count=0;
+  rows.forEach(function(row){
     const text=row.textContent.toLowerCase();
-    const show=(!q||text.includes(q))&&(st==="all"||text.includes(st));
+    const show=(!query||text.includes(query))&&(st==="all"||text.includes(st));
     row.classList.toggle("hidden",!show);if(show) count++;
   });
+  const filtered=Boolean(query)||st!=="all";
   jobsTable.classList.toggle("hidden",count===0||!apiOnline);
-  if(jobsEmpty) jobsEmpty.classList.toggle("hidden",count!==0||!apiOnline);
+  if(jobsEmpty){
+    jobsEmpty.classList.toggle("hidden",count!==0||!apiOnline);
+    const title=jobsEmpty.querySelector("b"),copy=jobsEmpty.querySelector("p"),clear=document.getElementById("clearJobsFilters");
+    if(rows.length===0){
+      if(title)title.textContent="No jobs yet";
+      if(copy)copy.textContent="Jobs will appear here after an app queues its first build or publish job.";
+      if(clear)clear.classList.add("hidden");
+    }else{
+      if(title)title.textContent="No jobs match this view";
+      if(copy)copy.textContent="Change the search or status filter to see other jobs.";
+      if(clear)clear.classList.toggle("hidden",!filtered);
+    }
+  }
 }
+
 [jobsSearch,jobsStatus].forEach(function(el){if(el) el.addEventListener(el.tagName==="INPUT"?"input":"change",filterJobs)});
 const clearJobsFilters=document.getElementById("clearJobsFilters");
 if(clearJobsFilters) clearJobsFilters.addEventListener("click",function(){jobsSearch.value="";jobsStatus.value="all";filterJobs()});
@@ -2030,7 +2073,7 @@ function filterAudit(){
   const empty=document.getElementById("auditEmpty");if(empty) empty.classList.toggle("hidden",count!==0);
 }
 [auditSearch,auditCategory].forEach(function(el){if(el)el.addEventListener(el.tagName==="INPUT"?"input":"change",filterAudit)});
-const auditExport=document.getElementById("auditExport");if(auditExport)auditExport.addEventListener("click",function(){toast.textContent="Audit export preview · production exports signed JSON/CSV audit events.";toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2400)});
+const auditExport=document.getElementById("auditExport");if(auditExport){auditExport.disabled=true;auditExport.title="Audit export endpoint is not implemented yet"}
 function appendAudit(category,action,resource,detail){
   const rows=document.getElementById("auditRows");if(!rows)return;
   const row=document.createElement("div");row.className="audit-row";row.dataset.auditCategory=category;
@@ -2207,10 +2250,8 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     const note=q("#liveDataNote");
     if(note){
-      note.className="note "+(ok?"live-note-ok":"");
-      note.textContent=ok
-        ?"Live data from the ForgeCore Control API. Configuration and job state shown here come from this installation."
-        :"Control API unavailable. Last loaded data remains visible.";
+      note.className="note "+(ok?"hidden":"");
+      note.textContent=ok?"":"Control API unavailable. Last loaded data remains visible.";
     }
   }
   function metric(card,label,value,sub,pill){
@@ -2299,8 +2340,18 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     q("#overview")?.classList.add("live-ready");
     const activity=q("#overview > .card.section .activity");
     if(activity){
-      const events=s.activity||[];
-      activity.innerHTML=events.slice(0,6).map(e=>'<div class="activity-row"><span class="act-dot '+(e.type==="job"?"blue":e.type==="cleanup"?"green":e.type==="integration"?"amber":"")+'"></span><div class="act-text"><b>'+esc(e.type||"system")+'</b><span> · '+esc(e.message||"")+'</span></div><span class="time">'+esc(e.epoch?fmtWhen(new Date(Number(e.epoch)*1000)):"—")+'</span></div>').join("") || '<div class="empty">No activity recorded yet.</div>';
+      const events=(s.activity||[]).filter(e=>!/watchdog refreshing idle github listener session/i.test(String(e.message||"")));
+      const compact=[];
+      events.forEach(e=>{
+        const key=(e.type||"system")+"|"+String(e.message||"");
+        const last=compact[compact.length-1];
+        if(last&&last.key===key){last.count++;return}
+        compact.push({key,event:e,count:1});
+      });
+      activity.innerHTML=compact.slice(0,6).map(item=>{
+        const e=item.event,suffix=item.count>1?(" · repeated ×"+item.count):"";
+        return '<div class="activity-row"><span class="act-dot '+(e.type==="job"?"blue":e.type==="cleanup"?"green":e.type==="integration"?"amber":"")+'"></span><div class="act-text"><b>'+esc(e.type||"system")+'</b><span> · '+esc((e.message||"")+suffix)+'</span></div><span class="time">'+esc(e.epoch?fmtWhen(new Date(Number(e.epoch)*1000)):"—")+'</span></div>';
+      }).join("") || '<div class="empty">No activity recorded yet.</div>';
     }
   }
   function selectApp(app,navigate=true){
@@ -2462,7 +2513,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     metric(cards[1],"Native executor",String(apps.filter(a=>a.build?.executor==="forgecore-native").length),"forgecore-native applications","Ready");
     metric(cards[2],"Actions adapter",String(apps.filter(a=>a.build?.executor==="github-actions").length),"GitHub Actions compatibility applications","Compatible");
     metric(cards[3],"Publish presets",String(presets.length),"Reusable release/store policies","Live");
-    const list=q("#apps .apps-nav-list");
+    const list=q("#apps .apps-nav-list"),workspace=q("#apps .apps-workspace"),detail=q("#apps .apps-detail");
     if(list){
       list.innerHTML=apps.length?apps.map((a,i)=>{
         const name=a.identity?.name||a.id,ex=a.build?.executor||"";
@@ -2472,10 +2523,27 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
           '<span class="status-dot ok" title="'+esc(ex)+'"></span></button>';
       }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Add the first app from Legacy Admin while the v2 editor is being migrated.</p></div>';
       bindAppButtons();
+    }
+    let emptyDetail=q("#appsEmptyDetail");
+    if(!apps.length){
+      fcState.selectedApp=null;
+      if(detail)detail.classList.add("hidden");
+      if(workspace&&!emptyDetail){
+        emptyDetail=document.createElement("div");
+        emptyDetail.id="appsEmptyDetail";
+        emptyDetail.className="card app-empty-detail";
+        emptyDetail.innerHTML='<div><div class="state-glyph">∅</div><b>No app selected</b><p>The app detail, lifecycle, artifacts and job state stay hidden until a real app exists in the registry.</p></div>';
+        workspace.appendChild(emptyDetail);
+      }
+    }else{
+      if(detail)detail.classList.remove("hidden");
+      if(emptyDetail)emptyDetail.remove();
       const wanted=location.hash.startsWith("#/apps/")?decodeURIComponent(location.hash.split("/").pop()):null;
-      const selected=apps.find(a=>a.id===wanted)||fcState.selectedApp||apps[0];if(selected)selectApp(selected,false);else q("#apps")?.classList.add("live-ready");
+      const selected=apps.find(a=>a.id===wanted)||fcState.selectedApp||apps[0];
+      if(selected)selectApp(selected,false);
     }
     const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
+    q("#apps")?.classList.add("live-ready");
   }
   function renderJobs(){
     const jobs=fcState.jobs,appsById=Object.fromEntries(fcState.apps.map(a=>[a.id,a]));
@@ -2498,9 +2566,11 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       }).join("");
       qa("#jobsTable .job-open").forEach(row=>row.addEventListener("click",()=>openJob(row.dataset.jobId)));
     }
-    const empty=q("#jobsEmpty"),table=q("#jobsTable");
-    if(empty)empty.classList.toggle("hidden",jobs.length!==0);
-    if(table)table.classList.toggle("hidden",jobs.length===0);
+    const queue=q("#jobs .page-head .btn.primary");
+    if(queue){
+      queue.disabled=fcState.apps.length===0;
+      queue.title=fcState.apps.length===0?"Add an app before queueing a job":"Open the current queue flow in Legacy Admin";
+    }
     if(typeof filterJobs==="function")filterJobs();
   }
   function openJob(id){
@@ -2607,9 +2677,13 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
           '<td>'+esc(fmtWhen(pub.publishedAt||store.publishedAt||j.createdAt))+'</td><td></td></tr>';
       }).join("");
     }
-    const empty=q("#releaseEmpty"),table=q("#releaseData .release-table");
-    if(empty){empty.classList.toggle("hidden",rows.length!==0);const b=q("b",empty);if(b)b.textContent="No release outputs yet"}
-    if(table)table.classList.toggle("hidden",rows.length===0);
+    const hint=q("#releaseData .release-center-head .tiny");
+    if(hint)hint.classList.toggle("hidden",rows.length===0);
+    const create=q("#releases .page-head .btn.primary");
+    if(create){
+      create.disabled=fcState.apps.length===0;
+      create.title=fcState.apps.length===0?"Add an app before creating a release":"Open the current release flow in Legacy Admin";
+    }
     q("#releases")?.classList.add("live-ready");
     if(typeof filterReleases==="function")filterReleases();
   }
@@ -2686,9 +2760,9 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       ]);
       setVals(sections[2],[
         ["Store enabled",p.store?.enabled?"Yes":"No"],
-        ["Submission mode",p.store?.mode||"—"],
-        ["Directory template",p.store?.directoryTemplate||"—"],
-        ["Approval",p.store?.mode==="pull-request"?"Review before merge":"Direct publish"]
+        ["Submission mode",p.store?.enabled?(p.store?.mode||"—"):((p.store?.mode||"Configured")+" · inactive")],
+        ["Directory template",p.store?.enabled?(p.store?.directoryTemplate||"—"):((p.store?.directoryTemplate||"Configured")+" · inactive")],
+        ["Approval",p.store?.enabled?(p.store?.mode==="pull-request"?"Review before merge":"Direct publish"):"Inactive while store publishing is disabled"]
       ]);
       const s=fcState.status||{};
       setVals(sections[3],[
@@ -2719,9 +2793,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(impact)impact.textContent=String(apps.length);
     }
     const fields=qa("#settings-integrations .field");
+    const runners=s.runners||[],online=runners.filter(r=>r.online).length;
     if(fields[0]){
-      const value=q(".field-value span:first-child",fields[0]);if(value)value.textContent=(s.runners||[]).some(r=>r.online)?"Runner connected":"No online runner";
-      const pill=q(".status-pill",fields[0]);if(pill){pill.textContent=(s.runners||[]).some(r=>r.online)?"Healthy":"Check";pill.className="status-pill "+((s.runners||[]).some(r=>r.online)?"":"queue")}
+      const value=q(".field-value span:first-child",fields[0]);if(value)value.textContent=runners.length?(online+" / "+runners.length+" online"):"No runner configured";
+      const pill=q(".status-pill",fields[0]);if(pill){pill.textContent=!runners.length?"Not configured":online===runners.length?"Healthy":online?"Partial":"Offline";pill.className="status-pill "+(online===runners.length&&runners.length?"":online?"queue":"fail")}
     }
     if(fields[1]){
       const value=q(".field-value span:first-child",fields[1]);if(value)value.textContent=s.olympus_releases?.repository||"Not configured";
@@ -2731,11 +2806,28 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(fields[2]){
       const value=q(".field-value span:first-child",fields[2]);if(value)value.textContent=s.community_app_store?.repository||"Not configured";
       const pill=q(".status-pill",fields[2]);if(pill){pill.textContent=s.community_app_store?.configurationReady?"Ready":"Needs config";pill.className="status-pill "+(s.community_app_store?.configurationReady?"":"queue")}
-      const impact=q(".impact-pill strong",fields[2]);if(impact)impact.textContent=String(presets.filter(p=>p.store?.enabled).length);
+      const enabled=presets.filter(p=>p.store?.enabled).length;
+      const source=q(".setting-source small",fields[2]);if(source)source.textContent="Store enabled in publish presets";
+      const impact=q(".impact-pill strong",fields[2]);if(impact)impact.textContent=String(enabled);
     }
 
     const presetActivity=q("#settings .grid2 .card:nth-child(2) .activity");
     if(presetActivity)presetActivity.innerHTML=presets.slice(0,4).map(p=>'<div class="activity-row"><span class="act-dot '+(p.release?.channel==="stable"?"green":"blue")+'"></span><div class="act-text"><b>'+esc(p.id)+'</b><span> · '+esc(p.release?.channel||"—")+' · Store '+(p.store?.enabled?"enabled":"disabled")+'</span></div><span class="status-pill neutral">Configured</span></div>').join("") || '<div class="empty">No presets configured.</div>';
+
+    const security=s.security||{},runtime=s.runtime||{},securityFields=qa("#settings-security .field");
+    const securityValues=[
+      ["Trusted repositories",security.trustedRepositoriesOnly?"Required":"Not required",security.trustedRepositoriesOnly?"Enforced":"Review"],
+      ["Untrusted forks",security.allowUntrustedForks?"Allowed":"Blocked",security.allowUntrustedForks?"Review":"Enforced"],
+      ["Isolated Docker",runtime.isolatedDocker?"Enabled":"Disabled",runtime.isolatedDocker?"Enforced":"Review"],
+      ["Publishing",security.publishRequiresExplicitPermission?"Explicit permission required":"No explicit permission gate",security.publishRequiresExplicitPermission?"Enabled":"Review"]
+    ];
+    securityFields.forEach((field,i)=>{
+      if(!securityValues[i])return;
+      const label=q(".field-label",field),value=q(".field-value span:first-child",field),pill=q(".status-pill",field);
+      if(label)label.textContent=securityValues[i][0];
+      if(value)value.textContent=securityValues[i][1];
+      if(pill){pill.textContent=securityValues[i][2];pill.className="status-pill "+(securityValues[i][2]==="Review"?"queue":"")}
+    });
 
     q("#settings")?.classList.add("live-ready");
     const backup=q("#backup-restore");
@@ -2770,23 +2862,66 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const select=q("#logStream"),panel=q("#logPanel");if(!select||!panel||!select.value)return;
     try{
       const d=await api("/api/logs?kind="+encodeURIComponent(select.value));
-      const lines=String(d.text||"").split(/\r?\n/).filter(Boolean).slice(-400);
-      panel.innerHTML='<div class="log-head"><span>Line</span><span>Stage</span><span>Message</span></div>'+lines.map((line,i)=>
-        '<div class="log-row" data-stage="platform"><time>'+String(i+1).padStart(3,"0")+'</time><span class="log-stage control">PLATFORM</span><code>'+esc(line)+'</code></div>'
-      ).join("")+(lines.length?"":'<div class="log-empty">Log is empty.</div>');
+      const raw=String(d.text||"").split(/\r?\n/).filter(Boolean).slice(-400);
+      const lines=[];
+      raw.forEach(line=>{
+        const last=lines[lines.length-1];
+        if(last&&last.text===line){last.count++;return}
+        lines.push({text:line,count:1});
+      });
+      panel.innerHTML='<div class="log-head"><span>Line</span><span>Stage</span><span>Message</span></div>'+lines.map((item,i)=>
+        '<div class="log-row" data-stage="platform"><time>'+String(i+1).padStart(3,"0")+'</time><span class="log-stage control">PLATFORM</span><code>'+esc(item.text)+(item.count>1?' <b>×'+item.count+'</b>':"")+'</code></div>'
+      ).join("")+(lines.length?"":'<div class="log-empty" id="logEmpty">Log is empty.</div>');
       const stage=q("#logStage");if(stage)stage.innerHTML='<option value="all">All stages</option><option value="platform">Platform</option>';
-      const sum=q("#logs .log-summary");if(sum)sum.innerHTML='<div><span class="status-pill">Live</span><b>'+esc(select.options[select.selectedIndex]?.text||select.value)+'</b></div><div><span>'+lines.length+' lines</span></div>';
+      const sum=q("#logs .log-summary");if(sum)sum.innerHTML='<div><span class="status-pill">Live</span><b>'+esc(select.options[select.selectedIndex]?.text||select.value)+'</b></div><div><span>'+raw.length+' lines</span>'+(raw.length!==lines.length?'<span>'+lines.length+' displayed</span>':"")+'</div>';
+      if(typeof filterLogs==="function")filterLogs();
+      const follow=document.getElementById("followLive");if(follow?.checked)panel.scrollTop=panel.scrollHeight;
     }catch(e){panel.innerHTML='<div class="log-empty">'+esc(e.message)+'</div>'}
   }
   function renderAudit(){
-    const activity=fcState.status?.activity||[],rows=q("#auditRows"),empty=q("#auditEmpty");if(!rows)return;
-    rows.innerHTML=activity.slice(0,100).map(a=>{
-      const when=a.time||a.timestamp||a.at||a.epoch,kind=a.kind||a.type||"system",msg=a.message||a.text||JSON.stringify(a);
-      return '<div class="audit-row" data-audit-category="'+esc(kind)+'"><time>'+esc(when?fmtWhen(typeof when==="number"?new Date(when*1000):when):"—")+'</time>'+
+    const raw=fcState.status?.activity||[],rows=q("#auditRows"),empty=q("#auditEmpty");if(!rows)return;
+    const classify=(a)=>{
+      const type=String(a.type||a.kind||"").toLowerCase(),msg=String(a.message||a.text||"").toLowerCase();
+      if(/watchdog refreshing idle github listener session|runner connecting/.test(msg))return null;
+      if(["app","preset","settings","integration"].includes(type))return "config";
+      if(type==="cleanup")return "maintenance";
+      if(type==="runner")return "maintenance";
+      if(type==="security"||/credential|signed in|sign-in|authentication/.test(msg))return "security";
+      if(type==="job"&&/release|publish|store/.test(msg))return "release";
+      return null;
+    };
+    const events=raw.map(a=>({event:a,category:classify(a)})).filter(x=>x.category);
+    const compact=[];
+    events.forEach(item=>{
+      const a=item.event,key=item.category+"|"+String(a.type||"")+"|"+String(a.message||"");
+      const last=compact[compact.length-1];
+      if(last&&last.key===key){last.count++;return}
+      compact.push({key,...item,count:1});
+    });
+    const today=new Date().toDateString();
+    const todayEvents=events.filter(x=>x.event.epoch&&new Date(Number(x.event.epoch)*1000).toDateString()===today);
+    const cards=qa("#audit > .grid4 > .card");
+    const setMetric=(card,label,value,sub)=>{if(!card)return;const l=q(".metric-label",card),v=q(".metric",card),s=q(".metric-sub",card);if(l)l.textContent=label;if(v)v.textContent=String(value);if(s)s.textContent=sub};
+    setMetric(cards[0],"Events today",todayEvents.length,"Relevant persisted audit/activity events");
+    setMetric(cards[1],"Configuration",todayEvents.filter(x=>x.category==="config").length,"App, preset, settings and integration changes");
+    setMetric(cards[2],"Security",todayEvents.filter(x=>x.category==="security").length,"Recorded authentication or credential events");
+    setMetric(cards[3],"Maintenance",todayEvents.filter(x=>x.category==="maintenance").length,"Cleanup and meaningful runtime changes");
+
+    const resourceFor=(item)=>{
+      const type=String(item.event.type||"system");
+      if(item.category==="config")return "config/"+type;
+      if(item.category==="release")return "release/job";
+      if(item.category==="security")return "security/activity";
+      return "runtime/"+type;
+    };
+    rows.innerHTML=compact.slice(0,100).map(item=>{
+      const a=item.event,when=a.time||a.timestamp||a.at||a.epoch,kind=a.kind||a.type||"system",msg=(a.message||a.text||JSON.stringify(a))+(item.count>1?(" · repeated ×"+item.count):"");
+      return '<div class="audit-row" data-audit-category="'+esc(item.category)+'"><time>'+esc(when?fmtWhen(typeof when==="number"?new Date(when*1000):when):"—")+'</time>'+
         '<span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">ForgeCore</span>'+
-        '<span><b>'+esc(kind)+'</b><small>'+esc(msg)+'</small></span><code>runtime/activity</code><span class="status-pill neutral">Recorded</span></div>';
+        '<span><b>'+esc(kind)+'</b><small>'+esc(msg)+'</small></span><code>'+esc(resourceFor(item))+'</code><span class="status-pill neutral">Recorded</span></div>';
     }).join("");
-    if(empty)empty.classList.toggle("hidden",activity.length!==0);
+    if(typeof filterAudit==="function")filterAudit();
+    if(empty&&compact.length===0)empty.classList.remove("hidden");
   }
   function bindTransitionalActions(){
     const legacyLabels=["queue job","import from github","new app","edit configuration","queue build","build & publish","dry run","edit steps","queue new job","create release","retry store stage","retry","run health check","edit policy","duplicate preset","new preset","edit preset","save changes"];
@@ -2804,16 +2939,18 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         const b=cloneNoHandlers(old);if(b){b.classList.remove("demo");b.disabled=true;b.title="Not implemented in the live dashboard yet"}return;
       }
       const b=cloneNoHandlers(old);if(!b)return;b.dataset.productionBound="1";b.classList.remove("demo");
+      if(label==="save changes")b.textContent="Open Legacy Admin ↗";
       b.title="Open the current write/edit surface in Legacy Admin";
       b.addEventListener("click",()=>{location.href="/legacy"});
     });
-    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob"].forEach(id=>{
+    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob","auditExport"].forEach(id=>{
       const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet";
     });
     qa('[data-go="account"]').forEach(el=>el.classList.add("hidden"));
     const sign=document.getElementById("signOut");if(sign){const b=cloneNoHandlers(sign);b.disabled=true;b.title="Local dashboard authentication is not enabled yet"}
     const retry=document.getElementById("apiRetry");if(retry){const b=cloneNoHandlers(retry);b.addEventListener("click",refreshLive)}
     qa(".api-retry-inline").forEach(old=>{const b=cloneNoHandlers(old);b.addEventListener("click",refreshLive)});
+    ["jobsRefresh","releaseRefresh"].forEach(id=>{const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.addEventListener("click",refreshLive)});
     const releaseExamples=q("#releases > .grid2.section");if(releaseExamples)releaseExamples.classList.add("hidden");
   }
   function showToast(message){
@@ -2825,6 +2962,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       fcState.status=status;fcState.apps=apps.apps||[];fcState.jobs=jobs.jobs||[];fcState.presets=presets.presets||[];
       setConnection(true);renderOverview();renderApps();renderJobs();renderReleases();renderInfrastructure();renderPresets();renderSettings();renderAudit();
       if(location.hash.startsWith("#/jobs/"))openJob(decodeURIComponent(location.hash.split("/").pop()));
+      if(location.hash==="#/logs"&&document.getElementById("followLive")?.checked)loadSelectedLog();
     }catch(e){setConnection(false,e.message)}
   }
   // Replace simulation-only controls before first user interaction.
