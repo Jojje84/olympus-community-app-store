@@ -5,7 +5,7 @@ This directory is the self-contained source package that becomes `olympus-forgec
 ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
 Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
 
-Beta 37 recovery returns ForgeCore to the live-verified beta31 runner core. The only runtime addition is a compatibility bridge that copies a verified persistent identity from the beta32+ runners/<repository> path back into beta31's runners/v2 layout without deleting the newer copy. The beta31 Compose startup, dashboard handoff, watchdog, Docker dependency and runner engine remain otherwise unchanged.
+Beta 38 keeps the live-verified beta37/beta31 runner core and the runners/v2 engine unchanged. The release focuses on dashboard clarity and safety: one primary Ready / Starting / Needs attention state, correct multi-runner aggregation, clearer warning/error presentation, a less intrusive runner setup flow, and an explicit destructive Repair confirmation so a fresh token cannot silently replace an existing runner identity.
 
 
 
