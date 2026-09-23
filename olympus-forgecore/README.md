@@ -2,14 +2,12 @@
 
 This directory is the self-contained source package that becomes `olympus-forgecore` for live Umbrel testing.
 
-ForgeCore is the source of truth; this Olympus directory is the downstream Umbrel distribution package.
-Changes are made in `Jojje84/ForgeCore` first and then synchronized here with source provenance recorded in `SOURCE_COMMIT`.
+Beta 20 keeps this directory as the package source of truth. Olympus is distribution only:
+changes are made and validated here first, then copied to `olympus-forgecore`.
 
-Beta 38 keeps the live-verified beta37/beta31 runner core and the runners/v2 engine unchanged. The release focuses on dashboard clarity and safety: one primary Ready / Starting / Needs attention state, correct multi-runner aggregation, clearer warning/error presentation, a less intrusive runner setup flow, and an explicit destructive Repair confirmation so a fresh token cannot silently replace an existing runner identity.
-
-
-
-The approved ForgeCore anvil remains unchanged. The canonical raster asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the fallback icon must all match it.
+Beta 20 also fixes the approved ForgeCore anvil at its source. The canonical raster
+asset is `assets/forgecore-logo.png`; `icon.svg`, the dashboard-served icon and the
+fallback icon must all match it and are checked by the smoke test.
 
 The dashboard is the primary control surface instead of SSH:
 
@@ -30,7 +28,6 @@ Contents:
 
 - `umbrel-app.yml` — Umbrel metadata and capability description
 - `docker-compose.yml` — isolated Docker, runner manager, cleanup and dashboard services
-- `exports.sh` — resolves and persists the verified external ForgeCore storage path before Umbrel start/update
 - `runner-manager.b64.template` — update-safe runner manager payload
 - `cleanup-loop.b64.template` — update-safe cleanup payload
 - `dashboard-server.b64.template` — update-safe dashboard/API payload
@@ -40,6 +37,3 @@ Contents:
 - `data/www/icon.svg` — fallback copy, required to be byte-identical to `icon.svg`
 
 Heavy CI data remains on the configured external ForgeCore storage root. The runner never mounts Umbrel's host Docker socket.
-
-
-Beta 35 fixes the Umbrel package/runtime mismatch that could show a new ForgeCore version while the containers still executed stale persisted runtime files. Compose now mounts the packaged `.b64.template` files directly for runner-manager, dashboard and cleanup, and the runner service starts independently of Docker. Olympus CI now validates those exact production mount paths.

@@ -1,6 +1,7 @@
 ForgeCore source repository: Jojje84/ForgeCore
-Source ref: fix/beta38-olympus-dashboard-clarity
-Source commit: ddb9dbc91f0d168153575d3ddf5b703ba7e28a68
-Package version: 0.1.0-beta.38
-Recovery baseline: de85aa4bac1b02f6a49c6c65d66fb40bcdcbcb49
-Validated ForgeCore CI run: 35818873628
+Source ref: v0.1.0-beta.39
+Source commit: 9e36309ac3aa1a3014058536e588504b57889f5a
+Package version: 0.1.0-beta.39
+Distribution path: direct olympus-community-app-store sync
+ForgeCore release validation run: 35868931283 attempt 2
+Note: Olympus-Releases publication was bypassed after GitHub returned HTTP 403 for that repository token.
