@@ -17,14 +17,17 @@ from urllib.parse import parse_qs, urlparse
 APP = Path(os.environ.get("FORGECORE_APP_ROOT", "/forgecore/app"))
 DASHBOARD_ARTIFACT = Path(os.environ.get("FORGECORE_DASHBOARD_B64", "/forgecore/runtime/dashboard-v2.b64"))
 CFG = APP / "config"
-RD = CFG / "runners"
+V1_RUNNER_CONFIG_DIR = CFG / "runners"
+V1_GLOBAL_CONFIG = CFG / "forgecore.env"
 AD = CFG / "apps"
 PD = CFG / "publish-presets"
 ST = APP / "state"
 JD = ST / "jobs"
+RUNNER_REQUEST_DIR = ST / "runner-requests"
 GLOBAL_CONFIG = CFG / "global.json"
-GC = CFG / "forgecore.env"
 GLOBAL_MIGRATION_MARKER = ST / "global-settings-v2.migrated.json"
+V1_RUNNER_APP_MIGRATION_MARKER = ST / "v1-runner-apps.migrated.json"
+RUNNER_METADATA_NAME = ".forgecore-runner.json"
 STORAGE = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/forgecore/storage"))
 STORAGE_DISPLAY = os.environ.get("FORGECORE_STORAGE_DISPLAY", str(STORAGE))
 STORAGE_HOST_PATH = os.environ.get("FORGECORE_STORAGE_HOST_PATH", STORAGE_DISPLAY)
@@ -32,7 +35,8 @@ STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
-WEB_BUILD = "0.1.0-beta.44"
+COMPOSE_VERSION = "5.5.1"
+WEB_BUILD = "0.1.0-beta.45"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -128,8 +132,8 @@ def int_setting(config, key, default):
     except (TypeError, ValueError):
         return default
 
-def legacy_cleanup_values(config=None, fallback=None):
-    config = config if isinstance(config, dict) else env(GC)
+def v1_cleanup_values(config=None, fallback=None):
+    config = config if isinstance(config, dict) else env(V1_GLOBAL_CONFIG)
     fallback = fallback if isinstance(fallback, dict) else {}
     return {
         "intervalHours": max(1, int_setting(config, "CLEANUP_INTERVAL_HOURS", fallback.get("intervalHours", 168))),
@@ -139,7 +143,7 @@ def legacy_cleanup_values(config=None, fallback=None):
         "buildkitKeepStorageGB": max(1, min(1000, int_setting(config, "BUILDKIT_KEEP_STORAGE_GB", fallback.get("buildkitKeepStorageGB", 50)))),
     }
 
-def default_global_config(legacy_config=None):
+def default_global_config(v1_config=None):
     release_repository = os.environ.get("FORGECORE_RELEASE_REPOSITORY", "Jojje84/Olympus-Releases").strip()
     store_repository = os.environ.get("FORGECORE_COMMUNITY_STORE_REPOSITORY", "Jojje84/olympus-community-app-store").strip()
     if not REPO.fullmatch(release_repository):
@@ -173,7 +177,7 @@ def default_global_config(legacy_config=None):
             "pidsLimit": 512,
         },
         "storage": {"root": storage_root},
-        "cleanup": legacy_cleanup_values(legacy_config),
+        "cleanup": v1_cleanup_values(v1_config),
         "security": {
             "trustedRepositoriesOnly": True,
             "allowUntrustedForks": False,
@@ -341,51 +345,46 @@ def validate_global_config(data):
         },
     }
 
-def sync_legacy_cleanup_env(global_config):
-    cleanup = global_config["cleanup"]
-    write_env_updates(GC, {
-        "CLEANUP_INTERVAL_HOURS": cleanup["intervalHours"],
-        "CACHE_MAX_AGE_DAYS": cleanup["cacheMaxAgeDays"],
-        "WORKSPACE_MAX_AGE_DAYS": cleanup["workspaceMaxAgeDays"],
-        "DISK_CLEANUP_THRESHOLD_PERCENT": cleanup["diskThresholdPercent"],
-        "BUILDKIT_KEEP_STORAGE_GB": cleanup["buildkitKeepStorageGB"],
-    })
-
-def ensure_global_config(sync_legacy=False):
+def ensure_global_config():
     CFG.mkdir(parents=True, exist_ok=True)
     ST.mkdir(parents=True, exist_ok=True)
-    legacy = env(GC)
     first_migration = not GLOBAL_MIGRATION_MARKER.exists()
+    v1_config = env(V1_GLOBAL_CONFIG) if first_migration and V1_GLOBAL_CONFIG.exists() else {}
+
     if GLOBAL_CONFIG.exists():
         candidate = read_json(GLOBAL_CONFIG)
     else:
-        candidate = default_global_config(legacy)
+        candidate = default_global_config(v1_config)
 
     cleanup = candidate.get("cleanup") if isinstance(candidate, dict) else None
-    if first_migration:
-        candidate["cleanup"] = legacy_cleanup_values(legacy, cleanup)
+    if first_migration and v1_config:
+        candidate["cleanup"] = v1_cleanup_values(v1_config, cleanup)
     elif isinstance(cleanup, dict) and "buildkitKeepStorageGB" not in cleanup:
         candidate["cleanup"] = dict(cleanup)
-        candidate["cleanup"]["buildkitKeepStorageGB"] = legacy_cleanup_values(legacy, cleanup)["buildkitKeepStorageGB"]
+        candidate["cleanup"]["buildkitKeepStorageGB"] = 50
 
     normalized = validate_global_config(candidate)
-    if not GLOBAL_CONFIG.exists() or normalized != candidate or first_migration:
-        write_json_atomic(GLOBAL_CONFIG, normalized)
+    # Always persist the normalized v2 document. During the one-time v1 import
+    # candidate has already been mutated in memory, so comparing it with
+    # normalized cannot tell whether the on-disk global.json still needs update.
+    write_json_atomic(GLOBAL_CONFIG, normalized)
 
     if first_migration:
         marker = {
             "schemaVersion": 1,
-            "kind": "ForgeCoreGlobalSettingsMigration",
+            "kind": "ForgeCoreV1GlobalMigration",
             "migratedAt": utc_now(),
             "globalRevision": config_revision(normalized),
-            "legacySource": "config/forgecore.env",
+            "v1Source": "config/forgecore.env" if V1_GLOBAL_CONFIG.exists() else None,
         }
         write_json_atomic(GLOBAL_MIGRATION_MARKER, marker)
-        append_activity("settings", "Legacy global settings migrated to v2 global.json")
-        sync_legacy = True
+        append_activity("settings", "v1 global settings migration completed")
 
-    if sync_legacy:
-        sync_legacy_cleanup_env(normalized)
+    if V1_GLOBAL_CONFIG.exists():
+        try:
+            V1_GLOBAL_CONFIG.unlink()
+        except OSError:
+            pass
     return normalized
 
 def olympus_releases_integration(global_config=None):
@@ -485,11 +484,7 @@ def save_community_app_store_integration(data):
     return community_app_store_integration(global_config)
 
 def settings():
-    c = env(GC)
-    if GLOBAL_CONFIG.exists():
-        global_config = validate_global_config(read_json(GLOBAL_CONFIG))
-    else:
-        global_config = default_global_config(c)
+    global_config = ensure_global_config()
     cleanup = global_config["cleanup"]
     return {
         "cleanup_interval_days": max(1, cleanup["intervalHours"] // 24),
@@ -497,8 +492,8 @@ def settings():
         "workspace_max_age_days": cleanup["workspaceMaxAgeDays"],
         "disk_cleanup_threshold_percent": cleanup["diskThresholdPercent"],
         "buildkit_keep_storage_gb": cleanup["buildkitKeepStorageGB"],
-        "compose_version": c.get("COMPOSE_VERSION", "5.5.1"),
-        "global_settings_source": "global.json" if GLOBAL_CONFIG.exists() else "legacy-defaults",
+        "compose_version": COMPOSE_VERSION,
+        "global_settings_source": "global.json",
         "global_settings_migrated": GLOBAL_MIGRATION_MARKER.exists(),
         "runtime": dict(global_config.get("runtime") or {}),
         "security": dict(global_config.get("security") or {}),
@@ -1449,24 +1444,143 @@ def executor_adapter(name):
         raise ValueError("Executor is invalid.") from exc
 
 
+def _runner_metadata_repositories():
+    repositories = set()
+    try:
+        for runner_dir in RUNNER_ENGINE.iterdir():
+            if not runner_dir.is_dir():
+                continue
+            metadata = runner_dir / RUNNER_METADATA_NAME
+            try:
+                data = read_json(metadata)
+            except ValueError:
+                continue
+            repository = str(data.get("repository") or "").strip()
+            if REPO.fullmatch(repository):
+                repositories.add(repository)
+    except OSError:
+        pass
+    return repositories
+
+def _v1_runner_repositories():
+    repositories = set()
+    if not V1_RUNNER_CONFIG_DIR.exists():
+        return repositories
+    for path in sorted(V1_RUNNER_CONFIG_DIR.glob("*.env")):
+        if path.name == "runner.env.example":
+            continue
+        repository = env(path).get("REPOSITORY", "")
+        if REPO.fullmatch(repository):
+            repositories.add(repository)
+    return repositories
+
+def _runner_state_repositories():
+    repositories = set()
+    for path in ST.glob("runner-*.repo"):
+        try:
+            repository = path.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if REPO.fullmatch(repository):
+            repositories.add(repository)
+    return repositories
+
+def _migration_app_id(repository, existing_ids):
+    base = slug(repository.rsplit("/", 1)[-1]) or "app"
+    candidates = [base, slug(repository), base + "-runner"]
+    for candidate in candidates:
+        if candidate and candidate not in existing_ids and SLUG_ID.fullmatch(candidate):
+            return candidate
+    index = 2
+    while True:
+        candidate = f"{base}-{index}"
+        if candidate not in existing_ids:
+            return candidate
+        index += 1
+
+def migrate_v1_runner_apps():
+    if V1_RUNNER_APP_MIGRATION_MARKER.exists():
+        return []
+    ensure_control_plane()
+    existing, _ = apps()
+    existing_ids = {app["id"] for app in existing}
+    repositories_with_apps = {
+        app.get("source", {}).get("repository")
+        for app in existing
+        if app.get("build", {}).get("executor") == "github-actions"
+    }
+    repositories = sorted(_v1_runner_repositories() | _runner_metadata_repositories() | _runner_state_repositories())
+    migrated = []
+    for repository in repositories:
+        if repository in repositories_with_apps:
+            continue
+        app_id = _migration_app_id(repository, existing_ids)
+        repo_name = repository.rsplit("/", 1)[-1]
+        migrated_app = validate_app({
+            "schemaVersion": 1,
+            "kind": "ForgeCoreApp",
+            "id": app_id,
+            "identity": {
+                "name": repo_name,
+                "storeId": "olympus-" + (slug(repo_name) or app_id),
+            },
+            "source": {
+                "provider": "github",
+                "repository": repository,
+                "defaultBranch": "main",
+                "private": True,
+            },
+            "build": {
+                "executor": "github-actions",
+                "targets": ["amd64", "arm64"],
+            },
+            "package": {
+                "format": "umbrel",
+                "sourcePath": "umbrel",
+            },
+            "publish": {
+                "preset": "olympus-default",
+            },
+        })
+        write_json_atomic(AD / f"{app_id}.json", migrated_app)
+        existing_ids.add(app_id)
+        repositories_with_apps.add(repository)
+        migrated.append({"appId": app_id, "repository": repository})
+        append_activity("app", f"v1 runner repository migrated to App {app_id}")
+
+    write_json_atomic(V1_RUNNER_APP_MIGRATION_MARKER, {
+        "schemaVersion": 1,
+        "kind": "ForgeCoreV1RunnerAppMigration",
+        "migratedAt": utc_now(),
+        "apps": migrated,
+    })
+    if migrated:
+        (ST / "reload-runners.request").touch()
+    return migrated
+
 def runners():
     managed_apps = apps()[0]
     apps_by_repository = {}
+    repositories = set(_runner_metadata_repositories())
     for app in managed_apps:
         if app.get("build", {}).get("executor") != "github-actions":
             continue
         repository = app.get("source", {}).get("repository", "")
         if repository:
             apps_by_repository.setdefault(repository, []).append(app)
+            repositories.add(repository)
+
+    for runtime_path in ST.glob("runner-*.runtime.json"):
+        try:
+            runtime = read_json(runtime_path)
+        except ValueError:
+            continue
+        repository = str(runtime.get("repository") or "").strip()
+        if REPO.fullmatch(repository):
+            repositories.add(repository)
 
     out = []
-    for p in sorted(RD.glob("*.env")):
-        if p.name == "runner.env.example":
-            continue
-        c = env(p)
-        repo = c.get("REPOSITORY", "")
-        if not REPO.fullmatch(repo):
-            continue
+    for repo in sorted(repositories):
         s = slug(repo)
         ep = ST / f"runner-{s}.error"
         np = ST / f"runner-{s}.name"
@@ -1474,17 +1588,16 @@ def runners():
         runner_dir = RUNNER_ENGINE / s
         settings_file = runner_dir / ".runner"
         er = ep.read_text(encoding="utf-8", errors="replace").strip() if ep.exists() else ""
-        name = c.get("NAME", "")
+        name = repo.rsplit("/", 1)[-1]
         if np.exists():
             name = np.read_text(encoding="utf-8", errors="replace").strip()
 
         mode = "unregistered"
         phase = "idle"
         message = ""
-        runtime = {}
         try:
-            runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+            runtime = read_json(runtime_path)
+        except ValueError:
             runtime = {}
 
         if isinstance(runtime, dict):
@@ -1603,7 +1716,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta44_seen"] = "ForgeCore 0.1.0-beta.44 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta45_seen"] = "ForgeCore 0.1.0-beta.45 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -1660,31 +1773,6 @@ def inherit_owner(path, parent):
     except OSError:
         pass
 
-def write_env_updates(path, updates):
-    lines = []
-    seen = set()
-    try:
-        original = path.read_text().splitlines()
-    except OSError:
-        original = []
-    for raw in original:
-        stripped = raw.strip()
-        if "=" in stripped and not stripped.startswith("#"):
-            key = stripped.split("=", 1)[0].strip()
-            if key in updates:
-                lines.append(f"{key}={updates[key]}")
-                seen.add(key)
-                continue
-        lines.append(raw)
-    for key, value in updates.items():
-        if key not in seen:
-            lines.append(f"{key}={value}")
-    tmp = path.with_name("." + path.name + ".tmp")
-    tmp.write_text("\n".join(lines).rstrip() + "\n")
-    os.chmod(tmp, 0o600)
-    inherit_owner(tmp, path.parent)
-    os.replace(tmp, path)
-
 def save_settings(data):
     def bounded(key, lo, hi):
         try:
@@ -1710,33 +1798,18 @@ def save_settings(data):
     }
     global_config = validate_global_config(global_config)
     write_json_atomic(GLOBAL_CONFIG, global_config)
-    sync_legacy_cleanup_env(global_config)
     append_activity("settings", "ForgeCore v2 global cleanup configuration updated")
 
-def save_runner(data, app_id=None):
-    requested_app_id = app_id or str(data.get("appId", "")).strip()
+def save_runner(data, app_id):
+    app = get_app(app_id)
+    if app is None:
+        raise ValueError("Runner registration requires an existing managed App.")
+    if app.get("build", {}).get("executor") != "github-actions":
+        raise ValueError("Only Apps using the GitHub Actions executor can own a repository runner.")
+    repo = app.get("source", {}).get("repository", "")
     supplied_repository = str(data.get("repository", "")).strip()
-    app = None
-
-    if requested_app_id:
-        app = get_app(requested_app_id)
-        if app is None:
-            raise ValueError("Runner registration requires an existing managed App.")
-        if app.get("build", {}).get("executor") != "github-actions":
-            raise ValueError("Only Apps using the GitHub Actions executor can own a repository runner.")
-        repo = app.get("source", {}).get("repository", "")
-        if supplied_repository and supplied_repository != repo:
-            raise ValueError("Runner repository must match the App source repository.")
-    else:
-        repo = supplied_repository
-        if not REPO.fullmatch(repo):
-            raise ValueError("Repository must look like owner/repository.")
-        matching_apps = apps_for_runner_repository(repo)
-        if not matching_apps:
-            raise ValueError(
-                "Runner registration must belong to a managed App using the GitHub Actions executor."
-            )
-        app = matching_apps[0]
+    if supplied_repository and supplied_repository != repo:
+        raise ValueError("Runner repository must match the App source repository.")
 
     token = str(data.get("token", "")).strip()
     repair_existing = data.get("repair_existing") is True
@@ -1753,39 +1826,27 @@ def save_runner(data, app_id=None):
         )
 
     s = slug(repo)
-    dst = RD / f"{s}.env"
-    for candidate in RD.glob("*.env"):
-        if candidate.name != "runner.env.example" and env(candidate).get("REPOSITORY", "") == repo:
-            dst = candidate
-            break
-    tmp = dst.with_name("." + dst.name + ".tmp")
-    tmp.write_text(
-        f'REPOSITORY="{repo}"\n'
-        f'REGISTRATION_TOKEN="{token}"\n'
-        f'REPAIR_EXISTING="{"true" if repair_existing else "false"}"\n'
-    )
-    os.chmod(tmp, 0o600)
-    inherit_owner(tmp, RD)
-    os.replace(tmp, dst)
+    RUNNER_REQUEST_DIR.mkdir(parents=True, exist_ok=True)
+    request_path = RUNNER_REQUEST_DIR / f"{s}.json"
+    write_json_atomic(request_path, {
+        "schemaVersion": 1,
+        "kind": "ForgeCoreRunnerRequest",
+        "appId": app["id"],
+        "repository": repo,
+        "token": token,
+        "repairExisting": repair_existing,
+        "requestedAt": utc_now(),
+    })
+
     ST.mkdir(parents=True, exist_ok=True)
-    runtime_path = ST / f"runner-{s}.runtime.json"
-    runtime_tmp = runtime_path.with_name("." + runtime_path.name + ".tmp")
-    runtime_tmp.write_text(
-        json.dumps(
-            {
-                "epoch": int(__import__("time").time()),
-                "repository": repo,
-                "appId": app["id"],
-                "phase": "queued",
-                "mode": "unknown",
-                "message": "Repair request saved; waiting for runner manager",
-            },
-            separators=(",", ":"),
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    os.replace(runtime_tmp, runtime_path)
+    write_json_atomic(ST / f"runner-{s}.runtime.json", {
+        "epoch": int(__import__("time").time()),
+        "repository": repo,
+        "appId": app["id"],
+        "phase": "queued",
+        "mode": "unknown",
+        "message": "Runner request saved; waiting for runner manager",
+    })
     append_activity("runner", f"Runner registration requested for app {app['id']} ({repo})")
     (ST / "reload-runners.request").touch()
 
@@ -1936,7 +1997,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta44_seen": bool(current.get("bootstrap_beta44_seen")),
+                "bootstrap_beta45_seen": bool(current.get("bootstrap_beta45_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
@@ -1965,8 +2026,6 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/apps/") and path.endswith("/runner"):
                 app_id = path[len("/api/apps/"):-len("/runner")].rstrip("/")
                 save_runner(data, app_id=app_id)
-            elif path == "/api/runners":
-                save_runner(data)
             elif path == "/api/jobs":
                 self.send_json(201, {"ok": True, "job": create_job(data)})
                 return
@@ -2027,10 +2086,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(500, {"error": "ForgeCore could not write its app data."})
 
 def main():
-    RD.mkdir(parents=True, exist_ok=True)
     ST.mkdir(parents=True, exist_ok=True)
+    RUNNER_REQUEST_DIR.mkdir(parents=True, exist_ok=True)
     ensure_control_plane()
-    ensure_global_config(sync_legacy=True)
+    ensure_global_config()
+    migrate_v1_runner_apps()
     print("[forgecore-web] dashboard listening on :8080", flush=True)
     ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
 
