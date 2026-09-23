@@ -182,9 +182,23 @@ assert len(items) == 1, items
 assert items[0]["mode"] == "persistent", items
 assert items[0]["phase"] == "idle", items
 
+try:
+    module.save_runner({
+        "repository": "Jojje84/ForgeCore",
+        "token": "fresh-dashboard-token",
+    })
+    raise AssertionError("existing persistent runner accepted an unconfirmed replacement")
+except module.RunnerConflictError:
+    pass
+
+blocked_config = (rd / "jojje84-forgecore.env").read_text(encoding="utf-8")
+assert 'REGISTRATION_TOKEN=""' in blocked_config, blocked_config
+assert not (st / "reload-runners.request").exists()
+
 module.save_runner({
     "repository": "Jojje84/ForgeCore",
     "token": "fresh-dashboard-token",
+    "repair_existing": True,
 })
 items = module.runners()
 assert items[0]["phase"] == "queued", items
