@@ -39,7 +39,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.37"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.38"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -87,7 +87,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.37"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.38"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
@@ -111,7 +111,7 @@ services:
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.37"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.38"
     volumes:
       - ${APP_DATA_DIR}/data:/forgecore/app
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore}:/forgecore/storage:ro
