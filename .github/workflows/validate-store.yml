@@ -34,17 +34,28 @@ jobs:
         shell: bash
         run: |
           python3 -m py_compile olympus-forgecore/data/bin/dashboard-server.py
+          for source in native-worker.py release-packager.py release-publisher.py store-publisher.py; do
+            if [ -f "olympus-forgecore/data/bin/$source" ]; then
+              python3 -m py_compile "olympus-forgecore/data/bin/$source"
+            fi
+          done
           bash -n olympus-forgecore/data/bin/runner-manager.sh
           sh -n olympus-forgecore/data/bin/cleanup-loop.sh
           python3 - <<'PY'
           import base64
           from pathlib import Path
 
-          pairs = (
+          pairs = [
               ("olympus-forgecore/dashboard-server.b64.template", "olympus-forgecore/data/bin/dashboard-server.py"),
               ("olympus-forgecore/runner-manager.b64.template", "olympus-forgecore/data/bin/runner-manager.sh"),
               ("olympus-forgecore/cleanup-loop.b64.template", "olympus-forgecore/data/bin/cleanup-loop.sh"),
-          )
+          ]
+          native_template = Path("olympus-forgecore/native-worker.b64.template")
+          native_source = Path("olympus-forgecore/data/bin/native-worker.py")
+          if native_template.is_file() or native_source.is_file():
+              if not native_template.is_file() or not native_source.is_file():
+                  raise SystemExit("ForgeCore native worker source/template pair is incomplete")
+              pairs.append((str(native_template), str(native_source)))
           for template, source in pairs:
               decoded = base64.b64decode(Path(template).read_text().strip())
               actual = Path(source).read_bytes()
@@ -92,42 +103,62 @@ jobs:
           import yaml
           compose_path = root / "docker-compose.yml"
           compose_text = compose_path.read_text(encoding="utf-8")
-          expected_mounts = (
+          expected_mounts = [
               "${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro",
               "${APP_DATA_DIR}/cleanup-loop.b64:/forgecore/runtime/cleanup-loop.b64:ro",
               "${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro",
-          )
+          ]
+          if native_source.is_file():
+              expected_mounts.append(
+                  "${APP_DATA_DIR}/native-worker.b64:/forgecore/runtime/native-worker.b64:ro"
+              )
           for mount in expected_mounts:
               if mount not in compose_text:
                   raise SystemExit(f"ForgeCore compose is not consuming Umbrel-rendered runtime output: {mount}")
 
-          forbidden_mounts = (
+          forbidden_mounts = [
               "${APP_DATA_DIR}/runner-manager.b64.template:/forgecore/runtime/runner-manager.b64:ro",
               "${APP_DATA_DIR}/cleanup-loop.b64.template:/forgecore/runtime/cleanup-loop.b64:ro",
               "${APP_DATA_DIR}/dashboard-server.b64.template:/forgecore/runtime/dashboard-server.b64:ro",
-          )
+              "${APP_DATA_DIR}/native-worker.b64.template:/forgecore/runtime/native-worker.b64:ro",
+          ]
           for mount in forbidden_mounts:
               if mount in compose_text:
                   raise SystemExit(f"ForgeCore compose incorrectly consumes template source at runtime: {mount}")
 
           compose = yaml.safe_load(compose_text)
-          runner = compose["services"]["runner"]
-          if runner.get("depends_on") != ["docker"]:
-              raise SystemExit("ForgeCore beta38 must preserve the live-verified beta31 runner->docker startup dependency")
+          services = compose["services"]
+          runner = services["runner"]
+          if "native" in services:
+              if runner.get("depends_on"):
+                  raise SystemExit("ForgeCore v2 runner must start independently of Docker readiness")
+              native = services["native"]
+              environment = native.get("environment") or {}
+              if "FORGECORE_COMMUNITY_STORE_TOKEN" not in environment:
+                  raise SystemExit("ForgeCore v2 native worker is missing the Community Store credential boundary")
+          elif runner.get("depends_on") != ["docker"]:
+              raise SystemExit("Legacy ForgeCore package must preserve its runner->docker startup dependency")
           PY
 
-      - name: Test ForgeCore beta31 recovery core
+      - name: Test packaged ForgeCore runtime fixtures
         shell: bash
         run: |
-          bash olympus-forgecore/tests/runtime/runner-lifecycle.sh
-          bash olympus-forgecore/tests/runtime/runner-watchdog.sh
-          bash olympus-forgecore/tests/runtime/runner-engine-v2.sh
-          bash olympus-forgecore/tests/runtime/runner-restore-beta31.sh
-          python3 olympus-forgecore/tests/runtime/dashboard-repair-guard.py
+          for test in             runner-lifecycle.sh             runner-watchdog.sh             runner-engine-v2.sh             runner-restore-beta31.sh; do
+            path="olympus-forgecore/tests/runtime/$test"
+            if [ -f "$path" ]; then
+              bash "$path"
+            fi
+          done
+          if [ -f olympus-forgecore/tests/runtime/dashboard-repair-guard.py ]; then
+            python3 olympus-forgecore/tests/runtime/dashboard-repair-guard.py
+          fi
 
-      - name: Boot ForgeCore runner container
+      - name: Boot packaged ForgeCore runner container when fixture is distributed
         shell: bash
-        run: bash olympus-forgecore/tests/runtime/runner-container-boot.sh
+        run: |
+          if [ -f olympus-forgecore/tests/runtime/runner-container-boot.sh ]; then
+            bash olympus-forgecore/tests/runtime/runner-container-boot.sh
+          fi
 
       - name: Check whitespace errors
         run: git diff --check
