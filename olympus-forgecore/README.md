@@ -31,6 +31,7 @@ Contents:
 - `runner-manager.b64.template` — update-safe runner manager payload
 - `cleanup-loop.b64.template` — update-safe cleanup payload
 - `dashboard-server.b64.template` — update-safe dashboard/API payload
+- `dashboard-v2.b64.template` — update-safe v2 dashboard HTML payload generated from `data/www/index.html`
 - `data/bin/` — readable source copies of runtime scripts
 - `assets/forgecore-logo.png` — canonical approved ForgeCore anvil artwork
 - `icon.svg` — self-contained Umbrel icon generated from the canonical artwork
