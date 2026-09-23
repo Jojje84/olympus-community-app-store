@@ -640,7 +640,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
       <section id="apps" class="view">
         <div class="page-head">
-          <div><h1>Apps</h1><p>Manage each application's source, executor, build steps, package output and Olympus publishing policy from one place.</p></div>
+          <div><h1>Apps</h1><p>Apps own repositories, executors and any GitHub Actions runner connection, then feed jobs, packages and publishing from one place.</p></div>
           <div class="actions"><button class="btn demo">Import from GitHub</button><button class="btn primary demo">New app</button></div>
         </div>
 
@@ -1140,7 +1140,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
         </div>
         <div class="grid2 section">
           <div class="card">
-            <div class="section-title"><div><h2>Executor adapters</h2><p>Common ForgeCore job engine boundary</p></div></div>
+            <div class="section-title"><div><h2>Executor capacity</h2><p>Installation-wide runtime health; GitHub Actions runners are assigned through Apps</p></div><button id="restartRunnerManager" class="btn">Restart runner manager</button></div>
             <div class="health-grid">
               <div class="health"><div class="health-top"><span class="health-name mono">forgecore-native</span><span class="dot"></span></div><div class="health-value">Available</div><div class="health-sub">Source · build · test · verify · package</div></div>
               <div class="health"><div class="health-top"><span class="health-name mono">github-actions</span><span class="dot"></span></div><div class="health-value">2 runners</div><div class="health-sub">Compatibility adapter · persistent</div></div>
@@ -1335,7 +1335,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       </section>
 
       <section id="settings" class="view">
-        <div class="page-head"><div><h1>Settings</h1><p>Global integrations and policy. App build instructions do not live here.</p></div><div class="actions"><button class="btn primary demo">Save changes</button></div></div>
+        <div class="page-head"><div><h1>Settings</h1><p>Installation-wide integrations and policy. App sources, executors and GitHub runners are managed from Apps.</p></div><div class="actions"><button class="btn primary demo">Save changes</button></div></div>
         <div class="settings-section-nav" aria-label="Settings sections">
           <button type="button" data-settings-anchor="settings-general">General</button>
           <button type="button" data-settings-anchor="settings-integrations">Integrations</button>
@@ -1352,7 +1352,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
         </div>
         <div class="grid2">
           <div id="settings-integrations" class="card"><div class="section-title"><div><h2>Global integrations</h2><p>Installation-wide connections and credentials</p></div></div><div class="form-grid">
-            <div class="field"><div class="field-label">GitHub</div><div class="field-value"><span>Connected</span><span class="status-pill">Healthy</span></div></div>
+            <div class="field"><div class="field-label">GitHub Actions</div><div class="field-value"><span>Managed per App</span><span class="status-pill neutral">App scope</span></div></div>
             <div class="field"><div class="field-label">Olympus Releases</div><div class="field-value"><span>Jojje84/Olympus-Releases</span><span class="status-pill">Ready</span></div><div class="setting-source"><small>Global integration</small><span class="impact-pill"><strong>7</strong> apps</span></div></div>
             <div class="field"><div class="field-label">Community Store</div><div class="field-value"><span>Connected</span><span class="status-pill neutral">Configured</span></div><div class="setting-source"><small>Submission policy lives in presets</small><span class="impact-pill"><strong>3</strong> presets</span></div></div>
             <div class="field"><div class="field-label">Secret provider</div><div class="field-value"><span class="mono">secret://env</span><span class="status-pill neutral">v2</span></div></div>
@@ -2250,10 +2250,19 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   function options(values,current){return values.map(x=>'<option value="'+esc(x[0])+'" '+(String(x[0])===String(current)?"selected":"")+'>'+esc(x[1])+'</option>').join("")}
   function currentApp(){return fcState.selectedApp||fcState.apps[0]||null}
+  function runnerForApp(app){
+    if(!app||app.build?.executor!=="github-actions")return null;
+    return (fcState.status?.runners||[]).find(r=>(r.appIds||[]).includes(app.id))
+      ||(fcState.status?.runners||[]).find(r=>r.assigned&&r.repository===app.source?.repository)
+      ||null;
+  }
+  function unassignedRunners(){return (fcState.status?.runners||[]).filter(r=>!r.assigned)}
   function currentPreset(){if(fcState.selectedPreset)return fcState.selectedPreset;const app=currentApp();return fcState.presets.find(p=>p.id===app?.publish?.preset)||fcState.presets[0]||null}
-  function openAppEditor(app,focusSteps){
-    const editing=Boolean(app);
-    const a=app||{id:"",identity:{name:"",storeId:""},source:{repository:"",defaultBranch:"main",private:true},build:{executor:"forgecore-native",targets:["amd64","arm64"],steps:[]},package:{sourcePath:"umbrel"},publish:{preset:fcState.presets[0]?.id||""}};
+  function openAppEditor(app,focusSteps,seedRepository){
+    const editing=Boolean(app),seedBase=(seedRepository||"").split("/").pop()||"";
+    const seedSlug=seedBase.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+    const seedStoreId=seedSlug?(seedSlug.startsWith("olympus-")?seedSlug:"olympus-"+seedSlug):"";
+    const a=app||{id:seedSlug,identity:{name:seedBase,storeId:seedStoreId},source:{repository:seedRepository||"",defaultBranch:"main",private:true},build:{executor:seedRepository?"github-actions":"forgecore-native",targets:["amd64","arm64"],steps:[]},package:{sourcePath:"umbrel"},publish:{preset:fcState.presets[0]?.id||""}};
     const presetOptions=fcState.presets.map(p=>[p.id,(p.name||p.id)+" · "+p.id]);
     const body='<form id="appAdminForm" class="admin-form-grid">'+
       field("id","App ID",a.id,"text",(editing?'readonly ':'')+'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"')+
@@ -2266,6 +2275,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       field("targets","Build targets",(a.build?.targets||[]).join(","),"text",'required placeholder="amd64,arm64"')+
       field("sourcePath","Umbrel package source",a.package?.sourcePath||"umbrel","text","required")+
       field("preset","Publish preset",options(presetOptions,a.publish?.preset||""),"select","required")+
+      '<div class="full admin-help">A GitHub Actions repository runner belongs to this App. Save the App first, then use the Runner action on the App to connect or repair it. Native Apps use ForgeCore shared infrastructure and need no repository runner.</div>'+
       field("steps","Build steps JSON",JSON.stringify(a.build?.steps||[],null,2),"textarea",'spellcheck="false"')+
       '<div class="full admin-help">Build steps are stored with the app and snapshotted into future jobs. Supported fields include name, stage, run, workingDirectory, timeoutSeconds, env and secrets using secret://env references.</div>'+
       '<div id="appAdminMsg" class="full admin-error"></div></form>';
@@ -2276,6 +2286,36 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       onDelete:editing?async()=>{const run=async()=>{try{await api("/api/apps/"+encodeURIComponent(a.id),{method:"DELETE"});closeAdmin();fcState.selectedApp=null;await refreshLive();showToast("App deleted.");}catch(e){showToast(e.message)}};if(typeof openConfirm==="function")openConfirm({title:"Delete "+a.id+"?",sub:"Job history is not deleted.",warning:"The app configuration will be removed.",text:"Existing immutable jobs and outputs remain available.",action:"Delete app",danger:true},run);else run()}:null});
     if(focusSteps){const el=q('[name="steps"]',adminBody);if(el)setTimeout(()=>el.focus(),0)}
   }
+
+  function openAppRunnerEditor(app){
+    if(!app||app.build?.executor!=="github-actions"){showToast("This App uses ForgeCore native infrastructure and does not need a repository runner.");return}
+    const runner=runnerForApp(app),repo=app.source?.repository||"",needsRepair=Boolean(runner&&runner.mode&&runner.mode!=="unregistered");
+    const statusText=runner?(runner.online?"Online":(runner.message||runner.error||runner.phase||runner.mode||"Configured")):"Not connected";
+    const body='<div class="admin-section"><h3>App-owned GitHub Actions runner</h3><p>This runner belongs to <b>'+esc(app.identity?.name||app.id)+'</b> because the App uses the GitHub Actions executor. Infrastructure only reports its health.</p>'+
+      '<div class="kv-list"><div><span>App</span><b>'+esc(app.id)+'</b></div><div><span>Repository</span><b class="mono">'+esc(repo)+'</b></div><div><span>Runner label</span><b class="mono">'+esc(repo.split("/").pop()||"—")+'</b></div><div><span>Status</span><b>'+esc(statusText)+'</b></div></div>'+
+      '<div class="admin-inline-actions"><a class="btn" target="_blank" rel="noopener noreferrer" href="https://github.com/'+encodeURI(repo)+'/settings/actions/runners/new">Open GitHub runner setup ↗</a></div></div>'+
+      '<div class="admin-section"><h3>'+(runner?"Repair or reconnect":"Connect runner")+'</h3><p>Paste a fresh repository runner registration token. ForgeCore clears the short-lived token after verified registration.</p>'+
+      '<form id="appRunnerForm" class="admin-form-grid">'+
+      field("token","Registration token","","password",'required autocomplete="off" data-full')+
+      '<label class="full"><span><input name="repair" type="checkbox" '+(needsRepair?'required':'')+'> I confirm replacement of an existing runner identity</span></label>'+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">'+(runner?"Connect / repair runner":"Connect runner")+'</button></div>'+
+      '<div id="appRunnerMsg" class="full admin-error"></div></form></div>';
+    openAdmin({title:"Runner · "+(app.identity?.name||app.id),sub:"Repository execution is configured from the App",body,hideSave:true});
+    const form=q("#appRunnerForm");
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();
+      const msg=q("#appRunnerMsg"),repair=form.elements.repair.checked;
+      if(needsRepair&&!repair){msg.textContent="Confirm runner identity replacement before Repair.";return}
+      try{
+        const button=q('button[type="submit"]',form);if(button)button.disabled=true;
+        await api("/api/apps/"+encodeURIComponent(app.id)+"/runner",{method:"POST",body:JSON.stringify({token:form.elements.token.value.trim(),repair_existing:repair})});
+        form.elements.token.value="";
+        msg.className="full admin-success";msg.textContent="Runner request accepted for this App.";
+        await refreshLive();setTimeout(()=>openAppRunnerEditor(fcState.apps.find(a=>a.id===app.id)||app),550);
+      }catch(err){msg.className="full admin-error";msg.textContent=err.message}
+    });
+  }
+
   function openPresetEditor(preset,duplicate){
     const editing=Boolean(preset&&!duplicate),p=preset||{id:"",name:"",release:{enabled:true,channel:"stable",tagPrefixTemplate:"{app.id}-",updateChannel:true},store:{enabled:false,mode:"pull-request",directoryTemplate:"olympus-{app.id}"},verification:{sha256:true,sigstore:true}};
     const body='<form id="presetAdminForm" class="admin-form-grid">'+
@@ -2306,16 +2346,25 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     f.elements.appId.addEventListener("change",()=>syncJobForm(true));f.elements.jobType.addEventListener("change",()=>syncJobForm(false));syncJobForm(false);
   }
   function openSettingsEditor(){
-    const s=fcState.status||{},rel=s.olympus_releases||{},sign=rel.signing||{},store=s.community_app_store||{},runners=s.runners||[];
-    const runnerRows=runners.map(r=>'<div class="admin-runner-row"><div><b>'+esc(r.repository)+'</b><div class="admin-help">'+esc(r.online?"Online":(r.message||r.error||r.phase||"Offline"))+'</div></div><button class="btn runner-repair-btn" type="button" data-repo="'+esc(r.repository)+'">Repair connection</button></div>').join("")||'<div class="admin-help">No repository runner is configured yet.</div>';
-    const body='<div class="admin-section"><h3>GitHub runners</h3><p>Registration tokens are used once and cleared after registration.</p>'+runnerRows+'<form id="runnerAdminForm" class="admin-form-grid">'+field("repository","Repository","","text",'required placeholder="owner/repository"')+field("token","Registration token","","password",'required autocomplete="off"')+'<label class="full"><span><input name="repair" type="checkbox"> I confirm replacement of an existing runner identity</span></label><div class="full admin-inline-actions"><button class="btn primary" type="submit">Connect runner</button><button id="restartListenerAdmin" class="btn" type="button">Restart listener</button></div><div id="runnerAdminMsg" class="full admin-error"></div></form></div>'+
-      '<div class="admin-section"><h3>Olympus Releases</h3><p>Secret values stay outside ForgeCore; only secret://env references are stored.</p><form id="releaseAdminForm" class="admin-form-grid">'+field("repository","Repository",rel.repository||"Jojje84/Olympus-Releases","text","required")+field("authRef","Credential reference",rel.authRef||"","text",'placeholder="secret://env/FORGECORE_RELEASE_TOKEN"')+field("signingEnabled","Sigstore signing",options([["true","Configured"],["false","Not configured"]],rel.signingConfigured?"true":"false"),"select")+field("signingEncoding","Signing encoding",options([["base64","Base64"],["plain","Plain"]],sign.encoding||"base64"),"select")+field("privateKeyRef","Private key reference",sign.privateKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PRIVATE_KEY_B64"')+field("publicKeyRef","Public key reference",sign.publicKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PUBLIC_KEY_B64"')+field("passwordRef","Password reference",sign.passwordRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PASSWORD"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Olympus Releases</button></div><div id="releaseAdminMsg" class="full admin-error"></div></form></div>'+
-      '<div class="admin-section"><h3>Community App Store</h3><form id="storeAdminForm" class="admin-form-grid">'+field("repository","Repository",store.repository||"Jojje84/olympus-community-app-store","text","required")+field("authRef","Credential reference",store.authRef||"","text",'placeholder="secret://env/FORGECORE_COMMUNITY_STORE_TOKEN"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Community Store</button></div><div id="storeAdminMsg" class="full admin-error"></div></form></div>'+
-      '<div class="admin-section"><h3>Cleanup & storage policy</h3><form id="cleanupPolicyForm" class="admin-form-grid">'+field("cleanup","Cleanup interval (days)",s.cleanup_interval_days||7,"number",'required min="1" max="365"')+field("cache","Cache max age (days)",s.cache_max_age_days||14,"number",'required min="1" max="365"')+field("workspace","Workspace max age (days)",s.workspace_max_age_days||30,"number",'required min="1" max="365"')+field("threshold","Disk cleanup threshold (%)",s.disk_cleanup_threshold_percent||85,"number",'required min="50" max="99"')+field("buildkit","BuildKit keep storage (GB)",s.buildkit_keep_storage_gb||50,"number",'required min="1" max="1000"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save cleanup policy</button></div><div id="cleanupPolicyMsg" class="full admin-error"></div></form></div>';
-    openAdmin({title:"ForgeCore settings",sub:"Installation-wide integrations, runners and storage policy",body,hideSave:true});
-    const rf=q("#runnerAdminForm");qa(".runner-repair-btn",adminBody).forEach(b=>b.addEventListener("click",()=>{rf.elements.repository.value=b.dataset.repo;rf.elements.repair.checked=true;rf.elements.token.focus()}));
-    rf.addEventListener("submit",async e=>{e.preventDefault();const m=q("#runnerAdminMsg");try{const repair=rf.elements.repair.checked;if(repair&&!confirm("Repair replaces the saved GitHub runner identity. Continue?"))return;await api("/api/runners",{method:"POST",body:JSON.stringify({repository:rf.elements.repository.value.trim(),token:rf.elements.token.value.trim(),repair_existing:repair})});rf.elements.token.value="";m.className="full admin-success";m.textContent="Runner connection request accepted.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
-    q("#restartListenerAdmin").addEventListener("click",async e=>{const b=e.currentTarget;try{b.disabled=true;await api("/api/reload",{method:"POST",body:"{}"});showToast("Runner listener restart requested.");setTimeout(refreshLive,600)}catch(err){showToast(err.message)}finally{b.disabled=false}});
+    const s=fcState.status||{},rel=s.olympus_releases||{},sign=rel.signing||{},store=s.community_app_store||{};
+    const body='<div class="admin-section"><h3>App execution scope</h3><p>Repositories, executors and GitHub Actions runner registration now belong to Apps. Infrastructure reports capacity and health; Settings does not create repository runners.</p></div>'+
+      '<div class="admin-section"><h3>Olympus Releases</h3><p>Secret values stay outside ForgeCore; only secret://env references are stored.</p><form id="releaseAdminForm" class="admin-form-grid">'+
+      field("repository","Repository",rel.repository||"Jojje84/Olympus-Releases","text","required")+field("authRef","Credential reference",rel.authRef||"","text",'placeholder="secret://env/FORGECORE_RELEASE_TOKEN"')+
+      field("signingEnabled","Sigstore signing",options([["true","Configured"],["false","Not configured"]],rel.signingConfigured?"true":"false"),"select")+
+      field("signingEncoding","Signing encoding",options([["base64","Base64"],["plain","Plain"]],sign.encoding||"base64"),"select")+
+      field("privateKeyRef","Private key reference",sign.privateKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PRIVATE_KEY_B64"')+
+      field("publicKeyRef","Public key reference",sign.publicKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PUBLIC_KEY_B64"')+
+      field("passwordRef","Password reference",sign.passwordRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PASSWORD"')+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Olympus Releases</button></div><div id="releaseAdminMsg" class="full admin-error"></div></form></div>'+
+      '<div class="admin-section"><h3>Community App Store</h3><form id="storeAdminForm" class="admin-form-grid">'+
+      field("repository","Repository",store.repository||"Jojje84/olympus-community-app-store","text","required")+field("authRef","Credential reference",store.authRef||"","text",'placeholder="secret://env/FORGECORE_COMMUNITY_STORE_TOKEN"')+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Community Store</button></div><div id="storeAdminMsg" class="full admin-error"></div></form></div>'+
+      '<div class="admin-section"><h3>Cleanup & storage policy</h3><form id="cleanupPolicyForm" class="admin-form-grid">'+
+      field("cleanup","Cleanup interval (days)",s.cleanup_interval_days||7,"number",'required min="1" max="365"')+field("cache","Cache max age (days)",s.cache_max_age_days||14,"number",'required min="1" max="365"')+
+      field("workspace","Workspace max age (days)",s.workspace_max_age_days||30,"number",'required min="1" max="365"')+field("threshold","Disk cleanup threshold (%)",s.disk_cleanup_threshold_percent||85,"number",'required min="50" max="99"')+
+      field("buildkit","BuildKit keep storage (GB)",s.buildkit_keep_storage_gb||50,"number",'required min="1" max="1000"')+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save cleanup policy</button></div><div id="cleanupPolicyMsg" class="full admin-error"></div></form></div>';
+    openAdmin({title:"ForgeCore settings",sub:"Installation-wide publishing integrations and storage policy",body,hideSave:true});
     q("#releaseAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#releaseAdminMsg"),enabled=f.elements.signingEnabled.value==="true",data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim(),signingEnabled:enabled,signingEncoding:f.elements.signingEncoding.value,privateKeyRef:f.elements.privateKeyRef.value.trim(),publicKeyRef:f.elements.publicKeyRef.value.trim(),passwordRef:f.elements.passwordRef.value.trim()};try{await api("/api/integrations/olympus-releases",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Olympus Releases saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
     q("#storeAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#storeAdminMsg"),data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim()};try{await api("/api/integrations/community-app-store",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Community Store saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
     q("#cleanupPolicyForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#cleanupPolicyMsg"),data={cleanup_interval_days:Number(f.elements.cleanup.value),cache_max_age_days:Number(f.elements.cache.value),workspace_max_age_days:Number(f.elements.workspace.value),disk_cleanup_threshold_percent:Number(f.elements.threshold.value),buildkit_keep_storage_gb:Number(f.elements.buildkit.value)};try{await api("/api/settings",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Cleanup policy saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
@@ -2416,7 +2465,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const health=qa("#overview .health-grid .health");
     if(health[0]){const v=q(".health-value",health[0]),sub=q(".health-sub",health[0]);if(v)v.textContent=s.manager_alive?"Online":"Offline";if(sub)sub.textContent=s.manager_runtime_version||"Native worker"}
     if(health[1]){const v=q(".health-value",health[1]),sub=q(".health-sub",health[1]);if(v)v.textContent=s.docker_online?"Healthy":"Unavailable";if(sub)sub.textContent=s.compose_online?"Docker + Compose":"Docker runtime"}
-    if(health[2]){const online=(s.runners||[]).filter(r=>r.online).length,v=q(".health-value",health[2]),sub=q(".health-sub",health[2]);if(v)v.textContent=online+" / "+(s.runners||[]).length;if(sub)sub.textContent="GitHub Actions adapters"}
+    if(health[2]){const assigned=(s.runners||[]).filter(r=>r.assigned),online=assigned.filter(r=>r.online).length,unassigned=(s.runners||[]).filter(r=>!r.assigned).length,v=q(".health-value",health[2]),sub=q(".health-sub",health[2]);if(v)v.textContent=online+" / "+assigned.length;if(sub)sub.textContent=unassigned?(unassigned+" unassigned runner"+(unassigned===1?"":"s")+" need Apps"):"App-owned GitHub Actions runners"}
     if(health[3]){const v=q(".health-value",health[3]),sub=q(".health-sub",health[3]);if(v)v.textContent=(s.cache_max_age_days||"—")+"d";if(sub)sub.textContent="Cache retention policy"}
 
     const appList=q("#overview .app-list");
@@ -2456,7 +2505,19 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const icon=q("#selectedAppIcon");if(icon)icon.textContent=name.charAt(0).toUpperCase();
     const detailMeta=q("#apps .detail-meta");
     if(detailMeta)detailMeta.innerHTML='<span id="selectedAppId">'+esc(app.id)+'</span><span>•</span><span id="selectedExecutor">'+esc(exec)+'</span><span>•</span><span>preset: '+esc(app.publish?.preset||"—")+'</span>';
-    const readyPill=q("#apps .detail-title-row .status-pill");if(readyPill){readyPill.textContent="Configured";readyPill.className="status-pill"}
+    const runner=runnerForApp(app);
+    const readyPill=q("#apps .detail-title-row .status-pill");
+    if(readyPill){
+      if(exec==="github-actions"&&!runner){readyPill.textContent="Runner missing";readyPill.className="status-pill fail"}
+      else if(exec==="github-actions"&&!runner.online){readyPill.textContent="Runner "+(runner.phase||"offline");readyPill.className="status-pill "+statusClass(runner.phase||"pending")}
+      else{readyPill.textContent="Configured";readyPill.className="status-pill"}
+    }
+    const detailActions=q("#apps .app-detail-actions"),oldRunnerAction=q("#appRunnerAction");
+    if(oldRunnerAction)oldRunnerAction.remove();
+    if(exec==="github-actions"&&detailActions){
+      const rb=document.createElement("button");rb.id="appRunnerAction";rb.className="btn";rb.textContent=runner?.online?"Runner · Online":runner?"Runner · "+(runner.phase||"Configured"):"Connect runner";
+      rb.addEventListener("click",()=>openAppRunnerEditor(app));detailActions.insertBefore(rb,detailActions.children[1]||null);
+    }
 
     const change=q("#apps .config-change");
     if(change)change.textContent=latest?("● Latest job: "+latest.status+(latest.currentStage?" · "+latest.currentStage:"")):"● No jobs yet";
@@ -2497,7 +2558,13 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(overviewCards[1]){
       const pill=q(".subcard-head .status-pill",overviewCards[1]);if(pill)pill.textContent=exec==="forgecore-native"?"Native":"Actions";
       const rows=qa(".kv-list > div",overviewCards[1]);
-      const vals=[
+      const vals=exec==="github-actions"?[
+        ["Executor",exec],
+        ["Runner",runner?(runner.online?"Online":(runner.phase||runner.mode||"Configured")):"Not connected"],
+        ["Runner label",runner?.label||repo.split("/").pop()||"—"],
+        ["Targets",(app.build?.targets||[]).join(" · ")||"—"],
+        ["Workspace","Repository runner _work"]
+      ]:[
         ["Executor",exec],
         ["Build steps",String((app.build?.steps||[]).length)+" configured"],
         ["Targets",(app.build?.targets||[]).join(" · ")||"—"],
@@ -2538,7 +2605,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     const healthCard=overviewGrids[1]?.querySelector(".subcard:nth-child(2)");
     if(healthCard){
-      const checks=q(".check-list",healthCard);if(checks)checks.innerHTML='<div><span class="check">✓</span><span>App schema validated</span></div><div><span class="check">✓</span><span>Publish preset exists</span></div><div><span class="check">✓</span><span>Package configuration validated</span></div><div><span class="check">✓</span><span>Secret material stored as references</span></div>';
+      const checks=q(".check-list",healthCard);if(checks)checks.innerHTML='<div><span class="check">✓</span><span>App schema validated</span></div><div><span class="check">✓</span><span>Publish preset exists</span></div><div><span class="check">✓</span><span>Package configuration validated</span></div>'+(exec==="github-actions"?'<div><span class="'+(runner?.online?"check":"lock-dot")+'">'+(runner?.online?"✓":"●")+'</span><span>'+(runner?.online?"App runner online":runner?"App runner needs attention":"App runner not connected")+'</span></div>':'<div><span class="check">✓</span><span>Shared native infrastructure</span></div>');
     }
 
     const steps=q("#app-build .step-list");
@@ -2595,21 +2662,37 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }));
   }
   function renderApps(){
-    const apps=fcState.apps,presets=fcState.presets;
+    const apps=fcState.apps,presets=fcState.presets,runners=fcState.status?.runners||[],unassigned=unassignedRunners();
+    const actionApps=apps.filter(a=>a.build?.executor==="github-actions");
+    const assignedOnline=actionApps.filter(a=>runnerForApp(a)?.online).length;
     const cards=qa("#apps > .grid4 > .card");
     metric(cards[0],"Managed apps",String(apps.length),"Validated app configurations","Live");
-    metric(cards[1],"Native executor",String(apps.filter(a=>a.build?.executor==="forgecore-native").length),"forgecore-native applications","Ready");
-    metric(cards[2],"Actions adapter",String(apps.filter(a=>a.build?.executor==="github-actions").length),"GitHub Actions compatibility applications","Compatible");
+    metric(cards[1],"Native executor",String(apps.filter(a=>a.build?.executor==="forgecore-native").length),"Apps using shared ForgeCore runtime","Ready");
+    metric(cards[2],"GitHub Actions apps",String(actionApps.length),assignedOnline+" runner"+(assignedOnline===1?"":"s")+" online · "+unassigned.length+" unassigned","App-owned");
     metric(cards[3],"Publish presets",String(presets.length),"Reusable release/store policies","Live");
-    const list=q("#apps .apps-nav-list"),workspace=q("#apps .apps-workspace"),detail=q("#apps .apps-detail");
+
+    const workspace=q("#apps .apps-workspace"),appsView=q("#apps");
+    let notice=q("#unassignedRunnerNotice");
+    if(unassigned.length){
+      if(!notice){
+        notice=document.createElement("div");notice.id="unassignedRunnerNotice";notice.className="source-note section";
+        appsView.insertBefore(notice,workspace);
+      }
+      notice.innerHTML='<div><b>'+unassigned.length+' existing runner'+(unassigned.length===1?" is":"s are")+' not assigned to an App</b><small>This is a migration state, not the normal v2 model. Create an App using the same repository and GitHub Actions executor to adopt it.</small></div><div class="actions">'+unassigned.map(r=>'<button class="btn adopt-runner" data-runner-repo="'+esc(r.repository)+'">Create App · '+esc(r.label||r.repository)+'</button>').join("")+'</div>';
+      qa(".adopt-runner",notice).forEach(b=>b.addEventListener("click",()=>openAppEditor(null,false,b.dataset.runnerRepo)));
+    }else if(notice){notice.remove()}
+
+    const list=q("#apps .apps-nav-list"),detail=q("#apps .apps-detail");
     if(list){
       list.innerHTML=apps.length?apps.map((a,i)=>{
-        const name=a.identity?.name||a.id,ex=a.build?.executor||"";
+        const name=a.identity?.name||a.id,ex=a.build?.executor||"",runner=runnerForApp(a);
+        const cls=ex!=="github-actions"?"ok":runner?.online?"ok":runner?"running":"bad";
+        const title=ex!=="github-actions"?"Shared native infrastructure":runner?.online?"App runner online":runner?("Runner "+(runner.phase||"configured")):"Runner not connected";
         return '<button class="app-nav-item '+(i===0?"active":"")+'" data-app-id="'+esc(a.id)+'">'+
           '<span class="app-icon large">'+esc(name.charAt(0).toUpperCase())+'</span>'+
           '<span class="app-nav-copy"><b>'+esc(name)+'</b><small>'+esc(a.id)+'</small></span>'+
-          '<span class="status-dot ok" title="'+esc(ex)+'"></span></button>';
-      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Create the first app directly in this dashboard.</p></div>';
+          '<span class="status-dot '+cls+'" title="'+esc(title)+'"></span></button>';
+      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>'+(unassigned.length?"Create an App for the existing unassigned runner, or add a new App.":"Create the first app directly in this dashboard.")+'</p></div>';
       bindAppButtons();
     }
     let emptyDetail=q("#appsEmptyDetail");
@@ -2620,7 +2703,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         emptyDetail=document.createElement("div");
         emptyDetail.id="appsEmptyDetail";
         emptyDetail.className="card app-empty-detail";
-        emptyDetail.innerHTML='<div><div class="state-glyph">∅</div><b>No app selected</b><p>The app detail, lifecycle, artifacts and job state stay hidden until a real app exists in the registry.</p></div>';
+        emptyDetail.innerHTML='<div><div class="state-glyph">∅</div><b>No app selected</b><p>Apps are the v2 ownership boundary for repositories, executors, GitHub runners, jobs and publishing.</p></div>';
         workspace.appendChild(emptyDetail);
       }
     }else{
@@ -2629,9 +2712,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       const selected=fcState.selectedApp&&apps.find(a=>a.id===fcState.selectedApp.id)?fcState.selectedApp:apps[0];
       if(selected)selectApp(selected,false);
     }
-    const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
+    const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+actionApps.length+" GitHub Actions · "+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
     q("#apps")?.classList.add("live-ready");
   }
+
   function renderJobs(){
     const jobs=fcState.jobs,appsById=Object.fromEntries(fcState.apps.map(a=>[a.id,a]));
     const cards=qa("#jobs > .grid4 > .card");
@@ -2782,7 +2866,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     metric(cards[2],"External storage",(s.disk_used||"—")+" / "+(s.disk_total||"—"),s.storage_display||"/forgecore/storage","Mounted");
     const health=qa("#infrastructure .health");
     if(health[0]){const v=q(".health-value",health[0]),sub=q(".health-sub",health[0]),dot=q(".dot",health[0]);if(v)v.textContent=s.manager_alive?"Available":"Unavailable";if(sub)sub.textContent="ForgeCore native worker/runtime";if(dot)dot.style.opacity=s.manager_alive?"1":".3"}
-    if(health[1]){const online=(s.runners||[]).filter(r=>r.online).length,v=q(".health-value",health[1]),sub=q(".health-sub",health[1]);if(v)v.textContent=online+" runner"+(online===1?"":"s");if(sub)sub.textContent="GitHub Actions compatibility adapter"}
+    if(health[1]){const assigned=(s.runners||[]).filter(r=>r.assigned),online=assigned.filter(r=>r.online).length,unassigned=(s.runners||[]).filter(r=>!r.assigned).length,v=q(".health-value",health[1]),sub=q(".health-sub",health[1]);if(v)v.textContent=online+" / "+assigned.length+" online";if(sub)sub.textContent=unassigned?(unassigned+" unassigned runner"+(unassigned===1?"":"s")+" · assign from Apps"):"App-owned GitHub Actions capacity"}
     const cleanup=q("#storage-cleanup");
     if(cleanup){
       const pill=q(".section-title .status-pill",cleanup);if(pill){pill.textContent=s.cleanup_running?"Cleanup running":s.cleanup_pending?"Cleanup queued":"Retention active";pill.className="status-pill "+(s.cleanup_running?"run":s.cleanup_pending?"queue":"")}
@@ -2809,6 +2893,11 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(title)title.textContent="Maintenance API not implemented";
       if(copy)copy.textContent="The current Control API does not expose maintenance mode yet.";
       const b=q("#maintenanceToggle",maintenance);if(b){b.disabled=true;b.textContent="Unavailable"}
+    }
+    const restart=q("#restartRunnerManager");
+    if(restart&&restart.dataset.productionBound!=="1"){
+      const b=cloneNoHandlers(restart);b.dataset.productionBound="1";
+      b.addEventListener("click",async()=>{try{b.disabled=true;await api("/api/reload",{method:"POST",body:"{}"});showToast("Runner manager restart requested.");setTimeout(refreshLive,700)}catch(e){showToast(e.message)}finally{b.disabled=false}});
     }
     bindCleanup();
   }
@@ -2880,10 +2969,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(impact)impact.textContent=String(apps.length);
     }
     const fields=qa("#settings-integrations .field");
-    const runners=s.runners||[],online=runners.filter(r=>r.online).length;
+    const actionApps=apps.filter(a=>a.build?.executor==="github-actions");
     if(fields[0]){
-      const value=q(".field-value span:first-child",fields[0]);if(value)value.textContent=runners.length?(online+" / "+runners.length+" online"):"No runner configured";
-      const pill=q(".status-pill",fields[0]);if(pill){pill.textContent=!runners.length?"Not configured":online===runners.length?"Healthy":online?"Partial":"Offline";pill.className="status-pill "+(online===runners.length&&runners.length?"":online?"queue":"fail")}
+      const value=q(".field-value span:first-child",fields[0]);if(value)value.textContent=actionApps.length+" App"+(actionApps.length===1?"":"s")+" use GitHub Actions";
+      const pill=q(".status-pill",fields[0]);if(pill){pill.textContent="App scope";pill.className="status-pill neutral"}
     }
     if(fields[1]){
       const value=q(".field-value span:first-child",fields[1]);if(value)value.textContent=s.olympus_releases?.repository||"Not configured";

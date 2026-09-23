@@ -32,7 +32,7 @@ STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
-WEB_BUILD = "0.1.0-beta.43"
+WEB_BUILD = "0.1.0-beta.44"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -875,6 +875,13 @@ def get_app(app_id):
         return None
     return validate_app(read_json(path))
 
+def apps_for_runner_repository(repository):
+    return [
+        app for app in apps()[0]
+        if app.get("build", {}).get("executor") == "github-actions"
+        and app.get("source", {}).get("repository") == repository
+    ]
+
 def save_app(data):
     app = validate_app(data)
     ensure_control_plane()
@@ -1443,6 +1450,15 @@ def executor_adapter(name):
 
 
 def runners():
+    managed_apps = apps()[0]
+    apps_by_repository = {}
+    for app in managed_apps:
+        if app.get("build", {}).get("executor") != "github-actions":
+            continue
+        repository = app.get("source", {}).get("repository", "")
+        if repository:
+            apps_by_repository.setdefault(repository, []).append(app)
+
     out = []
     for p in sorted(RD.glob("*.env")):
         if p.name == "runner.env.example":
@@ -1496,6 +1512,8 @@ def runners():
                 return int((ST / f"runner-{s}.{suffix}").read_text().strip())
             except (OSError, ValueError):
                 return 0
+
+        linked_apps = apps_by_repository.get(repo, [])
         out.append({
             "repository": repo,
             "name": name,
@@ -1505,6 +1523,9 @@ def runners():
             "message": message,
             "online": online,
             "error": er,
+            "assigned": bool(linked_apps),
+            "appIds": [app["id"] for app in linked_apps],
+            "appNames": [app.get("identity", {}).get("name", app["id"]) for app in linked_apps],
             "last_job_started_epoch": read_epoch("job-started-epoch"),
             "last_job_completed_epoch": read_epoch("job-completed-epoch"),
         })
@@ -1582,7 +1603,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta43_seen"] = "ForgeCore 0.1.0-beta.43 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta44_seen"] = "ForgeCore 0.1.0-beta.44 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -1692,20 +1713,45 @@ def save_settings(data):
     sync_legacy_cleanup_env(global_config)
     append_activity("settings", "ForgeCore v2 global cleanup configuration updated")
 
-def save_runner(data):
-    repo = str(data.get("repository", "")).strip()
+def save_runner(data, app_id=None):
+    requested_app_id = app_id or str(data.get("appId", "")).strip()
+    supplied_repository = str(data.get("repository", "")).strip()
+    app = None
+
+    if requested_app_id:
+        app = get_app(requested_app_id)
+        if app is None:
+            raise ValueError("Runner registration requires an existing managed App.")
+        if app.get("build", {}).get("executor") != "github-actions":
+            raise ValueError("Only Apps using the GitHub Actions executor can own a repository runner.")
+        repo = app.get("source", {}).get("repository", "")
+        if supplied_repository and supplied_repository != repo:
+            raise ValueError("Runner repository must match the App source repository.")
+    else:
+        repo = supplied_repository
+        if not REPO.fullmatch(repo):
+            raise ValueError("Repository must look like owner/repository.")
+        matching_apps = apps_for_runner_repository(repo)
+        if not matching_apps:
+            raise ValueError(
+                "Runner registration must belong to a managed App using the GitHub Actions executor."
+            )
+        app = matching_apps[0]
+
     token = str(data.get("token", "")).strip()
     repair_existing = data.get("repair_existing") is True
     if not REPO.fullmatch(repo):
-        raise ValueError("Repository must look like owner/repository.")
+        raise ValueError("App source repository must look like owner/repository.")
     if not TOKEN.fullmatch(token):
         raise ValueError("Enter a fresh GitHub self-hosted runner registration token.")
+
     identity_mode = stored_runner_identity_mode(repo)
     if identity_mode != "unregistered" and not repair_existing:
         raise RunnerConflictError(
             "Runner identity already exists. No changes were made. "
             "Open Repair connection and explicitly confirm replacement first."
         )
+
     s = slug(repo)
     dst = RD / f"{s}.env"
     for candidate in RD.glob("*.env"):
@@ -1729,6 +1775,7 @@ def save_runner(data):
             {
                 "epoch": int(__import__("time").time()),
                 "repository": repo,
+                "appId": app["id"],
                 "phase": "queued",
                 "mode": "unknown",
                 "message": "Repair request saved; waiting for runner manager",
@@ -1739,7 +1786,7 @@ def save_runner(data):
         encoding="utf-8",
     )
     os.replace(runtime_tmp, runtime_path)
-    append_activity("runner", f"Runner registration requested for {repo}")
+    append_activity("runner", f"Runner registration requested for app {app['id']} ({repo})")
     (ST / "reload-runners.request").touch()
 
 def tail_text(path, max_bytes=65536):
@@ -1889,7 +1936,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta43_seen": bool(current.get("bootstrap_beta43_seen")),
+                "bootstrap_beta44_seen": bool(current.get("bootstrap_beta44_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
@@ -1915,7 +1962,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             path = urlparse(self.path).path
-            if path == "/api/runners":
+            if path.startswith("/api/apps/") and path.endswith("/runner"):
+                app_id = path[len("/api/apps/"):-len("/runner")].rstrip("/")
+                save_runner(data, app_id=app_id)
+            elif path == "/api/runners":
                 save_runner(data)
             elif path == "/api/jobs":
                 self.send_json(201, {"ok": True, "job": create_job(data)})
