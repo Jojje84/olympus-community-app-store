@@ -435,6 +435,23 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
   .about-actions{flex-wrap:wrap}
   .modal-actions{flex-wrap:wrap}
 }
+
+/* live dashboard stabilization */
+.live-mode-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-4px 0 14px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:#0a1119}
+.live-mode-strip>div{min-width:0}.live-mode-strip b,.live-mode-strip span{display:block}.live-mode-strip b{font-size:10px}.live-mode-strip span{margin-top:2px;color:var(--muted);font-size:9px}
+.live-mode-strip .btn{min-height:30px;padding:5px 9px;font-size:9px;text-decoration:none;flex:0 0 auto}
+.live-unavailable{padding:18px;display:flex;gap:12px;align-items:flex-start}.live-unavailable .state-glyph{flex:0 0 auto}.live-unavailable b{display:block;font-size:11px}.live-unavailable p{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.55}
+html[data-theme="light"] .live-mode-strip{background:#fff}
+@media(max-width:620px){.live-mode-strip{align-items:flex-start;flex-direction:column}.live-mode-strip .btn{width:100%}}
+
+#apps:not(.live-ready) .apps-detail{visibility:hidden}
+#overview:not(.live-ready) .grid2.section,
+#overview:not(.live-ready) > .card.section{visibility:hidden}
+#releases:not(.live-ready) #releaseData,
+#presets:not(.live-ready) .preset-layout,
+#settings:not(.live-ready) .grid2,
+#settings:not(.live-ready) #backup-restore{visibility:hidden}
+.live-empty{padding:16px;color:var(--muted);font-size:10px;text-align:center}
 </style>
 </head>
 <body>
@@ -463,7 +480,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
     <div class="side-bottom">
       <div class="runtime">
         <div class="runtime-head"><div class="online"><span class="dot"></span>Healthy</div><span class="tiny">local</span></div>
-        <div class="version"><span>Runtime</span><b>beta.36</b></div>
+        <div class="version"><span>Runtime</span><b data-runtime-build>—</b></div>
         <div class="version"><span>Control API</span><b>v2</b></div>
       </div>
       <div class="side-footer">
@@ -503,7 +520,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
         <svg class="theme-icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
         <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.8 6.8 0 0 0 21 12.8z"/></svg>
       </button>
-      <span class="badge">dev · beta.36</span>
+      <span class="badge">dev · <span data-runtime-build>—</span></span>
       <button id="avatarToggle" class="avatar avatar-button" type="button" aria-label="Open account menu" title="Jojje">
         <img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="Jojje">
       </button>
@@ -520,13 +537,17 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           <div class="actions"><button class="btn" data-go="apps">Add app</button><button class="btn primary demo">Queue job</button></div>
         </div>
         <div id="liveDataNote" class="note">Connecting to the ForgeCore Control API…</div>
+        <div class="live-mode-strip">
+          <div><b>Live dashboard</b><span>Read state is shown from this ForgeCore installation. Configuration actions that are not migrated yet open Legacy Admin.</span></div>
+          <a class="btn" href="/legacy">Legacy Admin ↗</a>
+        </div>
         <div class="system-status-strip">
           <button class="system-status-main system-status-link" type="button" data-go="infrastructure"><span class="dot"></span><b id="overviewOpsState">ForgeCore healthy</b></button>
           <button class="system-status-link" type="button" data-go="jobs"><b>2</b> jobs running</button>
           <button class="system-status-link" type="button" data-go="jobs"><b>0</b> failed</button>
           <button class="system-status-link" type="button" data-go="infrastructure" data-status-anchor="storage-cleanup"><b>38%</b> storage</button>
           <button class="system-status-link" type="button" data-go="settings" data-status-anchor="backup-restore"><b>2h</b> since backup</button>
-          <button class="system-status-link system-update" type="button" data-go="infrastructure" data-status-anchor="forgecore-updates"><b>beta.37</b> available</button>
+          <button class="system-status-link system-update" type="button" data-go="infrastructure" data-status-anchor="forgecore-updates"><b>—</b> available</button>
         </div>
         <div class="grid4">
           <div class="card pad"><div class="metric-label"><span>Platform health</span><span class="status-pill">Healthy</span></div><div class="metric">All systems</div><div class="metric-sub">Docker, native worker and runner adapter online</div></div>
@@ -539,7 +560,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           <div class="card">
             <div class="section-title"><div><h2>Active pipeline</h2><p>Immutable job snapshot · forgecore-native</p></div><span class="status-pill run">Running</span></div>
             <div class="pipeline">
-              <div class="pipeline-top"><div><div class="job-title">Olympus Core · build-and-publish</div><div class="job-meta mono"><button class="job-link mono" data-job-id="job-7fd83a">job-7fd83a</button> · refs/heads/dev · 02:41 elapsed</div></div><button class="link job-link" data-job-id="job-7fd83a">View job →</button></div>
+              <div class="pipeline-top"><div><div class="job-title">Olympus Core · build-and-publish</div><div class="job-meta mono"><button class="job-link mono" data-job-id="job-pending">job-pending</button> · refs/heads/dev · 02:41 elapsed</div></div><button class="link job-link" data-job-id="job-pending">View job →</button></div>
               <div class="stage-row">
                 <div class="stage done"><div class="bar"></div><div class="stage-name">Source</div></div>
                 <div class="stage done"><div class="bar"></div><div class="stage-name">Build</div></div>
@@ -624,7 +645,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
             </div>
             <div class="apps-search-wrap"><input id="appSearch" class="search apps-search" placeholder="Search apps…"></div>
             <div class="apps-nav-list">
-              <button class="app-nav-item active" data-app-select="Olympus Core" data-app-id="olympus-core" data-repo="Jojje84/olympus-core" data-executor="forgecore-native">
+              <button class="app-nav-item active" data-app-select="Olympus Core" data-app-id="olympus-core" data-repo="—" data-executor="forgecore-native">
                 <span class="app-icon large">O</span><span class="app-nav-copy"><b>Olympus Core</b><small>olympus-core</small></span><span class="status-dot ok"></span>
               </button>
               <button class="app-nav-item" data-app-select="ForgeCore" data-app-id="forgecore" data-repo="Jojje84/ForgeCore" data-executor="github-actions">
@@ -649,7 +670,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                 <div class="app-icon hero" id="selectedAppIcon">O</div>
                 <div>
                   <div class="detail-title-row"><h2 id="selectedAppName">Olympus Core</h2><span class="status-pill">Ready</span></div>
-                  <div class="detail-repo mono" id="selectedAppRepo">Jojje84/olympus-core</div>
+                  <div class="detail-repo mono" id="selectedAppRepo">—</div>
                   <div class="detail-meta"><span id="selectedAppId">olympus-core</span><span>•</span><span id="selectedExecutor">forgecore-native</span><span>•</span><span>preset: olympus-default</span></div>
                 </div>
               </div>
@@ -692,7 +713,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                 <div class="grid3 app-summary-grid">
                   <div class="summary-box"><span>Default branch</span><b class="mono">main</b><small>Source checkout ref</small></div>
                   <div class="summary-box"><span>Targets</span><b>amd64 · arm64</b><small>2 package architectures</small></div>
-                  <div class="summary-box"><span>Latest release</span><b>v0.8.4</b><small>Stable · 2 days ago</small></div>
+                  <div class="summary-box"><span>Latest release</span><b>—</b><small>Stable · 2 days ago</small></div>
                 </div>
 
                 <div class="grid2 section">
@@ -700,7 +721,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                     <div class="subcard-head"><div><b>Source</b><small>Where ForgeCore checks out code</small></div><span class="status-pill">Valid</span></div>
                     <div class="kv-list">
                       <div><span>Provider</span><b>GitHub</b></div>
-                      <div><span>Repository</span><b class="mono">Jojje84/olympus-core</b></div>
+                      <div><span>Repository</span><b class="mono">—</b></div>
                       <div><span>Branch</span><b class="mono">main</b></div>
                       <div><span>Private repository</span><b>Yes</b></div>
                       <div><span>Auth reference</span><b class="mono">secret://env/FORGECORE_GITHUB_TOKEN</b></div>
@@ -738,7 +759,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                   <div class="artifact-grid">
                     <div class="artifact-card">
                       <div class="artifact-top"><span class="artifact-icon">PKG</span><span class="status-pill">Verified</span></div>
-                      <b>olympus-core-v0.8.4.tar.gz</b>
+                      <b>olympus-core-—.tar.gz</b>
                       <small>48.3 MB · amd64 + arm64</small>
                       <div class="artifact-meta"><span>SHA-256</span><code>91d8…b2a4</code></div>
                       <div class="artifact-meta"><span>Manifest</span><code>18 files</code></div>
@@ -746,8 +767,8 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                     <div class="artifact-card">
                       <div class="artifact-top"><span class="artifact-icon">REL</span><span class="status-pill">Published</span></div>
                       <b>Olympus Releases</b>
-                      <small>v0.8.4 · stable channel</small>
-                      <div class="artifact-meta"><span>Tag</span><code>olympus-core-v0.8.4</code></div>
+                      <small>— · stable channel</small>
+                      <div class="artifact-meta"><span>Tag</span><code>olympus-core-—</code></div>
                       <div class="artifact-meta"><span>Published</span><span>2 days ago</span></div>
                     </div>
                     <div class="artifact-card">
@@ -760,7 +781,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                   </div>
                   <div class="release-history">
                     <div class="release-row">
-                      <span class="release-version">v0.8.4</span>
+                      <span class="release-version">—</span>
                       <span class="release-channel stable">stable</span>
                       <span>Build ✓</span><span>Package ✓</span><span>Release ✓</span><span>Store ✓</span>
                       <span class="release-time">2d ago</span>
@@ -776,7 +797,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
 
 <div class="grid2 section">
                   <div class="subcard">
-                    <div class="subcard-head"><div><b>Current job</b><small>job-7fd83a · build-and-publish</small></div><span class="status-pill run">Running</span></div>
+                    <div class="subcard-head"><div><b>Current job</b><small>job-pending · build-and-publish</small></div><span class="status-pill run">Running</span></div>
                     <div class="stage-row compact">
                       <div class="stage done"><div class="bar"></div><div class="stage-name">Source</div></div>
                       <div class="stage done"><div class="bar"></div><div class="stage-name">Build</div></div>
@@ -908,9 +929,9 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
               <div id="app-jobs" class="app-tab-pane">
                 <div class="app-jobs-head"><div><b>Recent jobs for Olympus Core</b><div class="secondary">Immutable execution records and their resolved config revisions.</div></div><button class="btn primary demo">Queue new job</button></div>
                 <div class="table-scroll"><table><thead><tr><th>Job</th><th>Type</th><th>Ref</th><th>Executor</th><th>Revision</th><th>Duration</th><th>Status</th></tr></thead><tbody>
-                  <tr><td><button class="job-link mono" data-job-id="job-7fd83a">job-7fd83a</button></td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td class="mono">7fa0c9…e172</td><td>02:41</td><td><span class="status-pill run">Running</span></td></tr>
+                  <tr><td><button class="job-link mono" data-job-id="job-pending">job-pending</button></td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td class="mono">7fa0c9…e172</td><td>02:41</td><td><span class="status-pill run">Running</span></td></tr>
                   <tr><td><button class="job-link mono" data-job-id="job-282fc0">job-282fc0</button></td><td>build</td><td class="mono">main</td><td class="mono">forgecore-native</td><td class="mono">d1c891…0bf2</td><td>04:18</td><td><span class="status-pill">Succeeded</span></td></tr>
-                  <tr><td><button class="job-link mono" data-job-id="job-d18a42">job-d18a42</button></td><td>build-and-publish</td><td class="mono">v0.8.4</td><td class="mono">forgecore-native</td><td class="mono">a8e441…73c1</td><td>06:52</td><td><span class="status-pill">Succeeded</span></td></tr>
+                  <tr><td><button class="job-link mono" data-job-id="job-d18a42">job-d18a42</button></td><td>build-and-publish</td><td class="mono">—</td><td class="mono">forgecore-native</td><td class="mono">a8e441…73c1</td><td>06:52</td><td><span class="status-pill">Succeeded</span></td></tr>
                   <tr><td><button class="job-link mono" data-job-id="job-0cd9e1">job-0cd9e1</button></td><td>build</td><td class="mono">feature/ui</td><td class="mono">forgecore-native</td><td class="mono">a8e441…73c1</td><td>03:59</td><td><span class="status-pill fail">Failed</span></td></tr>
                 </tbody></table></div>
               </div>
@@ -935,10 +956,10 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
         <div id="jobsError" class="card state-panel error-state hidden"><div class="state-glyph">!</div><div><b>Jobs could not be refreshed</b><p>ForgeCore is showing the last known job state because the Control API is unavailable.</p><button class="btn api-retry-inline">Retry connection</button></div></div>
         <div id="jobsEmpty" class="card state-panel hidden"><div class="state-glyph">∅</div><div><b>No jobs match this view</b><p>Clear the current search/status filter or queue a new job.</p><button id="clearJobsFilters" class="btn">Clear filters</button></div></div>
         <div id="jobsTable" class="card table-card section"><div class="table-scroll"><table><thead><tr><th>Job ID</th><th>App</th><th>Type</th><th>Ref</th><th>Executor</th><th>Stage</th><th>Status</th><th>Started</th></tr></thead><tbody>
-          <tr class="job-open" data-job-id="job-7fd83a"><td><button class="job-link mono" data-job-id="job-7fd83a">job-7fd83a</button></td><td>Olympus Core</td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td>test</td><td><span class="status-pill run">Running</span></td><td>11:24</td></tr>
+          <tr class="job-open" data-job-id="job-pending"><td><button class="job-link mono" data-job-id="job-pending">job-pending</button></td><td>Olympus Core</td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td>test</td><td><span class="status-pill run">Running</span></td><td>11:24</td></tr>
           <tr><td><button class="job-link mono" data-job-id="job-a9c412">job-a9c412</button></td><td>ForgeCore</td><td>build</td><td class="mono">dev</td><td class="mono">github-actions</td><td>completed</td><td><span class="status-pill">Succeeded</span></td><td>11:18</td></tr>
           <tr><td><button class="job-link mono" data-job-id="job-11ebd0">job-11ebd0</button></td><td>Media Hub</td><td>build</td><td class="mono">main</td><td class="mono">forgecore-native</td><td>source</td><td><span class="status-pill queue">Queued</span></td><td>11:09</td></tr>
-          <tr><td><button class="job-link mono" data-job-id="job-8cf191">job-8cf191</button></td><td>Olympus Store</td><td>publish</td><td class="mono">v0.8.4</td><td class="mono">forgecore-native</td><td>store</td><td><span class="status-pill fail">Failed</span></td><td>10:52</td></tr>
+          <tr><td><button class="job-link mono" data-job-id="job-8cf191">job-8cf191</button></td><td>Olympus Store</td><td>publish</td><td class="mono">—</td><td class="mono">forgecore-native</td><td>store</td><td><span class="status-pill fail">Failed</span></td><td>10:52</td></tr>
           <tr><td><button class="job-link mono" data-job-id="job-282fc0">job-282fc0</button></td><td>Olympus Core</td><td>build</td><td class="mono">main</td><td class="mono">forgecore-native</td><td>completed</td><td><span class="status-pill">Succeeded</span></td><td>10:31</td></tr>
         </tbody></table></div></div>
       </section>
@@ -972,14 +993,14 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           <div class="table-scroll"><table class="release-table">
             <thead><tr><th>App / Version</th><th>Channel</th><th>Artifact</th><th>Olympus Releases</th><th>Community Store</th><th>Published</th><th></th></tr></thead>
             <tbody>
-              <tr data-release-row data-channel="stable" data-state="published" data-text="olympus core v0.8.4 stable">
-                <td><div class="primary-text">Olympus Core</div><div class="secondary mono">v0.8.4</div></td>
+              <tr data-release-row data-channel="stable" data-state="published" data-text="olympus core — stable">
+                <td><div class="primary-text">Olympus Core</div><div class="secondary mono">—</div></td>
                 <td><span class="release-channel stable">stable</span></td>
                 <td><span class="status-pill">Verified</span><div class="secondary">48.3 MB · SHA-256</div></td>
-                <td><span class="status-pill">Published</span><div class="secondary mono">olympus-core-v0.8.4</div></td>
+                <td><span class="status-pill">Published</span><div class="secondary mono">olympus-core-—</div></td>
                 <td><span class="status-pill">In store</span><div class="secondary">PR #184 merged</div></td>
                 <td>2d ago</td>
-                <td class="right"><button class="link release-open" data-release-link="olympus-core/v0.8.4">Details →</button></td>
+                <td class="right"><button class="link release-open" data-release-link="olympus-core/—">Details →</button></td>
               </tr>
               <tr data-release-row data-channel="beta" data-state="published" data-text="olympus core v0.8.5 beta">
                 <td><div class="primary-text">Olympus Core</div><div class="secondary mono">v0.8.5-beta.2</div></td>
@@ -990,23 +1011,23 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
                 <td>9h ago</td>
                 <td class="right"><button class="link release-open" data-release-link="olympus-core/v0.8.5-beta.2">Details →</button></td>
               </tr>
-              <tr data-release-row data-channel="stable" data-state="pending" data-text="forgecore v0.1.0 beta 40 stable pending">
-                <td><div class="primary-text">ForgeCore</div><div class="secondary mono">v0.1.0-beta.40</div></td>
+              <tr data-release-row data-channel="stable" data-state="pending" data-text="forgecore stable pending">
+                <td><div class="primary-text">ForgeCore</div><div class="secondary mono">—</div></td>
                 <td><span class="release-channel stable">stable</span></td>
                 <td><span class="status-pill">Verified</span><div class="secondary">Package ready</div></td>
                 <td><span class="status-pill">Published</span><div class="secondary">Release complete</div></td>
                 <td><span class="status-pill queue">PR open</span><div class="secondary">Awaiting review</div></td>
                 <td>18m ago</td>
-                <td class="right"><button class="link release-open" data-release-link="forgecore/v0.1.0-beta.40">Details →</button></td>
+                <td class="right"><button class="link release-open" data-release-link="forgecore/—">Details →</button></td>
               </tr>
-              <tr data-release-row data-channel="stable" data-state="failed" data-text="olympus store v0.8.4 failed">
-                <td><div class="primary-text">Olympus Store</div><div class="secondary mono">v0.8.4</div></td>
+              <tr data-release-row data-channel="stable" data-state="failed" data-text="olympus store — failed">
+                <td><div class="primary-text">Olympus Store</div><div class="secondary mono">—</div></td>
                 <td><span class="release-channel stable">stable</span></td>
                 <td><span class="status-pill">Verified</span><div class="secondary">31.2 MB</div></td>
                 <td><span class="status-pill">Published</span><div class="secondary">Release complete</div></td>
                 <td><span class="status-pill fail">Failed</span><div class="secondary">Store validation</div></td>
                 <td>34m ago</td>
-                <td class="right"><button class="link release-open" data-release-link="olympus-store/v0.8.4">Details →</button></td>
+                <td class="right"><button class="link release-open" data-release-link="olympus-store/—">Details →</button></td>
               </tr>
             </tbody>
           </table></div>
@@ -1017,10 +1038,10 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
 
         <div class="grid2 section">
           <div class="card">
-            <div class="section-title"><div><h2>Release detail example</h2><p>Deep link: <span class="mono">#/releases/olympus-core/v0.8.4</span></p></div><span class="status-pill">Published</span></div>
+            <div class="section-title"><div><h2>Release detail example</h2><p>Deep link: <span class="mono">#/releases/olympus-core/—</span></p></div><span class="status-pill">Published</span></div>
             <div class="release-detail-flow">
               <div class="release-detail-step done"><span>✓</span><div><b>Package</b><small>48.3 MB · manifest verified</small></div></div>
-              <div class="release-detail-step done"><span>✓</span><div><b>Olympus Releases</b><small>tag olympus-core-v0.8.4</small></div></div>
+              <div class="release-detail-step done"><span>✓</span><div><b>Olympus Releases</b><small>tag olympus-core-—</small></div></div>
               <div class="release-detail-step done"><span>✓</span><div><b>Stable feed</b><small>channels/olympus-core/stable.json</small></div></div>
               <div class="release-detail-step done"><span>✓</span><div><b>Community Store</b><small>PR #184 merged</small></div></div>
             </div>
@@ -1029,7 +1050,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
             <div class="section-title"><div><h2>Error-state example</h2><p>How a failed distribution step should look</p></div><span class="status-pill fail">Action required</span></div>
             <div class="error-state-body">
               <div class="error-symbol">!</div>
-              <div><b>Community Store validation failed</b><p><span class="mono">olympus-store/v0.8.4</span> was released successfully, but store metadata validation rejected the submission.</p><div class="actions state-actions"><button class="btn demo">View validation log</button><button class="btn primary demo">Retry store stage</button></div></div>
+              <div><b>Community Store validation failed</b><p><span class="mono">olympus-store/—</span> was released successfully, but store metadata validation rejected the submission.</p><div class="actions state-actions"><button class="btn demo">View validation log</button><button class="btn primary demo">Retry store stage</button></div></div>
             </div>
           </div>
         </div>
@@ -1037,7 +1058,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
 
       <section id="job-detail" class="view">
         <div class="page-head">
-          <div><button class="back-link" data-go="jobs">← Jobs</button><h1>job-7fd83a</h1><p>Olympus Core · build-and-publish · immutable execution snapshot.</p></div>
+          <div><button class="back-link" data-go="jobs">← Jobs</button><h1>job-pending</h1><p>Olympus Core · build-and-publish · immutable execution snapshot.</p></div>
           <div class="actions"><button class="btn demo">Copy deep link</button><button id="retryCleanJob" class="btn">Retry clean</button><button class="btn demo">Retry</button><button id="cancelJob" class="btn danger">Cancel job</button></div>
         </div>
 
@@ -1068,7 +1089,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
             <div class="section-title"><div><h2>Resolved configuration snapshot</h2><p>Frozen when the job entered the queue</p></div><span class="mono tiny">sha256:7fa0c9…e172</span></div>
             <div class="kv-list">
               <div><span>App</span><b>olympus-core</b></div>
-              <div><span>Repository</span><b class="mono">Jojje84/olympus-core</b></div>
+              <div><span>Repository</span><b class="mono">—</b></div>
               <div><span>Publish preset</span><b>olympus-default</b></div>
               <div><span>Release repository</span><b class="mono">Jojje84/Olympus-Releases</b></div>
               <div><span>Package targets</span><b>amd64 · arm64</b></div>
@@ -1101,7 +1122,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
         <div class="grid3">
           <div class="card pad"><div class="metric-label"><span>Native executor</span><span class="status-pill">Online</span></div><div class="metric">1 worker</div><div class="metric-sub">Python 3.13 · poll 2s · timeout 1800s</div></div>
           <div class="card pad"><div class="metric-label"><span>Docker runtime</span><span class="status-pill">Healthy</span></div><div class="metric">29.8.1</div><div class="metric-sub">Isolated Docker-in-Docker engine</div></div>
-          <div class="card pad"><div class="metric-label"><span>External storage</span><span class="status-pill">Mounted</span></div><div class="metric">312 / 820 GB</div><div class="metric-sub mono">/mnt/forgecore</div></div>
+          <div class="card pad"><div class="metric-label"><span>External storage</span><span class="status-pill">Mounted</span></div><div class="metric">— / —</div><div class="metric-sub mono">/mnt/forgecore</div></div>
         </div>
         <div class="grid2 section">
           <div class="card">
@@ -1127,12 +1148,12 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
             <div class="section-title"><div><h2>ForgeCore Updates</h2><p>Update the control plane without mixing application releases into platform maintenance.</p></div><span class="status-pill queue update-available-pill">Update available</span></div>
             <div class="update-body">
               <div class="version-compare">
-                <div><span>Installed</span><b>beta.36</b><small>Current runtime</small></div>
+                <div><span>Installed</span><b data-runtime-build>—</b><small>Current runtime</small></div>
                 <span class="version-arrow">→</span>
-                <div><span>Latest</span><b>beta.37</b><small>Stable beta channel</small></div>
+                <div><span>Latest</span><b>—</b><small>Stable beta channel</small></div>
               </div>
               <div class="update-notes">
-                <b>beta.37</b>
+                <b>—</b>
                 <span>Dashboard fixes · worker recovery · release validation improvements</span>
               </div>
               <div class="update-actions"><button id="checkUpdates" class="btn">Check again</button><button id="runUpdate" class="btn primary">Review update</button></div>
@@ -1338,7 +1359,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           <div class="section-title"><div><h2>Backup & Restore</h2><p>Protect ForgeCore configuration and control-plane state without backing up disposable CI cache.</p></div><span class="status-pill">Backup healthy</span></div>
           <div class="backup-layout">
             <div class="backup-summary">
-              <div class="backup-last"><span>Last successful backup</span><b>Today · 11:42</b><small>2 hours ago · 18.6 MB · verified</small></div>
+              <div class="backup-last"><span>Last successful backup</span><b>Not available</b><small>Backup API not implemented</small></div>
               <div class="backup-actions"><button id="createBackup" class="btn primary">Create backup</button><button id="restoreBackup" class="btn">Restore…</button></div>
             </div>
             <div class="backup-content">
@@ -1416,7 +1437,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           <div id="auditRows">
             <div class="audit-row" data-audit-category="config"><time>13:51:22</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Updated publish preset</b><small>Changed stable channel store policy</small></span><code>preset/olympus-default</code><span class="status-pill">Applied</span></div>
             <div class="audit-row" data-audit-category="maintenance"><time>11:42:08</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Created backup</b><small>Archive verified successfully</small></span><code>backup/2026-09-23-1142</code><span class="status-pill">Verified</span></div>
-            <div class="audit-row" data-audit-category="release"><time>10:52:14</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Published release</b><small>Stable package to Olympus Releases</small></span><code>olympus-core/v0.8.4</code><span class="status-pill">Published</span></div>
+            <div class="audit-row" data-audit-category="release"><time>10:52:14</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Published release</b><small>Stable package to Olympus Releases</small></span><code>olympus-core/—</code><span class="status-pill">Published</span></div>
             <div class="audit-row" data-audit-category="security"><time>08:14:31</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Signed in</b><small>Local administrator session created</small></span><code>session/local</code><span class="status-pill neutral">Allowed</span></div>
             <div class="audit-row" data-audit-category="config"><time>Yesterday</time><span class="audit-actor"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="">Jojje</span><span><b>Updated app configuration</b><small>Build configuration changed; future jobs only</small></span><code>app/olympus-core</code><span class="status-pill">Applied</span></div>
           </div>
@@ -1434,7 +1455,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
         <div class="card logs-shell">
           <div class="logs-toolbar">
             <div class="log-toolbar-group">
-              <label>Stream<select id="logStream" class="select"><option>Platform</option><option selected>job-7fd83a · Olympus Core</option><option>job-a9c412 · ForgeCore</option></select></label>
+              <label>Stream<select id="logStream" class="select"><option>Platform</option><option selected>job-pending · Olympus Core</option><option>job-a9c412 · ForgeCore</option></select></label>
               <label>Stage<select id="logStage" class="select"><option value="all">All stages</option><option value="control">Control</option><option value="native">Native</option><option value="source">Source</option><option value="build">Build</option><option value="test">Test</option><option value="security">Security</option></select></label>
             </div>
             <div class="log-toolbar-group grow">
@@ -1445,15 +1466,15 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
           </div>
 
           <div class="log-summary">
-            <div><span class="status-pill run">Running</span><b>job-7fd83a</b><span>Olympus Core · build-and-publish</span></div>
+            <div><span class="status-pill run">Running</span><b>job-pending</b><span>Olympus Core · build-and-publish</span></div>
             <div><span>14 events</span><span>02:48 elapsed</span><span class="mono">refs/heads/dev</span></div>
           </div>
 
           <div id="logPanel" class="log-panel wrap">
             <div class="log-head"><span>Time</span><span>Stage</span><span>Message</span></div>
-            <div class="log-row" data-stage="control"><time>11:24:01</time><span class="log-stage control">CONTROL</span><code>queued job <b>job-7fd83a</b> app=olympus-core executor=forgecore-native</code></div>
-            <div class="log-row" data-stage="native"><time>11:24:02</time><span class="log-stage native">NATIVE</span><code>claimed job <b>job-7fd83a</b></code></div>
-            <div class="log-row" data-stage="source"><time>11:24:02</time><span class="log-stage source">SOURCE</span><code>workspace=/forgecore/storage/workspaces/job-7fd83a</code></div>
+            <div class="log-row" data-stage="control"><time>11:24:01</time><span class="log-stage control">CONTROL</span><code>queued job <b>job-pending</b> app=olympus-core executor=forgecore-native</code></div>
+            <div class="log-row" data-stage="native"><time>11:24:02</time><span class="log-stage native">NATIVE</span><code>claimed job <b>job-pending</b></code></div>
+            <div class="log-row" data-stage="source"><time>11:24:02</time><span class="log-stage source">SOURCE</span><code>workspace=/forgecore/storage/workspaces/job-pending</code></div>
             <div class="log-row" data-stage="source"><time>11:24:05</time><span class="log-stage source">SOURCE</span><code>checkout refs/heads/dev complete</code></div>
             <div class="log-row" data-stage="build"><time>11:24:05</time><span class="log-stage build">BUILD</span><code>running step "Build application"</code></div>
             <div class="log-row success" data-stage="build"><time>11:25:22</time><span class="log-stage build">BUILD</span><code>completed exit=0 duration=77s</code></div>
@@ -1483,7 +1504,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
               <div class="about-eyebrow">OLYMPUS DEVELOPER PLATFORM</div>
               <h1>ForgeCore</h1>
               <p>CI/CD, release and distribution control plane for Olympus apps.</p>
-              <div class="about-badges"><span class="status-pill">Healthy</span><span class="badge">v2</span><span class="badge">beta.36</span></div>
+              <div class="about-badges"><span class="status-pill">Healthy</span><span class="badge">v2</span><span class="badge" data-runtime-build>—</span></div>
             </div>
           </div>
           <div class="about-actions">
@@ -1549,7 +1570,7 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
         </details>
 
         <div class="about-meta">
-          <span>ForgeCore v2 · beta.36</span>
+          <span>ForgeCore v2 · <span data-runtime-build>—</span></span>
           <span>© 2026 <a href="https://github.com/Jojje84" target="_blank" rel="noopener noreferrer">Jojje</a></span>
         </div>
       </section>
@@ -1567,8 +1588,8 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
     <div id="commandResults" class="command-results">
       <button class="command-item" data-command-text="Olympus Core app application" data-command-view="apps"><span class="command-type">APP</span><span><b>Olympus Core</b><small>Apps / olympus-core</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="ForgeCore app application" data-command-view="apps"><span class="command-type">APP</span><span><b>ForgeCore</b><small>Apps / forgecore</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="job 7fd83a Olympus Core running test" data-command-view="job-detail"><span class="command-type">JOB</span><span><b>job-7fd83a</b><small>Olympus Core · test · running</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="release Olympus Core v0.8.4 stable" data-command-view="releases"><span class="command-type">RELEASE</span><span><b>Olympus Core · v0.8.4</b><small>Stable release · published</small></span><em>↵</em></button>
+      <button class="command-item" data-command-text="job 7fd83a Olympus Core running test" data-command-view="job-detail"><span class="command-type">JOB</span><span><b>job-pending</b><small>Olympus Core · test · running</small></span><em>↵</em></button>
+      <button class="command-item" data-command-text="release Olympus Core — stable" data-command-view="releases"><span class="command-type">RELEASE</span><span><b>Olympus Core · —</b><small>Stable release · published</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="backup restore settings configuration" data-command-view="settings" data-command-anchor="backup-restore"><span class="command-type">SETTING</span><span><b>Backup & Restore</b><small>Settings / Backup & Restore</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="storage cleanup infrastructure disk cache" data-command-view="infrastructure" data-command-anchor="storage-cleanup"><span class="command-type">INFRA</span><span><b>Storage & Cleanup</b><small>Infrastructure / Storage & Cleanup</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="maintenance mode updates ForgeCore beta" data-command-view="infrastructure" data-command-anchor="maintenanceCard"><span class="command-type">INFRA</span><span><b>Maintenance mode</b><small>Infrastructure / ForgeCore Updates</small></span><em>↵</em></button>
@@ -1625,8 +1646,8 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
 </div>
 <div id="attentionPanel" class="attention-panel">
   <div class="attention-head"><div><b>Needs attention</b><small>3 items across ForgeCore</small></div><button id="attentionClose" class="icon-btn">×</button></div>
-  <button class="attention-item" data-go="releases"><span class="att-icon fail">!</span><span><b>Store publish failed</b><small>Olympus Store · v0.8.4</small></span><time>34m</time></button>
-  <button class="attention-item" data-go="releases"><span class="att-icon warn">↗</span><span><b>Store PR awaiting review</b><small>ForgeCore · v0.1.0-beta.40</small></span><time>18m</time></button>
+  <button class="attention-item" data-go="releases"><span class="att-icon fail">!</span><span><b>Store publish failed</b><small>Olympus Store · —</small></span><time>34m</time></button>
+  <button class="attention-item" data-go="releases"><span class="att-icon warn">↗</span><span><b>Store PR awaiting review</b><small>ForgeCore · current release state</small></span><time>18m</time></button>
   <button class="attention-item" data-go="infrastructure"><span class="att-icon warn">!</span><span><b>Cache cleanup due soon</b><small>86 GB · policy runs in 2d</small></span><time>2h</time></button>
   <div class="attention-foot">Only items that need action appear here.</div>
 </div>
@@ -1636,13 +1657,13 @@ html[data-theme="light"] .override-badge{background:#fff8e8}
 </div>
 <div id="toast" class="toast">Preview interaction only</div>
 <script>
-const names={overview:"Overview",apps:"Apps",jobs:"Jobs","job-detail":"Job · job-7fd83a",releases:"Releases",infrastructure:"Infrastructure",presets:"Publish Presets",settings:"Settings",account:"Profile & Account",audit:"Audit Log",logs:"Logs",about:"About"};
+const names={overview:"Overview",apps:"Apps",jobs:"Jobs","job-detail":"Job · job-pending",releases:"Releases",infrastructure:"Infrastructure",presets:"Publish Presets",settings:"Settings",account:"Profile & Account",audit:"Audit Log",logs:"Logs",about:"About"};
 const topBreadcrumb=document.getElementById("topBreadcrumb");
 const crumb=document.getElementById("crumb");
 function hideBreadcrumb(){if(topBreadcrumb) topBreadcrumb.classList.add("hidden")}
 function showBreadcrumb(label){if(topBreadcrumb){topBreadcrumb.classList.remove("hidden");if(crumb) crumb.textContent=label}}
 function syncBreadcrumb(id){
-  if(id==="job-detail") return showBreadcrumb("Jobs / job-7fd83a");
+  if(id==="job-detail") return showBreadcrumb("Jobs / job-pending");
   hideBreadcrumb();
 }
 
@@ -1651,7 +1672,7 @@ function showView(id,updateHash){
   document.querySelectorAll(".nav button").forEach(function(b){b.classList.toggle("active",b.dataset.view===id||(id==="job-detail"&&b.dataset.view==="jobs"))});
   syncBreadcrumb(id);
   if(updateHash!==false){
-    const routes={overview:"#/overview",apps:"#/apps",jobs:"#/jobs",releases:"#/releases",infrastructure:"#/infrastructure",presets:"#/publish-presets",settings:"#/settings",account:"#/account",audit:"#/audit",logs:"#/logs",about:"#/about","job-detail":"#/jobs/job-7fd83a"};
+    const routes={overview:"#/overview",apps:"#/apps",jobs:"#/jobs",releases:"#/releases",infrastructure:"#/infrastructure",presets:"#/publish-presets",settings:"#/settings",account:"#/account",audit:"#/audit",logs:"#/logs",about:"#/about","job-detail":"#/jobs/job-pending"};
     if(routes[id]) history.replaceState(null,"",routes[id]);
   }
   window.scrollTo({top:0,behavior:"smooth"});
@@ -1808,7 +1829,7 @@ if(cleanupConfirm) cleanupConfirm.addEventListener("click",function(){
 document.querySelectorAll(".job-link").forEach(function(el){
   el.addEventListener("click",function(e){
     e.preventDefault();e.stopPropagation();
-    const id=el.dataset.jobId||"job-7fd83a";
+    const id=el.dataset.jobId||"job-pending";
     history.replaceState(null,"","#/jobs/"+id);
     showView("job-detail",false);
   });
@@ -1881,7 +1902,7 @@ function runCommand(item){
   closeCommand();
   const view=item.dataset.commandView;
   if(view==="job-detail"){
-    history.replaceState(null,"","#/jobs/job-7fd83a");showView("job-detail",false);showBreadcrumb("Jobs / job-7fd83a");
+    history.replaceState(null,"","#/jobs/job-pending");showView("job-detail",false);showBreadcrumb("Jobs / job-pending");
   }else{
     showView(view);
   }
@@ -1920,11 +1941,11 @@ if(createBackup) createBackup.addEventListener("click",function(){
 const checkUpdates=document.getElementById("checkUpdates");
 const runUpdate=document.getElementById("runUpdate");
 if(checkUpdates) checkUpdates.addEventListener("click",function(){
-  toast.textContent="Update check complete — beta.37 is available on the configured beta channel.";
+  toast.textContent="Update check complete — — is available on the configured beta channel.";
   toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2400);
 });
 if(runUpdate) runUpdate.addEventListener("click",function(){
-  toast.textContent="Update preview — ForgeCore would enter maintenance mode, create a backup, apply beta.37 and run health checks.";
+  toast.textContent="Update preview — ForgeCore would enter maintenance mode, create a backup, apply — and run health checks.";
   toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},3200);
 });
 
@@ -2050,8 +2071,8 @@ if(confirmAction)confirmAction.addEventListener("click",function(){
 
 const cancelJob=document.getElementById("cancelJob");
 if(cancelJob)cancelJob.addEventListener("click",function(){openConfirm({
-  title:"Cancel job job-7fd83a?",sub:"The running test stage will be interrupted.",warning:"Cancellation cannot resume this job",text:"Completed stage logs and artifacts remain available, but the job will finish with state Canceled.",action:"Cancel job",danger:true
-},function(){toast.textContent="Job cancellation preview · job-7fd83a would be canceled.";toast.classList.add("show");appendAudit("maintenance","Canceled job","job/job-7fd83a","Running job canceled by administrator");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2500)});});
+  title:"Cancel job job-pending?",sub:"The running test stage will be interrupted.",warning:"Cancellation cannot resume this job",text:"Completed stage logs and artifacts remain available, but the job will finish with state Canceled.",action:"Cancel job",danger:true
+},function(){toast.textContent="Job cancellation preview · job-pending would be canceled.";toast.classList.add("show");appendAudit("maintenance","Canceled job","job/job-pending","Running job canceled by administrator");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2500)});});
 
 if(restoreBackup)restoreBackup.onclick=function(){openConfirm({
   title:"Restore ForgeCore backup?",sub:"Restore requires a temporary maintenance window.",warning:"Current control-plane state will be replaced",text:"ForgeCore will validate the backup, pause new work, restore configuration/state and run health checks before reopening.",action:"Review restore",danger:true,requireCheck:true,checkLabel:"I understand that current configuration and control-plane state will be replaced"
@@ -2134,7 +2155,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2200);
 })});
 </script>
-<!-- production-dashboard: v2-live-bridge -->
+<!-- production-dashboard: v2-live-stabilization -->
 
 <script>
 (function(){
@@ -2215,28 +2236,223 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     metric(cards[2],"Managed apps",String(apps.length),
       apps.filter(a=>a.build?.executor==="forgecore-native").length+" native · "+apps.filter(a=>a.build?.executor==="github-actions").length+" GitHub Actions","Live");
     metric(cards[3],"External storage",s.disk_used||"—",
-      (s.disk_total||"—")+" total · "+(s.storage_display||"/forgecore/storage"),(Number(s.disk_used_percent||0))+"% used");
+      (s.disk_total||"—")+" total · "+(s.storage_display||"/forgecore/storage"),Number(s.disk_used_percent||0)+"% used");
+
     const strip=qa("#overview .system-status-link");
     if(strip[0]){const b=q("b",strip[0]);if(b)b.textContent=healthy?"ForgeCore healthy":"ForgeCore needs attention"}
     if(strip[1])strip[1].innerHTML="<b>"+running+"</b> jobs running";
     if(strip[2])strip[2].innerHTML="<b>"+failed+"</b> failed";
     if(strip[3])strip[3].innerHTML="<b>"+Number(s.disk_used_percent||0)+"%</b> storage";
-    if(strip[4])strip[4].innerHTML="<b>—</b> backup";
+    if(strip[4])strip[4].innerHTML="<b>—</b> backup API";
     if(strip[5])strip[5].innerHTML="<b>"+esc(s.web_build||"dev")+"</b> runtime";
+
+    const pipelineCard=q("#overview .grid2.section .card:first-child");
+    const active=jobs.find(j=>["running","preparing","queued"].includes(j.status));
+    if(pipelineCard){
+      const title=q(".job-title",pipelineCard),meta=q(".job-meta",pipelineCard),pill=q(".section-title .status-pill",pipelineCard);
+      if(active){
+        const app=apps.find(a=>a.id===active.appId);
+        if(title)title.textContent=(app?.identity?.name||active.appId)+" · "+active.jobType;
+        if(meta)meta.innerHTML='<button class="job-link mono" data-job-id="'+esc(active.id)+'">'+esc(active.id)+'</button> · '+esc(active.trigger?.ref||"—")+' · '+esc(active.status);
+        if(pill){pill.textContent=active.status;pill.className="status-pill "+statusClass(active.status)}
+        const stages=qa(".stage",pipelineCard);
+        stages.forEach(x=>x.className="stage");
+        (active.stages||[]).forEach((st,i)=>{
+          if(!stages[i])return;
+          if(st.status==="succeeded")stages[i].classList.add("done");
+          else if(st.status==="running")stages[i].classList.add("active");
+          else if(st.status==="skipped")stages[i].classList.add("skip");
+          else if(st.status==="failed")stages[i].classList.add("active");
+          const n=q(".stage-name",stages[i]);if(n)n.textContent=st.name;
+        });
+        qa(".job-link",pipelineCard).forEach(b=>b.addEventListener("click",()=>openJob(active.id)));
+      }else{
+        if(title)title.textContent="No active job";
+        if(meta)meta.textContent="Queue a job from Legacy Admin or the job API.";
+        if(pill){pill.textContent="Idle";pill.className="status-pill neutral"}
+        qa(".stage",pipelineCard).forEach(x=>x.className="stage");
+      }
+    }
+
+    const recentBody=q("#overview .table-card tbody");
+    if(recentBody){
+      recentBody.innerHTML=jobs.slice(0,4).map(j=>{
+        const app=apps.find(a=>a.id===j.appId);
+        return '<tr data-live-job="'+esc(j.id)+'"><td><div class="primary-text mono">'+esc(j.id)+'</div><div class="secondary">'+esc(fmtWhen(j.createdAt))+'</div></td>'+
+          '<td>'+esc(app?.identity?.name||j.appId)+'</td><td class="mono">'+esc(j.executor||"—")+'</td><td><span class="status-pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>';
+      }).join("") || '<tr><td colspan="4"><div class="empty">No jobs yet.</div></td></tr>';
+      qa("[data-live-job]",recentBody).forEach(row=>row.addEventListener("click",()=>openJob(row.dataset.liveJob)));
+    }
+
+    const health=qa("#overview .health-grid .health");
+    if(health[0]){const v=q(".health-value",health[0]),sub=q(".health-sub",health[0]);if(v)v.textContent=s.manager_alive?"Online":"Offline";if(sub)sub.textContent=s.manager_runtime_version||"Native worker"}
+    if(health[1]){const v=q(".health-value",health[1]),sub=q(".health-sub",health[1]);if(v)v.textContent=s.docker_online?"Healthy":"Unavailable";if(sub)sub.textContent=s.compose_online?"Docker + Compose":"Docker runtime"}
+    if(health[2]){const online=(s.runners||[]).filter(r=>r.online).length,v=q(".health-value",health[2]),sub=q(".health-sub",health[2]);if(v)v.textContent=online+" / "+(s.runners||[]).length;if(sub)sub.textContent="GitHub Actions adapters"}
+    if(health[3]){const v=q(".health-value",health[3]),sub=q(".health-sub",health[3]);if(v)v.textContent=(s.cache_max_age_days||"—")+"d";if(sub)sub.textContent="Cache retention policy"}
+
+    const appList=q("#overview .app-list");
+    if(appList){
+      appList.innerHTML=apps.slice(0,3).map(a=>'<button class="app-card" data-live-app="'+esc(a.id)+'"><div class="app-top"><div class="app-icon">'+esc((a.identity?.name||a.id).charAt(0).toUpperCase())+'</div><div><div class="app-name">'+esc(a.identity?.name||a.id)+'</div><div class="app-id mono">'+esc(a.id)+'</div></div><span style="margin-left:auto" class="status-pill">Configured</span></div><div class="app-foot"><span>'+esc(a.build?.executor||"—")+'</span><span>'+esc(a.publish?.preset||"—")+'</span></div></button>').join("") || '<div class="empty">No managed apps.</div>';
+      qa("[data-live-app]",appList).forEach(b=>b.addEventListener("click",()=>{if(typeof showView==="function")showView("apps");const a=apps.find(x=>x.id===b.dataset.liveApp);if(a)selectApp(a,true)}));
+    }
+
+    q("#overview")?.classList.add("live-ready");
+    const activity=q("#overview > .card.section .activity");
+    if(activity){
+      const events=s.activity||[];
+      activity.innerHTML=events.slice(0,6).map(e=>'<div class="activity-row"><span class="act-dot '+(e.type==="job"?"blue":e.type==="cleanup"?"green":e.type==="integration"?"amber":"")+'"></span><div class="act-text"><b>'+esc(e.type||"system")+'</b><span> · '+esc(e.message||"")+'</span></div><span class="time">'+esc(e.epoch?fmtWhen(new Date(Number(e.epoch)*1000)):"—")+'</span></div>').join("") || '<div class="empty">No activity recorded yet.</div>';
+    }
   }
-  function selectApp(app){
+  function selectApp(app,navigate=true){
     fcState.selectedApp=app;
     qa(".app-nav-item").forEach(x=>x.classList.toggle("active",x.dataset.appId===app.id));
     const name=app.identity?.name||app.id,repo=app.source?.repository||"—",exec=app.build?.executor||"—";
+    const preset=fcState.presets.find(p=>p.id===app.publish?.preset)||null;
+    const appJobs=fcState.jobs.filter(j=>j.appId===app.id);
+    const latest=appJobs[0]||null;
+    const latestRelease=appJobs.find(j=>j.outputs?.releasePlan||j.outputs?.publication||j.outputs?.storePublication)||null;
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+
     set("selectedAppName",name);set("selectedAppId",app.id);set("selectedAppRepo",repo);set("selectedExecutor",exec);
     const icon=q("#selectedAppIcon");if(icon)icon.textContent=name.charAt(0).toUpperCase();
-    history.replaceState(null,"","#/apps/"+encodeURIComponent(app.id));
-    if(typeof showBreadcrumb==="function")showBreadcrumb("Apps / "+name);
+    const detailMeta=q("#apps .detail-meta");
+    if(detailMeta)detailMeta.innerHTML='<span id="selectedAppId">'+esc(app.id)+'</span><span>•</span><span id="selectedExecutor">'+esc(exec)+'</span><span>•</span><span>preset: '+esc(app.publish?.preset||"—")+'</span>';
+    const readyPill=q("#apps .detail-title-row .status-pill");if(readyPill){readyPill.textContent="Configured";readyPill.className="status-pill"}
+
+    const change=q("#apps .config-change");
+    if(change)change.textContent=latest?("● Latest job: "+latest.status+(latest.currentStage?" · "+latest.currentStage:"")):"● No jobs yet";
+    const lifeNames=["source","build","package","release","store"];
+    qa("#apps .life-step").forEach((step,i)=>{
+      step.className="life-step neutral";
+      const stage=latest?.stages?.find(x=>x.name===lifeNames[i]);
+      const small=q("small",step);
+      if(stage){
+        if(stage.status==="succeeded")step.className="life-step ok";
+        else if(["running","failed"].includes(stage.status))step.className="life-step warn";
+        if(small)small.textContent=stage.status;
+      }else if(small)small.textContent=latest?"not in job":"no job";
+    });
+
+    const summary=qa("#app-overview .app-summary-grid .summary-box");
+    if(summary[0]){q("b",summary[0]).textContent=app.source?.defaultBranch||"—";q("small",summary[0]).textContent="Source checkout branch"}
+    if(summary[1]){q("b",summary[1]).textContent=(app.build?.targets||[]).join(" · ")||"—";q("small",summary[1]).textContent=(app.build?.targets||[]).length+" package target(s)"}
+    if(summary[2]){
+      const version=latestRelease?.outputs?.releasePlan?.version||latestRelease?.outputs?.storePublication?.version||"No release";
+      q("b",summary[2]).textContent=version;
+      q("small",summary[2]).textContent=latestRelease?((latestRelease.outputs?.releasePlan?.channel||"—")+" · "+fmtWhen(latestRelease.createdAt)):"No persisted release output";
+    }
+
+    const overviewCards=qa("#app-overview > .grid2.section .subcard");
+    if(overviewCards[0]){
+      const pill=q(".subcard-head .status-pill",overviewCards[0]);if(pill)pill.textContent="Validated";
+      const rows=qa(".kv-list > div",overviewCards[0]);
+      const vals=[
+        ["Provider",app.source?.provider||"—"],
+        ["Repository",app.source?.repository||"—"],
+        ["Branch",app.source?.defaultBranch||"—"],
+        ["Private repository",app.source?.private?"Yes":"No"],
+        ["Credentials","Global secret reference"]
+      ];
+      rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]});
+    }
+    if(overviewCards[1]){
+      const pill=q(".subcard-head .status-pill",overviewCards[1]);if(pill)pill.textContent=exec==="forgecore-native"?"Native":"Actions";
+      const rows=qa(".kv-list > div",overviewCards[1]);
+      const vals=[
+        ["Executor",exec],
+        ["Build steps",String((app.build?.steps||[]).length)+" configured"],
+        ["Targets",(app.build?.targets||[]).join(" · ")||"—"],
+        ["Workspace","workspaces/<job-id>"],
+        ["Secrets in config","References only"]
+      ];
+      rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]});
+    }
+
+    const artifactGrid=q("#app-overview .artifact-grid");
+    const releaseHistory=q("#app-overview .release-history");
+    const outputJobs=appJobs.filter(j=>j.outputs&&(j.outputs.artifact||j.outputs.releasePlan||j.outputs.publication||j.outputs.storePublication));
+    if(artifactGrid){
+      const out=outputJobs[0]?.outputs||{};
+      const cards=[];
+      if(out.artifact)cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">PKG</span><span class="status-pill">Ready</span></div><b>Package artifact</b><small>'+esc(fmtBytes(out.artifact.totalBytes))+' · '+esc(out.artifact.fileCount||0)+' files</small><div class="artifact-meta"><span>Source</span><code>'+esc(String(out.artifact.sourceRevision||"—").slice(0,16))+'</code></div></div>');
+      if(out.publication||out.releasePlan){const p=out.publication||out.releasePlan;cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">REL</span><span class="status-pill '+statusClass(out.publication?"published":"pending")+'">'+(out.publication?"Published":"Planned")+'</span></div><b>Olympus Releases</b><small>'+esc(p.releaseTag||p.version||"—")+'</small><div class="artifact-meta"><span>Channel</span><code>'+esc(p.channel||out.releasePlan?.channel||"—")+'</code></div></div>')}
+      if(out.storePublication){const sp=out.storePublication;cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">PR</span><span class="status-pill '+statusClass(sp.status)+'">'+esc(sp.status||"Recorded")+'</span></div><b>Community App Store</b><small>'+esc(sp.repository||"—")+'</small><div class="artifact-meta"><span>Submission</span><code>'+esc(sp.pullRequestNumber?("#"+sp.pullRequestNumber):(sp.commitSha||"—"))+'</code></div></div>')}
+      artifactGrid.innerHTML=cards.join("")||'<div class="live-empty">No persisted artifacts or release outputs yet.</div>';
+    }
+    if(releaseHistory){
+      releaseHistory.innerHTML=outputJobs.slice(0,5).map(j=>{
+        const o=j.outputs||{},version=o.releasePlan?.version||o.storePublication?.version||o.publication?.releaseTag||j.id;
+        const channel=o.releasePlan?.channel||o.publication?.channel||"—";
+        return '<div class="release-row"><span class="release-version">'+esc(version)+'</span><span class="release-channel '+(channel==="stable"?"stable":"beta")+'">'+esc(channel)+'</span><span>Build '+(o.artifact?"✓":"—")+'</span><span>Release '+(o.publication?"✓":"—")+'</span><span>Store '+(o.storePublication?"✓":"—")+'</span><span class="release-time">'+esc(fmtWhen(j.createdAt))+'</span></div>';
+      }).join("")||'<div class="live-empty">No release history yet.</div>';
+    }
+
+    const overviewGrids=qa("#app-overview > .grid2.section");
+    const currentCard=overviewGrids[1]?.querySelector(".subcard:first-child");
+    if(currentCard){
+      const small=q(".subcard-head small",currentCard),pill=q(".subcard-head .status-pill",currentCard);
+      if(small)small.textContent=latest?(latest.id+" · "+latest.jobType):"No job";
+      if(pill){pill.textContent=latest?.status||"Idle";pill.className="status-pill "+statusClass(latest?.status||"")}
+      const stages=qa(".stage",currentCard);stages.forEach(x=>x.className="stage");
+      (latest?.stages||[]).forEach((st,i)=>{if(!stages[i])return;const n=q(".stage-name",stages[i]);if(n)n.textContent=st.name;if(st.status==="succeeded")stages[i].classList.add("done");else if(st.status==="running")stages[i].classList.add("active");else if(st.status==="skipped")stages[i].classList.add("skip");else if(st.status==="failed")stages[i].classList.add("active")});
+      const meta=q(".job-progress-meta",currentCard);if(meta)meta.innerHTML=latest?'<span>'+esc(fmtWhen(latest.createdAt))+'</span><span>Config <span class="mono">'+esc(String(latest.configRevision||"—").slice(0,18))+'</span></span>':'<span>No execution history</span>';
+    }
+    const healthCard=overviewGrids[1]?.querySelector(".subcard:nth-child(2)");
+    if(healthCard){
+      const checks=q(".check-list",healthCard);if(checks)checks.innerHTML='<div><span class="check">✓</span><span>App schema validated</span></div><div><span class="check">✓</span><span>Publish preset exists</span></div><div><span class="check">✓</span><span>Package configuration validated</span></div><div><span class="check">✓</span><span>Secret material stored as references</span></div>';
+    }
+
+    const steps=q("#app-build .step-list");
+    if(steps){
+      const configured=app.build?.steps||[];
+      steps.innerHTML=configured.length?configured.map((st,i)=>'<div class="build-step"><span class="step-index">'+(i+1)+'</span><div><b>'+esc(st.name||st.stage||("Step "+(i+1)))+'</b><small>'+esc(st.stage||"build")+(st.timeoutSeconds?(" · timeout "+st.timeoutSeconds+"s"):"")+'</small><code>'+esc(st.run||"—")+'</code></div></div>').join(""):'<div class="live-empty">No explicit build steps configured.</div>';
+    }
+    const targetList=q("#app-build .target-list");
+    if(targetList)targetList.innerHTML=(app.build?.targets||[]).map(t=>'<span class="target active">'+esc(t)+'</span>').join("")||'<span class="secondary">No targets</span>';
+    const envList=q("#app-build .stack .subcard:nth-child(2) .kv-list");
+    if(envList){
+      const pairs=[];
+      (app.build?.steps||[]).forEach(st=>{Object.entries(st.env||{}).forEach(([k,v])=>pairs.push([k,v]));Object.entries(st.secretEnv||{}).forEach(([k,v])=>pairs.push([k,v]))});
+      const unique=[];const seen=new Set();for(const p of pairs){if(!seen.has(p[0])){seen.add(p[0]);unique.push(p)}}
+      envList.innerHTML=unique.length?unique.slice(0,12).map(([k,v])=>'<div><span>'+esc(k)+'</span><b class="mono">'+esc(String(v).startsWith("secret://")?"secret reference":v)+'</b></div>').join(""):'<div><span>Environment</span><b>None configured</b></div>';
+    }
+    const pkgBoxes=qa("#app-build .package-grid .summary-box");
+    if(pkgBoxes[0]){q("b",pkgBoxes[0]).textContent=app.package?.format||"—";q("small",pkgBoxes[0]).textContent="Configured package format"}
+    if(pkgBoxes[1]){q("b",pkgBoxes[1]).textContent=app.package?.sourcePath||"—";q("small",pkgBoxes[1]).textContent="Package source path"}
+    if(pkgBoxes[2]){q("b",pkgBoxes[2]).textContent="artifacts/"+app.id+"/<job>";q("small",pkgBoxes[2]).textContent="External storage"}
+    const manifest=q("#app-build .manifest code");if(manifest){const a=outputJobs[0]?.outputs?.artifact;manifest.textContent=a?JSON.stringify({fileCount:a.fileCount,totalBytes:a.totalBytes,sourceRevision:a.sourceRevision||null}):"No artifact manifest yet."}
+
+    const scope=q("#app-publish .scope-path");
+    if(scope)scope.innerHTML='<span class="scope-chip">Global Settings</span><span class="scope-arrow">→</span><span class="scope-chip">'+esc(preset?.id||"No preset")+'</span><span class="scope-arrow">→</span><span class="scope-chip active">'+esc(name)+'</span>';
+    const notes=qa("#app-publish > .source-note");
+    if(notes[0]){const b=q("b",notes[0]),small=q("small",notes[0]);if(b)b.innerHTML='Olympus Releases repository: <span class="mono">'+esc(fcState.status?.olympus_releases?.repository||"Not configured")+'</span>';if(small)small.textContent="Inherited from Global Settings."}
+    if(notes[1]){const b=q("b",notes[1]),small=q("small",notes[1]);if(b)b.textContent=preset?("Release policy: "+(preset.release?.channel||"—")+" · SHA-256 "+(preset.verification?.sha256?"required":"optional")+" · Store "+(preset.store?.enabled?"enabled":"disabled")):"No publish preset";if(small)small.textContent=preset?("Inherited from "+preset.id+"."):"Select a valid publish preset."}
+    const publishCards=qa("#app-publish > .grid2 .subcard");
+    if(publishCards[0]){
+      const pill=q(".subcard-head .status-pill",publishCards[0]);if(pill)pill.textContent=preset?.id||"None";
+      const rows=qa(".kv-list > div",publishCards[0]);const vals=[["Release enabled",preset?.release?.enabled?"Yes":"No"],["Channel",preset?.release?.channel||"—"],["Tag template",preset?.release?.tagPrefixTemplate||"—"],["SHA-256",preset?.verification?.sha256?"Required":"No"],["Sigstore",preset?.verification?.sigstore?"Required":"No"]];rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]})
+    }
+    if(publishCards[1]){
+      const pill=q(".subcard-head .status-pill",publishCards[1]);if(pill){pill.textContent=fcState.status?.olympus_releases?.configurationReady?"Ready":"Needs config";pill.className="status-pill "+(fcState.status?.olympus_releases?.configurationReady?"":"queue")}
+      const rows=qa(".kv-list > div",publishCards[1]);const vals=[["Repository",fcState.status?.olympus_releases?.repository||"Not configured"],["Namespace",preset?.release?.tagPrefixTemplate||"—"],["Channel",preset?.release?.channel||"—"],["Credentials","Global secret reference"]];rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]})
+    }
+    const storeCard=q("#app-publish > .subcard.section");
+    if(storeCard){const pill=q(".subcard-head .status-pill",storeCard);if(pill){pill.textContent=preset?.store?.enabled?(preset.store.mode||"Enabled"):"Disabled";pill.className="status-pill "+(preset?.store?.enabled?"":"neutral")}}
+
+    const jobsHead=q("#app-jobs .app-jobs-head b");if(jobsHead)jobsHead.textContent="Recent jobs for "+name;
+    const jobsBody=q("#app-jobs tbody");
+    if(jobsBody)jobsBody.innerHTML=appJobs.slice(0,20).map(j=>'<tr data-app-job="'+esc(j.id)+'"><td><button class="job-link mono" data-job-id="'+esc(j.id)+'">'+esc(j.id)+'</button></td><td>'+esc(j.jobType)+'</td><td class="mono">'+esc(j.trigger?.ref||"—")+'</td><td class="mono">'+esc(j.executor||"—")+'</td><td class="mono">'+esc(String(j.configRevision||"—").slice(0,18))+'</td><td>'+esc(j.finishedAt?fmtWhen(j.finishedAt):"—")+'</td><td><span class="status-pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>').join("")||'<tr><td colspan="7"><div class="live-empty">No jobs for this app yet.</div></td></tr>';
+    qa("#app-jobs [data-app-job]").forEach(row=>row.addEventListener("click",()=>openJob(row.dataset.appJob)));
+
+    q("#apps")?.classList.add("live-ready");
+    if(navigate){
+      history.replaceState(null,"","#/apps/"+encodeURIComponent(app.id));
+      if(typeof showBreadcrumb==="function")showBreadcrumb("Apps / "+name);
+    }
   }
   function bindAppButtons(){
     qa(".app-nav-item").forEach(btn=>btn.addEventListener("click",()=>{
-      const app=fcState.apps.find(a=>a.id===btn.dataset.appId);if(app)selectApp(app);
+      const app=fcState.apps.find(a=>a.id===btn.dataset.appId);if(app)selectApp(app,true);
     }));
   }
   function renderApps(){
@@ -2257,7 +2473,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Add the first app from Legacy Admin while the v2 editor is being migrated.</p></div>';
       bindAppButtons();
       const wanted=location.hash.startsWith("#/apps/")?decodeURIComponent(location.hash.split("/").pop()):null;
-      const selected=apps.find(a=>a.id===wanted)||apps[0];if(selected)selectApp(selected);
+      const selected=apps.find(a=>a.id===wanted)||fcState.selectedApp||apps[0];if(selected)selectApp(selected,false);else q("#apps")?.classList.add("live-ready");
     }
     const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
   }
@@ -2295,16 +2511,58 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(typeof showBreadcrumb==="function")showBreadcrumb("Jobs / "+job.id);
     const section=q("#job-detail");if(!section)return;
     const h1=q(".page-head h1",section),p=q(".page-head p",section);
-    const app=fcState.apps.find(a=>a.id===job.appId);
+    const app=job.snapshot?.app||fcState.apps.find(a=>a.id===job.appId);
+    const preset=job.snapshot?.publishPreset||fcState.presets.find(x=>x.id===app?.publish?.preset);
+    const global=job.snapshot?.global||{};
     if(h1)h1.textContent=job.id;if(p)p.textContent=(app?.identity?.name||job.appId)+" · "+job.jobType+" · immutable execution snapshot.";
     const cards=qa(":scope > .grid4 > .card",section);
-    metric(cards[0],"Status",job.status,(job.stages||[]).find(s=>s.status==="running")?.name||"");
+    metric(cards[0],"Status",job.status,job.currentStage?("Current stage: "+job.currentStage):(job.statusMessage||""));
     metric(cards[1],"Executor",job.executor||"—","Resolved at queue time");
-    metric(cards[2],"Source",job.trigger?.ref||"—","Immutable trigger ref");
-    metric(cards[3],"Created",fmtWhen(job.createdAt),"Config "+String(job.configRevision||"").slice(0,18)+"…");
+    metric(cards[2],"Source",job.trigger?.ref||"—",job.outputs?.artifact?.sourceRevision?("commit "+String(job.outputs.artifact.sourceRevision).slice(0,12)):"Immutable trigger ref");
+    metric(cards[3],"Created",fmtWhen(job.createdAt),job.finishedAt?("Finished "+fmtWhen(job.finishedAt)):"Updated "+fmtWhen(job.updatedAt));
+
+    const pipeline=section.querySelector(".card.section");
+    const pipePill=pipeline?q(".section-title .status-pill",pipeline):null;
+    if(pipePill){pipePill.textContent=job.currentStage?(job.currentStage+" "+job.status):job.status;pipePill.className="status-pill "+statusClass(job.status)}
     const stages=qa(".stage",section);
     stages.forEach(st=>st.className="stage");
-    (job.stages||[]).forEach((st,i)=>{if(stages[i])stages[i].classList.add(st.status==="succeeded"?"done":st.status==="running"?"active":st.status==="skipped"?"skip":st.status==="failed"?"active":"")});
+    (job.stages||[]).forEach((st,i)=>{
+      if(!stages[i])return;
+      const label=q(".stage-name",stages[i]);if(label)label.textContent=st.name;
+      if(st.status==="succeeded")stages[i].classList.add("done");
+      else if(st.status==="running")stages[i].classList.add("active");
+      else if(st.status==="skipped")stages[i].classList.add("skip");
+      else if(st.status==="failed")stages[i].classList.add("active");
+    });
+
+    const snapshotCard=qa("#job-detail .grid2.section .card")[0];
+    if(snapshotCard){
+      const hash=q(".section-title .tiny",snapshotCard);if(hash)hash.textContent=String(job.configRevision||"—");
+      const rows=qa(".kv-list > div",snapshotCard);
+      const values=[
+        ["App",app?.id||job.appId],
+        ["Repository",app?.source?.repository||"—"],
+        ["Publish preset",preset?.id||app?.publish?.preset||"—"],
+        ["Release repository",global?.releases?.repository||"—"],
+        ["Package targets",(app?.build?.targets||[]).join(" · ")||"—"],
+        ["Secret material","References only"]
+      ];
+      rows.forEach((row,i)=>{if(!values[i])return;const s=q("span",row),b=q("b",row);if(s)s.textContent=values[i][0];if(b)b.textContent=values[i][1]});
+    }
+
+    const artifactCard=qa("#job-detail .grid2.section .card")[1];
+    if(artifactCard){
+      const o=job.outputs||{},items=[];
+      if(o.artifact)items.push(["Package artifact",fmtBytes(o.artifact.totalBytes)+" · "+(o.artifact.fileCount||0)+" files","Ready"]);
+      if(o.releasePlan)items.push(["Release plan",(o.releasePlan.channel||"—")+" · "+(o.releasePlan.releaseTag||"—"),"Ready"]);
+      if(o.publication)items.push(["Olympus Releases",o.publication.releaseTag||"Published","Published"]);
+      if(o.storePublication)items.push(["Community Store",o.storePublication.pullRequestNumber?("PR #"+o.storePublication.pullRequestNumber):(o.storePublication.status||"Recorded"),o.storePublication.status||"Recorded"]);
+      const body=q(".activity",artifactCard);
+      if(body)body.innerHTML=items.length?items.map(x=>'<div class="activity-row"><span class="act-dot green"></span><div class="act-text"><b>'+esc(x[0])+'</b><span> · '+esc(x[1])+'</span></div><span class="status-pill '+statusClass(x[2])+'">'+esc(x[2])+'</span></div>').join(""):'<div class="empty">No persisted job outputs yet.</div>';
+    }
+
+    const mini=q("#job-detail .mini-job-log");
+    if(mini)mini.innerHTML='<div><time>—</time><span class="log-stage control">INFO</span><code>Job-specific structured log API is not available yet. Use the full persistent log viewer.</code></div>';
     bindCancelJob();
   }
   function bindCancelJob(){
@@ -2352,10 +2610,12 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const empty=q("#releaseEmpty"),table=q("#releaseData .release-table");
     if(empty){empty.classList.toggle("hidden",rows.length!==0);const b=q("b",empty);if(b)b.textContent="No release outputs yet"}
     if(table)table.classList.toggle("hidden",rows.length===0);
+    q("#releases")?.classList.add("live-ready");
     if(typeof filterReleases==="function")filterReleases();
   }
   function renderInfrastructure(){
     const s=fcState.status||{},cards=qa("#infrastructure > .grid3 > .card");
+    const build=s.web_build||s.web_runtime_version||"—";qa("[data-runtime-build]").forEach(el=>el.textContent=build);
     metric(cards[0],"Native executor",s.manager_alive?"Online":"Offline",s.manager_runtime_version||"Runtime status","Runtime");
     metric(cards[1],"Docker runtime",s.docker_online?"Healthy":"Unavailable",s.compose_online?"Docker + Compose available":"Docker runtime check","Runtime");
     metric(cards[2],"External storage",(s.disk_used||"—")+" / "+(s.disk_total||"—"),s.storage_display||"/forgecore/storage","Mounted");
@@ -2373,6 +2633,22 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         '<div><span>Disk threshold</span><b>'+esc(s.disk_cleanup_threshold_percent||"—")+'%</b><small>Cleanup threshold</small></div>'+
         '<div><span>Last cleanup</span><b>'+(s.last_cleanup_epoch?esc(new Date(Number(s.last_cleanup_epoch)*1000).toLocaleString()):"Not yet")+'</b><small>Persistent cleanup state</small></div>';
     }
+    const update=q("#forgecore-updates");
+    if(update){
+      const pill=q(".section-title .status-pill",update);if(pill){pill.textContent="Not connected";pill.className="status-pill neutral"}
+      const boxes=qa(".version-box",update);
+      if(boxes[0]){const b=q("b",boxes[0]);if(b)b.textContent=s.web_build||"dev"}
+      if(boxes[1]){const b=q("b",boxes[1]);if(b)b.textContent="—"}
+      qa("button",update).forEach(b=>{b.disabled=true;b.title="No ForgeCore update endpoint exists in the current Control API"});
+    }
+    const maintenance=q("#maintenanceCard");
+    if(maintenance){
+      const pill=q("#maintenanceStatus",maintenance);if(pill){pill.textContent="Unavailable";pill.className="status-pill neutral"}
+      const title=q("#maintenanceTitle",maintenance),copy=q("#maintenanceCopy",maintenance);
+      if(title)title.textContent="Maintenance API not implemented";
+      if(copy)copy.textContent="The current Control API does not expose maintenance mode yet.";
+      const b=q("#maintenanceToggle",maintenance);if(b){b.disabled=true;b.textContent="Unavailable"}
+    }
     bindCleanup();
   }
   function bindCleanup(){
@@ -2385,34 +2661,92 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   function renderPresets(){
     const apps=fcState.apps,presets=fcState.presets,list=q("#presets .preset-list-body");
     const head=q("#presets .preset-list-head .secondary");if(head)head.textContent=presets.length+" reusable polic"+(presets.length===1?"y":"ies");
+    function showPreset(p){
+      if(!p)return;
+      qa("#presets .preset-item").forEach(x=>x.classList.toggle("active",x.dataset.presetId===p.id));
+      const hero=q("#presets .preset-hero"),h2=hero?q("h2",hero):null,desc=hero?q("p",hero):null;
+      const used=apps.filter(a=>a.publish?.preset===p.id);
+      if(h2)h2.textContent=p.id;if(desc)desc.textContent=p.name||"Publish preset";
+      const impact=hero?q(".impact-pill strong",hero):null;if(impact)impact.textContent=used.length+" app"+(used.length===1?"":"s");
+      const sections=qa("#presets .preset-section");
+      const setVals=(section,values)=>{
+        if(!section)return;qa(".preset-value",section).forEach((row,i)=>{if(!values[i])return;const a=q("span",row),b=q("b",row);if(a)a.textContent=values[i][0];if(b)b.textContent=values[i][1]});
+      };
+      setVals(sections[0],[
+        ["Release enabled",p.release?.enabled?"Yes":"No"],
+        ["Channel",p.release?.channel||"—"],
+        ["Tag prefix",p.release?.tagPrefixTemplate||"—"],
+        ["Update channel",p.release?.updateChannel?"Yes":"No"]
+      ]);
+      setVals(sections[1],[
+        ["SHA-256",p.verification?.sha256?"Required":"No"],
+        ["Sigstore",p.verification?.sigstore?"Required":"No"],
+        ["Package manifest","Required"],
+        ["Publish on verify failure","No"]
+      ]);
+      setVals(sections[2],[
+        ["Store enabled",p.store?.enabled?"Yes":"No"],
+        ["Submission mode",p.store?.mode||"—"],
+        ["Directory template",p.store?.directoryTemplate||"—"],
+        ["Approval",p.store?.mode==="pull-request"?"Review before merge":"Direct publish"]
+      ]);
+      const s=fcState.status||{};
+      setVals(sections[3],[
+        ["Release repository",s.olympus_releases?.repository||"Not configured"],
+        ["Store repository",s.community_app_store?.repository||"Not configured"],
+        ["Credentials","Secret references only"]
+      ]);
+      const usedList=q("#presets .usedby-list");
+      if(usedList)usedList.innerHTML=used.length?used.map(a=>'<span class="usedby">'+esc(a.identity?.name||a.id)+'</span>').join(""):'<span class="secondary">No apps currently use this preset.</span>';
+      const usedCopy=q("#presets .preset-usedby .secondary");if(usedCopy)usedCopy.textContent="Changing this preset affects future jobs for "+used.length+" app"+(used.length===1?"":"s")+". Existing job snapshots remain unchanged.";
+    }
     if(list)list.innerHTML=presets.map((p,i)=>{
       const used=apps.filter(a=>a.publish?.preset===p.id).length,channel=p.release?.channel||"—";
       return '<button class="preset-item '+(i===0?"active":"")+'" data-preset-id="'+esc(p.id)+'"><div class="preset-item-top"><b>'+esc(p.id)+'</b><span class="status-pill '+(channel==="stable"?"":"run")+'">'+esc(channel)+'</span></div>'+
         '<small>'+esc(p.name||p.id)+' · Store '+(p.store?.enabled?"enabled":"disabled")+'</small><div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>'+used+'</strong> apps</span></div></button>';
-    }).join("");
-    qa("#presets .preset-item").forEach(b=>b.addEventListener("click",()=>{
-      qa("#presets .preset-item").forEach(x=>x.classList.toggle("active",x===b));
-      const p=presets.find(x=>x.id===b.dataset.presetId),h=q("#presets .preset-hero h2"),d=q("#presets .preset-hero p");
-      if(p&&h)h.textContent=p.id;if(p&&d)d.textContent=p.name||"Publish preset";
-    }));
+    }).join("") || '<div class="empty">No publish presets configured.</div>';
+    qa("#presets .preset-item").forEach(b=>b.addEventListener("click",()=>showPreset(presets.find(x=>x.id===b.dataset.presetId))));
+    showPreset(presets[0]);
+    q("#presets")?.classList.add("live-ready");
   }
   function renderSettings(){
-    const s=fcState.status||{},apps=fcState.apps;
+    const s=fcState.status||{},apps=fcState.apps,presets=fcState.presets;
     const note=q("#settings .source-note");
     if(note){
       const b=q("b",note),small=q("small",note),impact=q(".impact-pill strong",note);
-      if(b)b.textContent="Olympus Releases integration affects "+apps.length+" managed apps";
-      if(small)small.innerHTML="Repository: <span class=\"mono\">"+esc(s.olympus_releases?.repository||"Not configured")+"</span>. Existing immutable jobs keep their original snapshot.";
+      if(b)b.textContent="Global integrations affect "+apps.length+" managed app"+(apps.length===1?"":"s");
+      if(small)small.innerHTML="Olympus Releases: <span class=\"mono\">"+esc(s.olympus_releases?.repository||"Not configured")+"</span> · Community Store: <span class=\"mono\">"+esc(s.community_app_store?.repository||"Not configured")+"</span>. Existing immutable jobs keep their original snapshot.";
       if(impact)impact.textContent=String(apps.length);
     }
     const fields=qa("#settings-integrations .field");
+    if(fields[0]){
+      const value=q(".field-value span:first-child",fields[0]);if(value)value.textContent=(s.runners||[]).some(r=>r.online)?"Runner connected":"No online runner";
+      const pill=q(".status-pill",fields[0]);if(pill){pill.textContent=(s.runners||[]).some(r=>r.online)?"Healthy":"Check";pill.className="status-pill "+((s.runners||[]).some(r=>r.online)?"":"queue")}
+    }
     if(fields[1]){
       const value=q(".field-value span:first-child",fields[1]);if(value)value.textContent=s.olympus_releases?.repository||"Not configured";
       const pill=q(".status-pill",fields[1]);if(pill){pill.textContent=s.olympus_releases?.configurationReady?"Ready":"Needs config";pill.className="status-pill "+(s.olympus_releases?.configurationReady?"":"queue")}
+      const impact=q(".impact-pill strong",fields[1]);if(impact)impact.textContent=String(apps.length);
+    }
+    if(fields[2]){
+      const value=q(".field-value span:first-child",fields[2]);if(value)value.textContent=s.community_app_store?.repository||"Not configured";
+      const pill=q(".status-pill",fields[2]);if(pill){pill.textContent=s.community_app_store?.configurationReady?"Ready":"Needs config";pill.className="status-pill "+(s.community_app_store?.configurationReady?"":"queue")}
+      const impact=q(".impact-pill strong",fields[2]);if(impact)impact.textContent=String(presets.filter(p=>p.store?.enabled).length);
+    }
+
+    const presetActivity=q("#settings .grid2 .card:nth-child(2) .activity");
+    if(presetActivity)presetActivity.innerHTML=presets.slice(0,4).map(p=>'<div class="activity-row"><span class="act-dot '+(p.release?.channel==="stable"?"green":"blue")+'"></span><div class="act-text"><b>'+esc(p.id)+'</b><span> · '+esc(p.release?.channel||"—")+' · Store '+(p.store?.enabled?"enabled":"disabled")+'</span></div><span class="status-pill neutral">Configured</span></div>').join("") || '<div class="empty">No presets configured.</div>';
+
+    q("#settings")?.classList.add("live-ready");
+    const backup=q("#backup-restore");
+    if(backup){
+      const titlePill=q(".section-title .status-pill",backup);if(titlePill){titlePill.textContent="Not implemented";titlePill.className="status-pill neutral"}
+      const layout=q(".backup-layout",backup);if(layout)layout.innerHTML='<div class="live-unavailable"><div class="state-glyph">—</div><div><b>Backup & Restore is not connected to the Control API yet</b><p>No backup history is shown because ForgeCore has no backup endpoint in the current live runtime. This screen will become active only when backup state and restore validation exist server-side.</p></div></div>';
+      const history=q(".backup-history",backup);if(history)history.classList.add("hidden");
     }
   }
   async function renderLogs(){
-    const select=q("#logStream");if(!select)return;
+    const select=q("#logStream"),panel=q("#logPanel"),sum=q("#logs .log-summary");if(!select||!panel)return;
     try{
       const d=await api("/api/logs"),sources=d.sources||[];
       const current=select.value;
@@ -2421,8 +2755,16 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(!select.dataset.productionBound){
         select.dataset.productionBound="1";select.addEventListener("change",loadSelectedLog);
       }
+      if(!sources.length){
+        panel.innerHTML='<div class="log-empty">No persistent log sources are available yet.</div>';
+        if(sum)sum.innerHTML='<div><span class="status-pill neutral">Empty</span><b>No log sources</b></div><div><span>0 lines</span></div>';
+        return;
+      }
       await loadSelectedLog();
-    }catch(e){}
+    }catch(e){
+      panel.innerHTML='<div class="log-empty">'+esc(e.message)+'</div>';
+      if(sum)sum.innerHTML='<div><span class="status-pill fail">Error</span><b>Log API unavailable</b></div>';
+    }
   }
   async function loadSelectedLog(){
     const select=q("#logStream"),panel=q("#logPanel");if(!select||!panel||!select.value)return;
@@ -2447,18 +2789,32 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(empty)empty.classList.toggle("hidden",activity.length!==0);
   }
   function bindTransitionalActions(){
+    const legacyLabels=["queue job","import from github","new app","edit configuration","queue build","build & publish","dry run","edit steps","queue new job","create release","retry store stage","retry","run health check","edit policy","duplicate preset","new preset","edit preset","save changes"];
     qa(".demo").forEach(old=>{
-      if(old.dataset.productionBound==="1")return;
+      const label=(old.textContent||"").replace(/\s+/g," ").trim().toLowerCase();
+      if(label==="copy deep link"){
+        const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(location.href);showToast("Deep link copied.")}catch(_){showToast(location.href)}});return;
+      }
+      if(label==="view all"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("apps"));return}
+      if(label==="preset details →"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("presets"));return}
+      if(label==="open release center →"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("releases"));return}
+      if(label==="download log"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.disabled=true;b.title="Log download endpoint is not implemented yet";return}
+      if(label==="change avatar"){const b=cloneNoHandlers(old);b.disabled=true;b.title="Dashboard-local profile management is not implemented";return}
+      if(!legacyLabels.some(x=>label===x||label.startsWith(x))){
+        const b=cloneNoHandlers(old);if(b){b.classList.remove("demo");b.disabled=true;b.title="Not implemented in the live dashboard yet"}return;
+      }
       const b=cloneNoHandlers(old);if(!b)return;b.dataset.productionBound="1";b.classList.remove("demo");
-      b.title="This editor/action is still available in Legacy Admin during the v2 UI migration";
-      b.addEventListener("click",()=>showToast("This write action currently lives in Legacy Admin (/legacy)."));
+      b.title="Open the current write/edit surface in Legacy Admin";
+      b.addEventListener("click",()=>{location.href="/legacy"});
     });
     ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob"].forEach(id=>{
       const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet";
     });
+    qa('[data-go="account"]').forEach(el=>el.classList.add("hidden"));
     const sign=document.getElementById("signOut");if(sign){const b=cloneNoHandlers(sign);b.disabled=true;b.title="Local dashboard authentication is not enabled yet"}
     const retry=document.getElementById("apiRetry");if(retry){const b=cloneNoHandlers(retry);b.addEventListener("click",refreshLive)}
     qa(".api-retry-inline").forEach(old=>{const b=cloneNoHandlers(old);b.addEventListener("click",refreshLive)});
+    const releaseExamples=q("#releases > .grid2.section");if(releaseExamples)releaseExamples.classList.add("hidden");
   }
   function showToast(message){
     const t=document.getElementById("toast");if(!t)return;t.textContent=message;t.classList.add("show");clearTimeout(window.__fcToast);window.__fcToast=setTimeout(()=>t.classList.remove("show"),2600);
