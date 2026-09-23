@@ -3,7 +3,7 @@ set -eu
 
 APP_ROOT="${FORGECORE_APP_ROOT:-/forgecore/app}"
 STORAGE_ROOT="${FORGECORE_STORAGE_ROOT:-/forgecore/storage}"
-CONFIG_FILE="${APP_ROOT}/config/forgecore.env"
+GLOBAL_CONFIG="${APP_ROOT}/config/global.json"
 STATE_DIR="${APP_ROOT}/state"
 LOG_FILE="${STORAGE_ROOT}/logs/cleanup.log"
 LAST_RUN_FILE="${STATE_DIR}/last-cleanup-epoch"
@@ -20,13 +20,23 @@ activity() {
   printf '{"epoch":%s,"type":"%s","message":"%s"}\n' "${epoch}" "${kind}" "${message}" >> "${ACTIVITY_FILE}" || true
 }
 
+json_int() {
+  key="$1"
+  fallback="$2"
+  [ -f "${GLOBAL_CONFIG}" ] || { printf '%s\n' "${fallback}"; return 0; }
+  value="$(sed -n -E 's/.*"'"'"'"${key}"'"'"'"[[:space:]]*:[[:space:]]*([0-9]+).*/\1/p' "${GLOBAL_CONFIG}" | head -n 1)"
+  case "${value}" in
+    ''|*[!0-9]*) printf '%s\n' "${fallback}" ;;
+    *) printf '%s\n' "${value}" ;;
+  esac
+}
+
 load_config() {
-  CLEANUP_INTERVAL_HOURS=168
-  CACHE_MAX_AGE_DAYS=14
-  WORKSPACE_MAX_AGE_DAYS=30
-  DISK_CLEANUP_THRESHOLD_PERCENT=85
-  BUILDKIT_KEEP_STORAGE_GB=50
-  if [ -f "${CONFIG_FILE}" ]; then . "${CONFIG_FILE}"; fi
+  CLEANUP_INTERVAL_HOURS="$(json_int intervalHours 168)"
+  CACHE_MAX_AGE_DAYS="$(json_int cacheMaxAgeDays 14)"
+  WORKSPACE_MAX_AGE_DAYS="$(json_int workspaceMaxAgeDays 30)"
+  DISK_CLEANUP_THRESHOLD_PERCENT="$(json_int diskThresholdPercent 85)"
+  BUILDKIT_KEEP_STORAGE_GB="$(json_int buildkitKeepStorageGB 50)"
 }
 
 wait_for_docker() {
@@ -46,7 +56,7 @@ prune_workspace_contents() {
     done
   fi
 
-  # beta.8 legacy workspace location.
+  # Native v2 executor workspaces.
   if [ -d "${STORAGE_ROOT}/workspaces" ]; then
     for workspace_root in "${STORAGE_ROOT}"/workspaces/*; do
       [ -d "${workspace_root}" ] || continue
