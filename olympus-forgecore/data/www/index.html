@@ -162,7 +162,7 @@ html[data-theme="light"] .account-menu,html[data-theme="light"] .login-card,html
 .about-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:13px}.about-card{padding:16px}.about-card-head{display:flex;align-items:center;gap:11px}.about-card-head h2{font-size:13px;margin:0}.about-card-head p{font-size:9px;color:var(--muted);margin:2px 0 0}.about-icon{width:36px;height:36px;border-radius:10px;border:1px solid #5c4419;background:#171106;color:var(--amber2);display:grid;place-items:center;font:900 9px "SFMono-Regular",Consolas,monospace}.creator-avatar{width:38px;height:38px;border-radius:10px;border:1px solid var(--border2)}.about-copy{font-size:10px;color:var(--muted);line-height:1.65;margin-top:13px}.about-mini-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:13px}.about-mini-flow span{border:1px solid var(--border);background:#0b121a;border-radius:7px;padding:5px 7px;font-size:8px;font-weight:800;color:#aeb9c9}.about-mini-flow i{font-style:normal;color:#4e5d71}.about-link-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:13px;border-top:1px solid var(--border);padding-top:11px;text-decoration:none;color:var(--muted);font-size:9px}.about-link-row b{color:#a8b8ca;font-weight:700}.about-metric{font-size:17px!important}
 .donation-card{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px;border-color:#4f3b17;background:linear-gradient(145deg,rgba(25,19,7,.95),rgba(11,17,26,.96))}.donation-main{display:flex;align-items:center;gap:13px;max-width:760px}.donation-icon{width:44px;height:44px;flex:0 0 auto;border-radius:13px;border:1px solid #664b1b;background:#191207;color:var(--amber2);display:grid;place-items:center;font-size:23px}.donation-main h2{font-size:14px;margin:2px 0 0}.donation-main p{font-size:10px;color:#b8aa84;margin:4px 0 0;line-height:1.55}.donation-side{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.donation-side a{text-decoration:none}
 .about-details{overflow:hidden}.about-details summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px}.about-details summary::-webkit-details-marker{display:none}.about-details summary b,.about-details summary span{display:block}.about-details summary b{font-size:11px}.about-details summary div>span{font-size:9px;color:var(--muted);margin-top:2px}.details-chevron{color:var(--muted);transition:.18s}.about-details[open] .details-chevron{transform:rotate(180deg)}.about-architecture{border-top:1px solid var(--border)}.about-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--muted2);font-size:9px;padding:13px 3px 0}.about-meta a{color:#8fa0b5;text-decoration:none}
-/* Light theme QA pass — keep this block last so legacy dark component rules cannot win. */
+/* Light theme QA pass — keep this block last so dark component rules cannot win. */
 html[data-theme="light"] .detail-tab{color:#66758a}
 html[data-theme="light"] .detail-tab:hover{color:#26364a}
 html[data-theme="light"] .detail-tab.active{color:#172033;border-bottom-color:var(--amber)}
@@ -464,6 +464,9 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
   .app-lifecycle .life-step,.delivery-flow .delivery-node{min-width:0}
   .architecture .mini-flow{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px}
 }
+
+.admin-editor-card{width:min(920px,calc(100vw - 28px));max-height:92vh;overflow:hidden}.admin-editor-body{max-height:72vh;overflow:auto}.admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-form-grid .full{grid-column:1/-1}.admin-form-grid label{display:grid;gap:6px;font-size:10px;color:var(--muted)}.admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea{width:100%;box-sizing:border-box}.admin-form-grid textarea{min-height:150px;resize:vertical}.admin-section{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}.admin-section h3{margin:0 0 5px;font-size:11px}.admin-section p{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.5}.admin-inline-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.admin-runner-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--border);padding:9px 0}.admin-runner-row:first-child{border-top:0}.admin-help{font-size:9px;color:var(--muted);line-height:1.5}.admin-error{color:var(--red);font-size:9px;margin-top:8px}.admin-success{color:var(--green);font-size:9px;margin-top:8px}@media(max-width:820px){.admin-form-grid{grid-template-columns:1fr}.admin-form-grid .full{grid-column:auto}}
+
 </style>
 </head>
 <body>
@@ -550,8 +553,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
         </div>
         <div id="liveDataNote" class="note">Connecting to the ForgeCore Control API…</div>
         <div class="live-mode-strip">
-          <div><b>Live dashboard</b><span>Read state is shown from this ForgeCore installation. Configuration actions that are not migrated yet open Legacy Admin.</span></div>
-          <a class="btn" href="/legacy">Legacy Admin ↗</a>
+          <div><b>Live dashboard</b><span>One dashboard for live state, configuration and operations on this ForgeCore installation.</span></div>
         </div>
         <div class="system-status-strip">
           <button class="system-status-main system-status-link" type="button" data-go="infrastructure"><span class="dot"></span><b id="overviewOpsState">ForgeCore healthy</b></button>
@@ -1050,7 +1052,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
         <div class="grid2 section">
           <div class="card">
-            <div class="section-title"><div><h2>Release detail example</h2><p>Deep link: <span class="mono">#/releases/olympus-core/—</span></p></div><span class="status-pill">Published</span></div>
+            <div class="section-title"><div><h2>Release detail example</h2><p>Release details stay inside the dashboard without changing the browser URL.</p></div><span class="status-pill">Published</span></div>
             <div class="release-detail-flow">
               <div class="release-detail-step done"><span>✓</span><div><b>Package</b><small>48.3 MB · manifest verified</small></div></div>
               <div class="release-detail-step done"><span>✓</span><div><b>Olympus Releases</b><small>tag olympus-core-—</small></div></div>
@@ -1071,7 +1073,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       <section id="job-detail" class="view">
         <div class="page-head">
           <div><button class="back-link" data-go="jobs">← Jobs</button><h1>job-pending</h1><p>Olympus Core · build-and-publish · immutable execution snapshot.</p></div>
-          <div class="actions"><button class="btn demo">Copy deep link</button><button id="retryCleanJob" class="btn">Retry clean</button><button class="btn demo">Retry</button><button id="cancelJob" class="btn danger">Cancel job</button></div>
+          <div class="actions"><button class="btn demo">Copy dashboard URL</button><button id="retryCleanJob" class="btn">Retry clean</button><button class="btn demo">Retry</button><button id="cancelJob" class="btn danger">Cancel job</button></div>
         </div>
 
         <div class="grid4">
@@ -1633,7 +1635,15 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
   <div class="account-menu-head"><img src="https://avatars.githubusercontent.com/u/68773604?v=4" alt="Jojje"><div><b>Jojje</b><small>@Jojje84 · Administrator</small></div></div>
   <button data-go="account"><span>Profile & account</span><small>Name, avatar & password</small></button>
   <a href="https://github.com/Jojje84" target="_blank" rel="noopener noreferrer"><span>GitHub profile ↗</span><small>github.com/Jojje84</small></a>
-  <a href="/legacy"><span>Legacy admin ↗</span><small>Current write/edit administration</small></a><button id="signOut"><span>Sign out</span><small>Local authentication is not enabled yet</small></button>
+<button id="signOut"><span>Sign out</span><small>Local authentication is not enabled yet</small></button>
+</div>
+
+<div id="adminEditor" class="modal-backdrop">
+  <div class="modal-card admin-editor-card">
+    <div class="modal-head"><div><b id="adminEditorTitle">ForgeCore</b><small id="adminEditorSub"></small></div><button id="adminEditorClose" class="icon-btn" type="button">×</button></div>
+    <div id="adminEditorBody" class="modal-body admin-editor-body"></div>
+    <div id="adminEditorActions" class="modal-actions"><button id="adminEditorDelete" class="btn danger hidden" type="button">Delete</button><button id="adminEditorCancel" class="btn" type="button">Cancel</button><button id="adminEditorSave" class="btn primary" type="button">Save</button></div>
+  </div>
 </div>
 <div id="confirmDialog" class="modal-backdrop">
   <div class="modal-card confirm-card">
@@ -1679,32 +1689,26 @@ function syncBreadcrumb(id){
   hideBreadcrumb();
 }
 
-function showView(id,updateHash){
+let currentView="overview";
+let currentDetailKind="";
+function rootUrl(){return location.pathname||"/"}
+function keepRootUrl(){history.replaceState({view:currentView},"",rootUrl())}
+function showView(id){
+  currentView=id;
+  document.body.dataset.currentView=id;
   document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active",v.id===id)});
   document.querySelectorAll(".nav button").forEach(function(b){b.classList.toggle("active",b.dataset.view===id||(id==="job-detail"&&b.dataset.view==="jobs"))});
   syncBreadcrumb(id);
-  if(updateHash!==false){
-    const routes={overview:"#/overview",apps:"#/apps",jobs:"#/jobs",releases:"#/releases",infrastructure:"#/infrastructure",presets:"#/publish-presets",settings:"#/settings",account:"#/account",audit:"#/audit",logs:"#/logs",about:"#/about","job-detail":"#/jobs/job-pending"};
-    if(routes[id]) history.replaceState(null,"",routes[id]);
-  }
+  keepRootUrl();
   window.scrollTo({top:0,behavior:"smooth"});
-}
-function routeFromHash(){
-  const h=location.hash||"#/overview";
-  if(h.indexOf("#/jobs/job-")===0){showView("job-detail",false);return showBreadcrumb("Jobs / "+h.split("/").pop())}
-  if(h.indexOf("#/apps/")===0){showView("apps",false);return showBreadcrumb("Apps / "+h.split("/").pop())}
-  if(h.indexOf("#/releases/")===0){showView("releases",false);return showBreadcrumb("Releases / "+h.split("/").slice(2).join(" / "))}
-  const map={"#/overview":"overview","#/apps":"apps","#/jobs":"jobs","#/releases":"releases","#/infrastructure":"infrastructure","#/publish-presets":"presets","#/settings":"settings","#/account":"account","#/audit":"audit","#/logs":"logs","#/about":"about"};
-  showView(map[h]||"overview",false);
 }
 document.querySelectorAll("[data-view]").forEach(function(b){b.addEventListener("click",function(){showView(b.dataset.view)})});
 document.querySelectorAll("[data-go]").forEach(function(b){b.addEventListener("click",function(){showView(b.dataset.go);if(b.closest(".attention-panel")) document.getElementById("attentionPanel").classList.remove("open")})});
 const crumbRoot=document.querySelector("[data-breadcrumb-root]");
 if(crumbRoot) crumbRoot.addEventListener("click",function(){
-  const h=location.hash||"";
-  if(h.indexOf("#/jobs/")===0) showView("jobs");
-  else if(h.indexOf("#/apps/")===0) showView("apps");
-  else if(h.indexOf("#/releases/")===0) showView("releases");
+  if(currentDetailKind==="jobs")showView("jobs");
+  else if(currentDetailKind==="apps")showView("apps");
+  else if(currentDetailKind==="releases")showView("releases");
   else showView("overview");
 });
 document.querySelectorAll("[data-status-anchor]").forEach(function(el){
@@ -1735,12 +1739,8 @@ document.querySelectorAll(".app-nav-item").forEach(function(item){
     document.getElementById("selectedAppRepo").textContent=item.dataset.repo;
     document.getElementById("selectedExecutor").textContent=item.dataset.executor;
     document.getElementById("selectedAppIcon").textContent=item.dataset.appSelect.charAt(0);
-    history.replaceState(null,"","#/apps/"+item.dataset.appId);
+    currentDetailKind="apps";
     showBreadcrumb("Apps / "+item.dataset.appSelect);
-    if(item.dataset.appId!=="olympus-core"){
-      toast.textContent=item.dataset.appSelect+" selected — detailed content remains the Olympus Core design example.";
-      toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2400);
-    }
   });
 });
 const appSearch=document.getElementById("appSearch");
@@ -1752,14 +1752,13 @@ if(appSearch) appSearch.addEventListener("input",function(){
 });
 
 
-window.addEventListener("hashchange",routeFromHash);
-routeFromHash();
+showView("overview");
 
 document.querySelectorAll(".job-open").forEach(function(row){
-  row.addEventListener("click",function(){history.replaceState(null,"","#/jobs/"+row.dataset.jobId);showView("job-detail",false)});
+  row.addEventListener("click",function(){currentDetailKind="jobs";showView("job-detail")});
 });
 document.querySelectorAll(".release-open").forEach(function(btn){
-  btn.addEventListener("click",function(){history.replaceState(null,"","#/releases/"+btn.dataset.releaseLink);showView("releases",false);showBreadcrumb("Releases / "+btn.dataset.releaseLink);window.scrollTo({top:0,behavior:"smooth"})});
+  btn.addEventListener("click",function(){currentDetailKind="releases";showView("releases");showBreadcrumb("Releases / "+btn.dataset.releaseLink);window.scrollTo({top:0,behavior:"smooth"})});
 });
 
 const releaseSearch=document.getElementById("releaseSearch");
@@ -1857,8 +1856,8 @@ document.querySelectorAll(".job-link").forEach(function(el){
   el.addEventListener("click",function(e){
     e.preventDefault();e.stopPropagation();
     const id=el.dataset.jobId||"job-pending";
-    history.replaceState(null,"","#/jobs/"+id);
-    showView("job-detail",false);
+    currentDetailKind="jobs";
+    showView("job-detail");
   });
 });
 
@@ -1884,16 +1883,14 @@ const signOut=document.getElementById("signOut");
 const loginForm=document.getElementById("loginForm");
 if(signOut) signOut.addEventListener("click",function(){
   accountMenu.classList.remove("open");
-  history.replaceState(null,"","#/login");
-  loginScreen.classList.add("open");
+  loginScreen.classList.add("open");keepRootUrl();
 });
 if(loginForm) loginForm.addEventListener("submit",function(e){
   e.preventDefault();
   loginScreen.classList.remove("open");
-  history.replaceState(null,"","#/overview");
-  showView("overview",false);
+  showView("overview");
 });
-if(location.hash==="#/login") loginScreen.classList.add("open");
+
 
 const profileName=document.getElementById("profileName");
 const profilePreviewName=document.getElementById("profilePreviewName");
@@ -1929,7 +1926,7 @@ function runCommand(item){
   closeCommand();
   const view=item.dataset.commandView;
   if(view==="job-detail"){
-    history.replaceState(null,"","#/jobs/job-pending");showView("job-detail",false);showBreadcrumb("Jobs / job-pending");
+    currentDetailKind="jobs";showView("job-detail");showBreadcrumb("Jobs / job-pending");
   }else{
     showView(view);
   }
@@ -2194,7 +2191,7 @@ if(followLive) followLive.addEventListener("change",function(){
 });
 const toast=document.getElementById("toast");
 document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click",function(){
-  toast.textContent="This action is still handled by Legacy Admin while the v2 editor is migrated.";
+  toast.textContent="This action is still handled by the dashboard while the v2 editor is migrated.";
   toast.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(function(){toast.classList.remove("show")},2200);
 })});
 </script>
@@ -2233,6 +2230,97 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   function cloneNoHandlers(el){
     if(!el)return null;const n=el.cloneNode(true);el.replaceWith(n);return n;
   }
+  const adminModal=q("#adminEditor"),adminBody=q("#adminEditorBody"),adminTitle=q("#adminEditorTitle"),adminSub=q("#adminEditorSub"),adminSave=q("#adminEditorSave"),adminDelete=q("#adminEditorDelete");
+  let adminSaveHandler=null,adminDeleteHandler=null;
+  function closeAdmin(){if(adminModal)adminModal.classList.remove("open");adminSaveHandler=null;adminDeleteHandler=null}
+  ["adminEditorClose","adminEditorCancel"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("click",closeAdmin)});
+  if(adminSave)adminSave.addEventListener("click",()=>{if(adminSaveHandler)adminSaveHandler()});
+  if(adminDelete)adminDelete.addEventListener("click",()=>{if(adminDeleteHandler)adminDeleteHandler()});
+  function openAdmin(opts){
+    adminTitle.textContent=opts.title||"ForgeCore";adminSub.textContent=opts.sub||"";adminBody.innerHTML=opts.body||"";
+    adminSave.textContent=opts.saveLabel||"Save";adminSave.classList.toggle("hidden",opts.hideSave===true);
+    adminDelete.classList.toggle("hidden",!opts.onDelete);adminDeleteHandler=opts.onDelete||null;adminSaveHandler=opts.onSave||null;
+    adminModal.classList.add("open");const first=q("input,select,textarea",adminBody);if(first)setTimeout(()=>first.focus(),0);
+  }
+  function field(name,label,value,type,extra){
+    extra=extra||"";const v=value==null?"":String(value);
+    if(type==="textarea")return '<label class="full"><span>'+esc(label)+'</span><textarea class="account-input" name="'+name+'" '+extra+'>'+esc(v)+'</textarea></label>';
+    if(type==="select")return '<label><span>'+esc(label)+'</span><select class="select" name="'+name+'" '+extra+'>'+value+'</select></label>';
+    return '<label'+(extra.includes("data-full")?' class="full"':"")+'><span>'+esc(label)+'</span><input class="account-input" name="'+name+'" type="'+(type||"text")+'" value="'+esc(v)+'" '+extra.replace("data-full","")+'></label>';
+  }
+  function options(values,current){return values.map(x=>'<option value="'+esc(x[0])+'" '+(String(x[0])===String(current)?"selected":"")+'>'+esc(x[1])+'</option>').join("")}
+  function currentApp(){return fcState.selectedApp||fcState.apps[0]||null}
+  function currentPreset(){if(fcState.selectedPreset)return fcState.selectedPreset;const app=currentApp();return fcState.presets.find(p=>p.id===app?.publish?.preset)||fcState.presets[0]||null}
+  function openAppEditor(app,focusSteps){
+    const editing=Boolean(app);
+    const a=app||{id:"",identity:{name:"",storeId:""},source:{repository:"",defaultBranch:"main",private:true},build:{executor:"forgecore-native",targets:["amd64","arm64"],steps:[]},package:{sourcePath:"umbrel"},publish:{preset:fcState.presets[0]?.id||""}};
+    const presetOptions=fcState.presets.map(p=>[p.id,(p.name||p.id)+" · "+p.id]);
+    const body='<form id="appAdminForm" class="admin-form-grid">'+
+      field("id","App ID",a.id,"text",(editing?'readonly ':'')+'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"')+
+      field("name","Name",a.identity?.name||"","text","required")+
+      field("storeId","Olympus Store ID",a.identity?.storeId||"","text",'required placeholder="olympus-app"')+
+      field("repository","GitHub repository",a.source?.repository||"","text",'required placeholder="owner/repository"')+
+      field("defaultBranch","Default branch",a.source?.defaultBranch||"main","text","required")+
+      field("private","Private repository",options([["true","Yes"],["false","No"]],a.source?.private?"true":"false"),"select")+
+      field("executor","Executor",options([["forgecore-native","ForgeCore native"],["github-actions","GitHub Actions adapter"]],a.build?.executor||"forgecore-native"),"select")+
+      field("targets","Build targets",(a.build?.targets||[]).join(","),"text",'required placeholder="amd64,arm64"')+
+      field("sourcePath","Umbrel package source",a.package?.sourcePath||"umbrel","text","required")+
+      field("preset","Publish preset",options(presetOptions,a.publish?.preset||""),"select","required")+
+      field("steps","Build steps JSON",JSON.stringify(a.build?.steps||[],null,2),"textarea",'spellcheck="false"')+
+      '<div class="full admin-help">Build steps are stored with the app and snapshotted into future jobs. Supported fields include name, stage, run, workingDirectory, timeoutSeconds, env and secrets using secret://env references.</div>'+
+      '<div id="appAdminMsg" class="full admin-error"></div></form>';
+    openAdmin({title:(editing?"Edit ":"New ")+(a.identity?.name||"app"),sub:"Complete ForgeCore v2 app configuration",body,saveLabel:editing?"Save app":"Create app",
+      onSave:async()=>{const f=q("#appAdminForm"),msg=q("#appAdminMsg");let steps=[];try{steps=JSON.parse(f.elements.steps.value||"[]");if(!Array.isArray(steps))throw new Error("Build steps must be a JSON array.");}catch(e){msg.textContent=e.message;return}
+        const data={schemaVersion:1,kind:"ForgeCoreApp",id:f.elements.id.value.trim(),identity:{name:f.elements.name.value.trim(),storeId:f.elements.storeId.value.trim()},source:{provider:"github",repository:f.elements.repository.value.trim(),defaultBranch:f.elements.defaultBranch.value.trim(),private:f.elements.private.value==="true"},build:{executor:f.elements.executor.value,targets:f.elements.targets.value.split(",").map(x=>x.trim()).filter(Boolean),steps:steps},package:{format:"umbrel",sourcePath:f.elements.sourcePath.value.trim()},publish:{preset:f.elements.preset.value}};
+        try{adminSave.disabled=true;await api("/api/apps",{method:"POST",body:JSON.stringify(data)});closeAdmin();await refreshLive();fcState.selectedApp=fcState.apps.find(x=>x.id===data.id)||null;if(fcState.selectedApp)selectApp(fcState.selectedApp,false);showToast("App configuration saved.");}catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}},
+      onDelete:editing?async()=>{const run=async()=>{try{await api("/api/apps/"+encodeURIComponent(a.id),{method:"DELETE"});closeAdmin();fcState.selectedApp=null;await refreshLive();showToast("App deleted.");}catch(e){showToast(e.message)}};if(typeof openConfirm==="function")openConfirm({title:"Delete "+a.id+"?",sub:"Job history is not deleted.",warning:"The app configuration will be removed.",text:"Existing immutable jobs and outputs remain available.",action:"Delete app",danger:true},run);else run()}:null});
+    if(focusSteps){const el=q('[name="steps"]',adminBody);if(el)setTimeout(()=>el.focus(),0)}
+  }
+  function openPresetEditor(preset,duplicate){
+    const editing=Boolean(preset&&!duplicate),p=preset||{id:"",name:"",release:{enabled:true,channel:"stable",tagPrefixTemplate:"{app.id}-",updateChannel:true},store:{enabled:false,mode:"pull-request",directoryTemplate:"olympus-{app.id}"},verification:{sha256:true,sigstore:true}};
+    const body='<form id="presetAdminForm" class="admin-form-grid">'+
+      field("id","Preset ID",duplicate?"":p.id,"text",(editing?'readonly ':'')+'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"')+
+      field("name","Name",duplicate?(p.name+" copy"):p.name,"text","required")+
+      field("releaseEnabled","Release enabled",options([["true","Yes"],["false","No"]],p.release?.enabled?"true":"false"),"select")+
+      field("channel","Release channel",options([["stable","Stable"],["beta","Beta"],["prerelease","Prerelease"]],p.release?.channel||"stable"),"select")+
+      field("tagPrefix","Tag prefix template",p.release?.tagPrefixTemplate||"{app.id}-","text","required")+
+      field("updateChannel","Update release channel",options([["true","Yes"],["false","No"]],p.release?.updateChannel?"true":"false"),"select")+
+      field("storeEnabled","Store enabled",options([["true","Yes"],["false","No"]],p.store?.enabled?"true":"false"),"select")+
+      field("storeMode","Store mode",options([["pull-request","Pull request"],["direct","Direct"]],p.store?.mode||"pull-request"),"select")+
+      field("directory","Store directory template",p.store?.directoryTemplate||"olympus-{app.id}","text","required")+
+      field("sha","SHA-256",options([["true","Required"],["false","Disabled"]],p.verification?.sha256?"true":"false"),"select")+
+      field("sigstore","Sigstore",options([["true","Required"],["false","Disabled"]],p.verification?.sigstore?"true":"false"),"select")+
+      '<div id="presetAdminMsg" class="full admin-error"></div></form>';
+    openAdmin({title:editing?"Edit publish preset":duplicate?"Duplicate publish preset":"New publish preset",sub:"Reusable release and store policy",body,saveLabel:editing?"Save preset":"Create preset",
+      onSave:async()=>{const f=q("#presetAdminForm"),msg=q("#presetAdminMsg"),data={schemaVersion:1,kind:"ForgeCorePublishPreset",id:f.elements.id.value.trim(),name:f.elements.name.value.trim(),release:{enabled:f.elements.releaseEnabled.value==="true",repositoryRef:"global.releases",channel:f.elements.channel.value,tagPrefixTemplate:f.elements.tagPrefix.value.trim(),updateChannel:f.elements.updateChannel.value==="true"},store:{enabled:f.elements.storeEnabled.value==="true",repositoryRef:"global.communityStore",mode:f.elements.storeMode.value,directoryTemplate:f.elements.directory.value.trim()},verification:{sha256:f.elements.sha.value==="true",sigstore:f.elements.sigstore.value==="true"}};try{adminSave.disabled=true;await api("/api/publish-presets",{method:"POST",body:JSON.stringify(data)});closeAdmin();await refreshLive();fcState.selectedPreset=fcState.presets.find(x=>x.id===data.id)||null;showToast("Publish preset saved.");}catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}},
+      onDelete:editing?async()=>{const run=async()=>{try{await api("/api/publish-presets/"+encodeURIComponent(p.id),{method:"DELETE"});closeAdmin();fcState.selectedPreset=null;await refreshLive();showToast("Publish preset deleted.");}catch(e){showToast(e.message)}};if(typeof openConfirm==="function")openConfirm({title:"Delete "+p.id+"?",sub:"Presets still referenced by an app cannot be deleted.",warning:"Future jobs will no longer be able to select this preset.",text:"Existing immutable job snapshots remain unchanged.",action:"Delete preset",danger:true},run);else run()}:null});
+  }
+  function openJobEditor(defaultType,app){
+    if(!fcState.apps.length){showToast("Add an app before queueing a job.");return}
+    const selected=app||currentApp()||fcState.apps[0],type=defaultType||"build",appOptions=fcState.apps.map(a=>[a.id,(a.identity?.name||a.id)+" · "+a.id]);
+    const body='<form id="jobAdminForm" class="admin-form-grid">'+field("appId","App",options(appOptions,selected.id),"select","required")+field("jobType","Job type",options([["build","Build"],["publish","Publish"],["build-and-publish","Build & publish"]],type),"select")+field("ref","Git ref","refs/heads/"+(selected.source?.defaultBranch||"main"),"text",'required data-full')+'<label id="jobArtifactField" class="full"><span>Artifact source</span><select class="select" name="artifactSource"></select><small class="admin-help">Native publish-only jobs reuse a succeeded build artifact.</small></label><div id="jobAdminMsg" class="full admin-error"></div></form>';
+    openAdmin({title:"Queue ForgeCore job",sub:"Configuration is snapshotted when the job enters the queue",body,saveLabel:"Queue job",
+      onSave:async()=>{const f=q("#jobAdminForm"),msg=q("#jobAdminMsg"),data={appId:f.elements.appId.value,jobType:f.elements.jobType.value,trigger:{type:"manual",ref:f.elements.ref.value.trim()}},appNow=fcState.apps.find(a=>a.id===f.elements.appId.value);if(data.jobType==="publish"&&appNow?.build?.executor==="forgecore-native"){if(!f.elements.artifactSource.value){msg.textContent="Select a succeeded build artifact first.";return}data.artifactSource={jobId:f.elements.artifactSource.value}}try{adminSave.disabled=true;const d=await api("/api/jobs",{method:"POST",body:JSON.stringify(data)});closeAdmin();await refreshLive();showToast("Queued "+d.job.id+".");}catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}}});
+    const f=q("#jobAdminForm"),artifact=q("#jobArtifactField");
+    function syncJobForm(resetRef){const a=fcState.apps.find(x=>x.id===f.elements.appId.value),publish=f.elements.jobType.value==="publish",native=a?.build?.executor==="forgecore-native";if(resetRef)f.elements.ref.value="refs/heads/"+(a?.source?.defaultBranch||"main");artifact.classList.toggle("hidden",!(publish&&native));const candidates=fcState.jobs.filter(j=>j.appId===a?.id&&j.status==="succeeded"&&["build","build-and-publish"].includes(j.jobType)&&j.outputs?.artifact?.sourceRevision);f.elements.artifactSource.innerHTML=candidates.map(j=>'<option value="'+esc(j.id)+'">'+esc(j.id)+' · '+esc(String(j.outputs.artifact.sourceRevision).slice(0,12))+'</option>').join("")||'<option value="">No reusable build artifacts</option>'}
+    f.elements.appId.addEventListener("change",()=>syncJobForm(true));f.elements.jobType.addEventListener("change",()=>syncJobForm(false));syncJobForm(false);
+  }
+  function openSettingsEditor(){
+    const s=fcState.status||{},rel=s.olympus_releases||{},sign=rel.signing||{},store=s.community_app_store||{},runners=s.runners||[];
+    const runnerRows=runners.map(r=>'<div class="admin-runner-row"><div><b>'+esc(r.repository)+'</b><div class="admin-help">'+esc(r.online?"Online":(r.message||r.error||r.phase||"Offline"))+'</div></div><button class="btn runner-repair-btn" type="button" data-repo="'+esc(r.repository)+'">Repair connection</button></div>').join("")||'<div class="admin-help">No repository runner is configured yet.</div>';
+    const body='<div class="admin-section"><h3>GitHub runners</h3><p>Registration tokens are used once and cleared after registration.</p>'+runnerRows+'<form id="runnerAdminForm" class="admin-form-grid">'+field("repository","Repository","","text",'required placeholder="owner/repository"')+field("token","Registration token","","password",'required autocomplete="off"')+'<label class="full"><span><input name="repair" type="checkbox"> I confirm replacement of an existing runner identity</span></label><div class="full admin-inline-actions"><button class="btn primary" type="submit">Connect runner</button><button id="restartListenerAdmin" class="btn" type="button">Restart listener</button></div><div id="runnerAdminMsg" class="full admin-error"></div></form></div>'+
+      '<div class="admin-section"><h3>Olympus Releases</h3><p>Secret values stay outside ForgeCore; only secret://env references are stored.</p><form id="releaseAdminForm" class="admin-form-grid">'+field("repository","Repository",rel.repository||"Jojje84/Olympus-Releases","text","required")+field("authRef","Credential reference",rel.authRef||"","text",'placeholder="secret://env/FORGECORE_RELEASE_TOKEN"')+field("signingEnabled","Sigstore signing",options([["true","Configured"],["false","Not configured"]],rel.signingConfigured?"true":"false"),"select")+field("signingEncoding","Signing encoding",options([["base64","Base64"],["plain","Plain"]],sign.encoding||"base64"),"select")+field("privateKeyRef","Private key reference",sign.privateKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PRIVATE_KEY_B64"')+field("publicKeyRef","Public key reference",sign.publicKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PUBLIC_KEY_B64"')+field("passwordRef","Password reference",sign.passwordRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PASSWORD"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Olympus Releases</button></div><div id="releaseAdminMsg" class="full admin-error"></div></form></div>'+
+      '<div class="admin-section"><h3>Community App Store</h3><form id="storeAdminForm" class="admin-form-grid">'+field("repository","Repository",store.repository||"Jojje84/olympus-community-app-store","text","required")+field("authRef","Credential reference",store.authRef||"","text",'placeholder="secret://env/FORGECORE_COMMUNITY_STORE_TOKEN"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Community Store</button></div><div id="storeAdminMsg" class="full admin-error"></div></form></div>'+
+      '<div class="admin-section"><h3>Cleanup & storage policy</h3><form id="cleanupPolicyForm" class="admin-form-grid">'+field("cleanup","Cleanup interval (days)",s.cleanup_interval_days||7,"number",'required min="1" max="365"')+field("cache","Cache max age (days)",s.cache_max_age_days||14,"number",'required min="1" max="365"')+field("workspace","Workspace max age (days)",s.workspace_max_age_days||30,"number",'required min="1" max="365"')+field("threshold","Disk cleanup threshold (%)",s.disk_cleanup_threshold_percent||85,"number",'required min="50" max="99"')+field("buildkit","BuildKit keep storage (GB)",s.buildkit_keep_storage_gb||50,"number",'required min="1" max="1000"')+'<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save cleanup policy</button></div><div id="cleanupPolicyMsg" class="full admin-error"></div></form></div>';
+    openAdmin({title:"ForgeCore settings",sub:"Installation-wide integrations, runners and storage policy",body,hideSave:true});
+    const rf=q("#runnerAdminForm");qa(".runner-repair-btn",adminBody).forEach(b=>b.addEventListener("click",()=>{rf.elements.repository.value=b.dataset.repo;rf.elements.repair.checked=true;rf.elements.token.focus()}));
+    rf.addEventListener("submit",async e=>{e.preventDefault();const m=q("#runnerAdminMsg");try{const repair=rf.elements.repair.checked;if(repair&&!confirm("Repair replaces the saved GitHub runner identity. Continue?"))return;await api("/api/runners",{method:"POST",body:JSON.stringify({repository:rf.elements.repository.value.trim(),token:rf.elements.token.value.trim(),repair_existing:repair})});rf.elements.token.value="";m.className="full admin-success";m.textContent="Runner connection request accepted.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+    q("#restartListenerAdmin").addEventListener("click",async e=>{const b=e.currentTarget;try{b.disabled=true;await api("/api/reload",{method:"POST",body:"{}"});showToast("Runner listener restart requested.");setTimeout(refreshLive,600)}catch(err){showToast(err.message)}finally{b.disabled=false}});
+    q("#releaseAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#releaseAdminMsg"),enabled=f.elements.signingEnabled.value==="true",data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim(),signingEnabled:enabled,signingEncoding:f.elements.signingEncoding.value,privateKeyRef:f.elements.privateKeyRef.value.trim(),publicKeyRef:f.elements.publicKeyRef.value.trim(),passwordRef:f.elements.passwordRef.value.trim()};try{await api("/api/integrations/olympus-releases",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Olympus Releases saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+    q("#storeAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#storeAdminMsg"),data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim()};try{await api("/api/integrations/community-app-store",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Community Store saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+    q("#cleanupPolicyForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#cleanupPolicyMsg"),data={cleanup_interval_days:Number(f.elements.cleanup.value),cache_max_age_days:Number(f.elements.cache.value),workspace_max_age_days:Number(f.elements.workspace.value),disk_cleanup_threshold_percent:Number(f.elements.threshold.value),buildkit_keep_storage_gb:Number(f.elements.buildkit.value)};try{await api("/api/settings",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Cleanup policy saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+  }
+
   function setConnection(ok,error){
     fcState.online=ok;
     const old=q("#apiStatusToggle"), live=old && old.dataset.productionBound==="1" ? old : cloneNoHandlers(old);
@@ -2309,7 +2397,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         qa(".job-link",pipelineCard).forEach(b=>b.addEventListener("click",()=>openJob(active.id)));
       }else{
         if(title)title.textContent="No active job";
-        if(meta)meta.textContent="Queue a job from Legacy Admin or the job API.";
+        if(meta)meta.textContent="Queue a job from the dashboard or the job API.";
         if(pill){pill.textContent="Idle";pill.className="status-pill neutral"}
         qa(".stage",pipelineCard).forEach(x=>x.className="stage");
       }
@@ -2463,7 +2551,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const envList=q("#app-build .stack .subcard:nth-child(2) .kv-list");
     if(envList){
       const pairs=[];
-      (app.build?.steps||[]).forEach(st=>{Object.entries(st.env||{}).forEach(([k,v])=>pairs.push([k,v]));Object.entries(st.secretEnv||{}).forEach(([k,v])=>pairs.push([k,v]))});
+      (app.build?.steps||[]).forEach(st=>{Object.entries(st.env||{}).forEach(([k,v])=>pairs.push([k,v]));Object.entries(st.secrets||{}).forEach(([k,v])=>pairs.push([k,v]))});
       const unique=[];const seen=new Set();for(const p of pairs){if(!seen.has(p[0])){seen.add(p[0]);unique.push(p)}}
       envList.innerHTML=unique.length?unique.slice(0,12).map(([k,v])=>'<div><span>'+esc(k)+'</span><b class="mono">'+esc(String(v).startsWith("secret://")?"secret reference":v)+'</b></div>').join(""):'<div><span>Environment</span><b>None configured</b></div>';
     }
@@ -2497,7 +2585,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
 
     q("#apps")?.classList.add("live-ready");
     if(navigate){
-      history.replaceState(null,"","#/apps/"+encodeURIComponent(app.id));
+      currentDetailKind="apps";
       if(typeof showBreadcrumb==="function")showBreadcrumb("Apps / "+name);
     }
   }
@@ -2521,7 +2609,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
           '<span class="app-icon large">'+esc(name.charAt(0).toUpperCase())+'</span>'+
           '<span class="app-nav-copy"><b>'+esc(name)+'</b><small>'+esc(a.id)+'</small></span>'+
           '<span class="status-dot ok" title="'+esc(ex)+'"></span></button>';
-      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Add the first app from Legacy Admin while the v2 editor is being migrated.</p></div>';
+      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Create the first app directly in this dashboard.</p></div>';
       bindAppButtons();
     }
     let emptyDetail=q("#appsEmptyDetail");
@@ -2538,8 +2626,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }else{
       if(detail)detail.classList.remove("hidden");
       if(emptyDetail)emptyDetail.remove();
-      const wanted=location.hash.startsWith("#/apps/")?decodeURIComponent(location.hash.split("/").pop()):null;
-      const selected=apps.find(a=>a.id===wanted)||fcState.selectedApp||apps[0];
+      const selected=fcState.selectedApp&&apps.find(a=>a.id===fcState.selectedApp.id)?fcState.selectedApp:apps[0];
       if(selected)selectApp(selected,false);
     }
     const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
@@ -2569,7 +2656,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const queue=q("#jobs .page-head .btn.primary");
     if(queue){
       queue.disabled=fcState.apps.length===0;
-      queue.title=fcState.apps.length===0?"Add an app before queueing a job":"Open the current queue flow in Legacy Admin";
+      queue.title=fcState.apps.length===0?"Add an app before queueing a job":"Queue a ForgeCore job";
     }
     if(typeof filterJobs==="function")filterJobs();
   }
@@ -2577,7 +2664,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const job=fcState.jobs.find(j=>j.id===id);if(!job)return;
     fcState.selectedJob=job;
     if(typeof showView==="function")showView("job-detail",false);
-    history.replaceState(null,"","#/jobs/"+encodeURIComponent(job.id));
+    currentDetailKind="jobs";
     if(typeof showBreadcrumb==="function")showBreadcrumb("Jobs / "+job.id);
     const section=q("#job-detail");if(!section)return;
     const h1=q(".page-head h1",section),p=q(".page-head p",section);
@@ -2682,7 +2769,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const create=q("#releases .page-head .btn.primary");
     if(create){
       create.disabled=fcState.apps.length===0;
-      create.title=fcState.apps.length===0?"Add an app before creating a release":"Open the current release flow in Legacy Admin";
+      create.title=fcState.apps.length===0?"Add an app before creating a release":"Queue a release-capable ForgeCore job";
     }
     q("#releases")?.classList.add("live-ready");
     if(typeof filterReleases==="function")filterReleases();
@@ -2736,7 +2823,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const apps=fcState.apps,presets=fcState.presets,list=q("#presets .preset-list-body");
     const head=q("#presets .preset-list-head .secondary");if(head)head.textContent=presets.length+" reusable polic"+(presets.length===1?"y":"ies");
     function showPreset(p){
-      if(!p)return;
+      if(!p)return;fcState.selectedPreset=p;
       qa("#presets .preset-item").forEach(x=>x.classList.toggle("active",x.dataset.presetId===p.id));
       const hero=q("#presets .preset-hero"),h2=hero?q("h2",hero):null,desc=hero?q("p",hero):null;
       const used=apps.filter(a=>a.publish?.preset===p.id);
@@ -2924,28 +3011,31 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(empty&&compact.length===0)empty.classList.remove("hidden");
   }
   function bindTransitionalActions(){
-    const legacyLabels=["queue job","import from github","new app","edit configuration","queue build","build & publish","dry run","edit steps","queue new job","create release","retry store stage","retry","run health check","edit policy","duplicate preset","new preset","edit preset","save changes"];
     qa(".demo").forEach(old=>{
-      const label=(old.textContent||"").replace(/\s+/g," ").trim().toLowerCase();
-      if(label==="copy deep link"){
-        const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(location.href);showToast("Deep link copied.")}catch(_){showToast(location.href)}});return;
-      }
-      if(label==="view all"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("apps"));return}
-      if(label==="preset details →"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("presets"));return}
-      if(label==="open release center →"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.addEventListener("click",()=>showView("releases"));return}
-      if(label==="download log"){const b=cloneNoHandlers(old);b.classList.remove("demo");b.disabled=true;b.title="Log download endpoint is not implemented yet";return}
-      if(label==="change avatar"){const b=cloneNoHandlers(old);b.disabled=true;b.title="Dashboard-local profile management is not implemented";return}
-      if(!legacyLabels.some(x=>label===x||label.startsWith(x))){
-        const b=cloneNoHandlers(old);if(b){b.classList.remove("demo");b.disabled=true;b.title="Not implemented in the live dashboard yet"}return;
-      }
-      const b=cloneNoHandlers(old);if(!b)return;b.dataset.productionBound="1";b.classList.remove("demo");
-      if(label==="save changes")b.textContent="Open Legacy Admin ↗";
-      b.title="Open the current write/edit surface in Legacy Admin";
-      b.addEventListener("click",()=>{location.href="/legacy"});
+      const text=(old.textContent||"").replace(/\s+/g," ").trim().toLowerCase(),label=text||String(old.getAttribute("title")||"").trim().toLowerCase();
+      const b=cloneNoHandlers(old);if(!b)return;b.classList.remove("demo");b.dataset.productionBound="1";
+      if(label==="new app"||label==="add app"){b.addEventListener("click",()=>openAppEditor(null,false));return}
+      if(label==="edit configuration"){b.addEventListener("click",()=>openAppEditor(currentApp(),false));return}
+      if(label==="edit steps"){b.addEventListener("click",()=>openAppEditor(currentApp(),true));return}
+      if(label==="queue job"||label==="queue new job"||label==="queue build"){b.addEventListener("click",()=>openJobEditor("build",currentApp()));return}
+      if(label==="build & publish"||label==="create release"){b.addEventListener("click",()=>openJobEditor("build-and-publish",currentApp()));return}
+      if(label==="new preset"){b.addEventListener("click",()=>openPresetEditor(null,false));return}
+      if(label==="edit preset"||label==="edit policy"){b.addEventListener("click",()=>openPresetEditor(currentPreset(),false));return}
+      if(label==="duplicate preset"){b.addEventListener("click",()=>openPresetEditor(currentPreset(),true));return}
+      if(label==="save changes"){b.textContent="Manage settings";b.addEventListener("click",openSettingsEditor);return}
+      if(label==="view all"){b.addEventListener("click",()=>showView("apps"));return}
+      if(label==="preset details →"){b.addEventListener("click",()=>showView("presets"));return}
+      if(label==="open release center →"){b.addEventListener("click",()=>showView("releases"));return}
+      if(label==="view validation log"){b.addEventListener("click",()=>showView("logs"));return}
+      if(label==="copy dashboard url"){b.addEventListener("click",async()=>{const url=location.origin+rootUrl();try{await navigator.clipboard.writeText(url);showToast("Dashboard URL copied.")}catch(_){showToast(url)}});return}
+      if(label==="import from github"){b.disabled=true;b.title="Repository import is not exposed by the Control API yet";return}
+      if(label==="dry run"){b.disabled=true;b.title="Dry-run jobs are not exposed by the Control API yet";return}
+      if(label.startsWith("retry store stage")||label==="retry"||label==="run health check"){b.disabled=true;b.title="This retry operation is not exposed by the Control API yet";return}
+      if(label==="download log"){b.disabled=true;b.title="Log download endpoint is not implemented yet";return}
+      if(label==="change avatar"){b.disabled=true;b.title="Dashboard-local profile management is not implemented";return}
+      b.disabled=true;b.title="Not implemented in the live Control API yet";
     });
-    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob","auditExport"].forEach(id=>{
-      const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet";
-    });
+    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob","auditExport"].forEach(id=>{const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet"});
     qa('[data-go="account"]').forEach(el=>el.classList.add("hidden"));
     const sign=document.getElementById("signOut");if(sign){const b=cloneNoHandlers(sign);b.disabled=true;b.title="Local dashboard authentication is not enabled yet"}
     const retry=document.getElementById("apiRetry");if(retry){const b=cloneNoHandlers(retry);b.addEventListener("click",refreshLive)}
@@ -2961,8 +3051,8 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       const [status,apps,jobs,presets]=await Promise.all([api("/api/status"),api("/api/apps"),api("/api/jobs"),api("/api/publish-presets")]);
       fcState.status=status;fcState.apps=apps.apps||[];fcState.jobs=jobs.jobs||[];fcState.presets=presets.presets||[];
       setConnection(true);renderOverview();renderApps();renderJobs();renderReleases();renderInfrastructure();renderPresets();renderSettings();renderAudit();
-      if(location.hash.startsWith("#/jobs/"))openJob(decodeURIComponent(location.hash.split("/").pop()));
-      if(location.hash==="#/logs"&&document.getElementById("followLive")?.checked)loadSelectedLog();
+      if(currentView==="job-detail"&&fcState.selectedJob)openJob(fcState.selectedJob.id);
+      if(currentView==="logs"&&document.getElementById("followLive")?.checked)loadSelectedLog();
     }catch(e){setConnection(false,e.message)}
   }
   // Replace simulation-only controls before first user interaction.
