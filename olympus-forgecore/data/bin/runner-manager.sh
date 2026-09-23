@@ -4,26 +4,36 @@ set -euo pipefail
 APP_ROOT="${FORGECORE_APP_ROOT:-/forgecore/app}"
 STORAGE_ROOT="${FORGECORE_STORAGE_ROOT:-/forgecore/storage}"
 CONFIG_DIR="${APP_ROOT}/config"
-RUNNER_CONFIG_DIR="${CONFIG_DIR}/runners"
 APP_CONFIG_DIR="${CONFIG_DIR}/apps"
 PUBLISH_PRESET_DIR="${CONFIG_DIR}/publish-presets"
+GLOBAL_CONFIG="${CONFIG_DIR}/global.json"
+V1_RUNNER_CONFIG_DIR="${CONFIG_DIR}/runners"
 STATE_DIR="${APP_ROOT}/state"
-CONFIG_FILE="${CONFIG_DIR}/forgecore.env"
+RUNNER_REQUEST_DIR="${STATE_DIR}/runner-requests"
 RELOAD_FILE="${STATE_DIR}/reload-runners.request"
 LOG_FILE="${STORAGE_ROOT}/logs/runner-manager.log"
 ACTIVITY_FILE="${STATE_DIR}/activity.log"
 RUNTIME_VERSION="${FORGECORE_RUNTIME_VERSION:-dev}"
-FORGECORE_MANAGER_BUILD="0.1.0-beta.44"
+FORGECORE_MANAGER_BUILD="0.1.0-beta.45"
 RUNNER_DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 RUNNER_STARTUP_GRACE_SECONDS="${FORGECORE_RUNNER_STARTUP_GRACE_SECONDS:-2}"
 RUNNER_ACQUIRE_STALL_SECONDS="${FORGECORE_RUNNER_ACQUIRE_STALL_SECONDS:-90}"
 RUNNER_IDLE_RECYCLE_SECONDS="${FORGECORE_RUNNER_IDLE_RECYCLE_SECONDS:-300}"
 RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners"
-RUNNER_LAYOUT_MARKER="${STATE_DIR}/runner-layout-standard.initialized"
-LEGACY_RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
+V1_RUNNER_ENGINE_ROOT="${STORAGE_ROOT}/runners/v2"
+V1_RUNNER_MIGRATION_MARKER="${STATE_DIR}/v1-runner-config.migrated.json"
+RUNNER_METADATA_NAME=".forgecore-runner.json"
 RUNNER_BACKUP_ROOT="${STORAGE_ROOT}/runner-backups"
 DEPENDENCY_READY_FILE="${STATE_DIR}/dependencies.ready"
 DEPENDENCY_ERROR_FILE="${STATE_DIR}/dependencies.error"
+COMPOSE_VERSION="5.5.1"
+COMPOSE_SHA256_X86_64="db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576"
+COMPOSE_SHA256_AARCH64="732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7"
+CLEANUP_INTERVAL_HOURS=168
+CACHE_MAX_AGE_DAYS=14
+WORKSPACE_MAX_AGE_DAYS=30
+DISK_CLEANUP_THRESHOLD_PERCENT=85
+BUILDKIT_KEEP_STORAGE_GB=50
 
 declare -a RUNNER_PIDS=()
 STATUS_PID=""
@@ -58,7 +68,7 @@ activity() {
 }
 
 prepare_paths() {
-  sudo mkdir -p "${CONFIG_DIR}" "${RUNNER_CONFIG_DIR}" "${APP_CONFIG_DIR}" "${PUBLISH_PRESET_DIR}" "${STATE_DIR}"
+  sudo mkdir -p "${CONFIG_DIR}" "${APP_CONFIG_DIR}" "${PUBLISH_PRESET_DIR}" "${STATE_DIR}" "${RUNNER_REQUEST_DIR}"
   sudo mkdir -p "${STORAGE_ROOT}/docker"
   sudo mkdir -p \
     "${STORAGE_ROOT}/runners" \
@@ -91,41 +101,13 @@ prepare_paths() {
     return 1
   fi
 
-  mkdir -p "${RUNNER_ENGINE_ROOT}"
+  mkdir -p "${RUNNER_ENGINE_ROOT}" "${RUNNER_REQUEST_DIR}"
   if [[ ! -w "${RUNNER_ENGINE_ROOT}" ]]; then
-    write_service_error "ForgeCore cannot write to the clean runner engine directory: ${RUNNER_ENGINE_ROOT}"
+    write_service_error "ForgeCore cannot write to the runner engine directory: ${RUNNER_ENGINE_ROOT}"
     return 1
   fi
 
-  if [[ ! -f "${CONFIG_FILE}" ]]; then
-    cat > "${CONFIG_FILE}" <<'FORGECORE_CONFIG'
-# ForgeCore v1 global settings.
-CLEANUP_INTERVAL_HOURS=168
-CACHE_MAX_AGE_DAYS=14
-WORKSPACE_MAX_AGE_DAYS=30
-DISK_CLEANUP_THRESHOLD_PERCENT=85
-BUILDKIT_KEEP_STORAGE_GB=50
-COMPOSE_VERSION="5.5.1"
-COMPOSE_SHA256_X86_64="db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576"
-COMPOSE_SHA256_AARCH64="732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7"
-FORGECORE_CONFIG
-    chmod 600 "${CONFIG_FILE}"
-  fi
-
-  # This is only an example/fallback file, so refresh it on every startup.
-  # Real repository configs are separate *.env files and are never overwritten here.
-  cat > "${RUNNER_CONFIG_DIR}/runner.env.example" <<'FORGECORE_RUNNER_CONFIG'
-# One file per GitHub repository.
-# Prefer the ForgeCore dashboard for normal setup.
-# Manual fallback: copy this file to a new .env file in this directory.
-# ForgeCore derives runner name and its single custom label from REPOSITORY.
-REPOSITORY=""
-REGISTRATION_TOKEN=""
-REPAIR_EXISTING="false"
-FORGECORE_RUNNER_CONFIG
-  chmod 600 "${RUNNER_CONFIG_DIR}/runner.env.example"
-
-  initialize_runner_layout
+  migrate_v1_runner_state
 }
 
 normalize_app_permissions() {
@@ -135,55 +117,88 @@ normalize_app_permissions() {
   sudo chown -R runner:docker "${CONFIG_DIR}" "${STATE_DIR}"
 }
 
-initialize_runner_layout() {
+write_runner_metadata() {
+  local runner_dir="$1" repo="$2"
+  local metadata="${runner_dir}/${RUNNER_METADATA_NAME}"
+  mkdir -p "${runner_dir}"
+  jq -n \
+    --arg repository "${repo}" \
+    --argjson updatedEpoch "$(date +%s)" \
+    '{schemaVersion:1,kind:"ForgeCoreRunner",repository:$repository,updatedEpoch:$updatedEpoch}' \
+    > "${metadata}.tmp"
+  chmod 600 "${metadata}.tmp"
+  mv "${metadata}.tmp" "${metadata}"
+}
+
+migrate_v1_runner_state() {
   local config_file repo slug source_dir target_dir backup_dir stamp source_mode
-  [[ -f "${RUNNER_LAYOUT_MARKER}" ]] && return 0
+  [[ -f "${V1_RUNNER_MIGRATION_MARKER}" ]] && return 0
 
   mkdir -p "${RUNNER_BACKUP_ROOT}"
-  log "normalizing runner storage to standard runners/<repository> layout"
+  log "checking one-time v1 runner migration"
 
-  shopt -s nullglob
-  local configs=("${RUNNER_CONFIG_DIR}"/*.env)
-  shopt -u nullglob
+  if [[ -d "${V1_RUNNER_CONFIG_DIR}" ]]; then
+    shopt -s nullglob
+    local configs=("${V1_RUNNER_CONFIG_DIR}"/*.env)
+    shopt -u nullglob
 
-  for config_file in "${configs[@]}"; do
-    [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
-    repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
-    [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || continue
-    slug="$(slugify "${repo}")"
-    source_dir="${LEGACY_RUNNER_ENGINE_ROOT}/${slug}"
-    target_dir="${RUNNER_ENGINE_ROOT}/${slug}"
+    for config_file in "${configs[@]}"; do
+      [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
+      repo="$(sed -n -E 's/^[[:space:]]*REPOSITORY="([^"]+)"[[:space:]]*$/\1/p' "${config_file}" | head -n 1)"
+      [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { rm -f "${config_file}"; continue; }
+      slug="$(slugify "${repo}")"
+      source_dir="${V1_RUNNER_ENGINE_ROOT}/${slug}"
+      target_dir="${RUNNER_ENGINE_ROOT}/${slug}"
 
-    if [[ -d "${source_dir}" ]]; then
-      source_mode="$(runner_identity_mode "${source_dir}")"
-      if [[ "${source_mode}" == "persistent" ]]; then
-        if [[ -e "${target_dir}" ]]; then
-          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-standard-${stamp}"
-          mv "${target_dir}" "${backup_dir}"
-          log "archived previous runner directory for ${repo}: ${backup_dir}"
+      if [[ -d "${source_dir}" ]]; then
+        source_mode="$(runner_identity_mode "${source_dir}")"
+        if [[ "${source_mode}" == "persistent" ]]; then
+          if [[ -e "${target_dir}" ]]; then
+            stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+            backup_dir="${RUNNER_BACKUP_ROOT}/${slug}-pre-v2-${stamp}"
+            mv "${target_dir}" "${backup_dir}"
+            log "archived previous runner directory for ${repo}: ${backup_dir}"
+          fi
+          mv "${source_dir}" "${target_dir}"
+          log "migrated persistent runner identity for ${repo}"
+        elif [[ ! -e "${target_dir}" ]]; then
+          mv "${source_dir}" "${target_dir}"
         fi
-        mv "${source_dir}" "${target_dir}"
-        log "migrated active runner identity to standard path for ${repo}"
-        activity "runner" "Runner storage normalized for ${repo}; persistent identity preserved"
-      elif [[ ! -e "${target_dir}" ]]; then
-        mv "${source_dir}" "${target_dir}"
       fi
-    fi
-  done
 
-  rmdir "${LEGACY_RUNNER_ENGINE_ROOT}" 2>/dev/null || true
-  rm -f "${STATE_DIR}/runner-engine-v2.initialized"
-  printf '%s\n' "1" > "${RUNNER_LAYOUT_MARKER}"
+      mkdir -p "${target_dir}"
+      write_runner_metadata "${target_dir}" "${repo}"
+      rm -f "${config_file}"
+      activity "runner" "v1 runner configuration migrated to v2 metadata for ${repo}"
+    done
+
+    rm -f "${V1_RUNNER_CONFIG_DIR}/runner.env.example"
+    rmdir "${V1_RUNNER_CONFIG_DIR}" 2>/dev/null || true
+  fi
+
+  rmdir "${V1_RUNNER_ENGINE_ROOT}" 2>/dev/null || true
+  rm -f "${STATE_DIR}/runner-engine-v2.initialized" "${STATE_DIR}/runner-layout-standard.initialized"
+  jq -n \
+    --argjson migratedEpoch "$(date +%s)" \
+    '{schemaVersion:1,kind:"ForgeCoreV1RunnerMigration",migratedEpoch:$migratedEpoch}' \
+    > "${V1_RUNNER_MIGRATION_MARKER}.tmp"
+  chmod 600 "${V1_RUNNER_MIGRATION_MARKER}.tmp"
+  mv "${V1_RUNNER_MIGRATION_MARKER}.tmp" "${V1_RUNNER_MIGRATION_MARKER}"
 }
 
 load_config() {
-  source "${CONFIG_FILE}"
-  : "${COMPOSE_VERSION:=5.5.1}"
-  : "${COMPOSE_SHA256_X86_64:=db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576}"
-  : "${COMPOSE_SHA256_AARCH64:=732e3a84c1a0f67256ce80bc2598a24546b10ca05f9faa97efceb1171ece2ef7}"
-  : "${CLEANUP_INTERVAL_HOURS:=168}"
-  : "${CACHE_MAX_AGE_DAYS:=14}"
+  CLEANUP_INTERVAL_HOURS=168
+  CACHE_MAX_AGE_DAYS=14
+  WORKSPACE_MAX_AGE_DAYS=30
+  DISK_CLEANUP_THRESHOLD_PERCENT=85
+  BUILDKIT_KEEP_STORAGE_GB=50
+  if [[ -f "${GLOBAL_CONFIG}" ]]; then
+    CLEANUP_INTERVAL_HOURS="$(jq -r '.cleanup.intervalHours // 168' "${GLOBAL_CONFIG}" 2>/dev/null || echo 168)"
+    CACHE_MAX_AGE_DAYS="$(jq -r '.cleanup.cacheMaxAgeDays // 14' "${GLOBAL_CONFIG}" 2>/dev/null || echo 14)"
+    WORKSPACE_MAX_AGE_DAYS="$(jq -r '.cleanup.workspaceMaxAgeDays // 30' "${GLOBAL_CONFIG}" 2>/dev/null || echo 30)"
+    DISK_CLEANUP_THRESHOLD_PERCENT="$(jq -r '.cleanup.diskThresholdPercent // 85' "${GLOBAL_CONFIG}" 2>/dev/null || echo 85)"
+    BUILDKIT_KEEP_STORAGE_GB="$(jq -r '.cleanup.buildkitKeepStorageGB // 50' "${GLOBAL_CONFIG}" 2>/dev/null || echo 50)"
+  fi
 }
 
 wait_for_docker() {
@@ -265,14 +280,8 @@ reset_runner_install() {
 }
 
 clear_registration_request() {
-  local file="$1"
-  sed -i -E 's/^[[:space:]]*REGISTRATION_TOKEN=.*/REGISTRATION_TOKEN=""/' "${file}"
-  if grep -Eq '^[[:space:]]*REPAIR_EXISTING=' "${file}"; then
-    sed -i -E 's/^[[:space:]]*REPAIR_EXISTING=.*/REPAIR_EXISTING="false"/' "${file}"
-  else
-    printf '%s\n' 'REPAIR_EXISTING="false"' >> "${file}"
-  fi
-  chmod 600 "${file}"
+  local file="${1:-}"
+  [[ -n "${file}" && -f "${file}" ]] && rm -f "${file}"
 }
 
 runner_identity_mode() {
@@ -533,18 +542,30 @@ restore_runner_repair_backup() {
   mv "${backup_dir}" "${runner_dir}"
 }
 
-start_runner_from_config() {
-  local config_file="$1"
-  local REPOSITORY="" REGISTRATION_TOKEN="" REPAIR_EXISTING="false" NAME="" LABELS=""
-  local repo slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary repair_backup=""
-
-  source "${config_file}"
-  repo="${REPOSITORY}"
+start_runner_for_repository() {
+  local repo="$1" request_file="${2:-}"
+  local REGISTRATION_TOKEN="" REPAIR_EXISTING="false"
+  local slug repo_label runner_dir runner_name labels pid error_file runner_log registration_log identity_mode log_offset registration_summary repair_backup=""
+  local request_repo=""
 
   [[ -n "${repo}" ]] || return 0
-  [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { log "invalid repository in ${config_file}: ${repo}"; return 1; }
+  [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { log "invalid App repository: ${repo}"; return 1; }
 
   slug="$(slugify "${repo}")"
+  if [[ -z "${request_file}" ]]; then
+    request_file="${RUNNER_REQUEST_DIR}/${slug}.json"
+  fi
+  if [[ -f "${request_file}" ]]; then
+    request_repo="$(jq -r '.repository // empty' "${request_file}" 2>/dev/null || true)"
+    if [[ "${request_repo}" != "${repo}" ]]; then
+      log "discarding runner request whose repository does not match its App: ${request_repo}"
+      clear_registration_request "${request_file}"
+    else
+      REGISTRATION_TOKEN="$(jq -r '.token // empty' "${request_file}" 2>/dev/null || true)"
+      [[ "$(jq -r '.repairExisting // false' "${request_file}" 2>/dev/null || echo false)" == "true" ]] && REPAIR_EXISTING="true"
+    fi
+  fi
+
   repo_label="${repo##*/}"
   labels="${repo_label}"
 
@@ -560,7 +581,7 @@ start_runner_from_config() {
   if [[ -n "${REGISTRATION_TOKEN}" && "${identity_mode}" != "unregistered" && "${REPAIR_EXISTING}" != "true" ]]; then
     log "blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
     activity "runner" "Blocked unconfirmed runner replacement for ${repo}; existing identity preserved"
-    clear_registration_request "${config_file}"
+    clear_registration_request "${request_file}"
     REGISTRATION_TOKEN=""
     REPAIR_EXISTING="false"
     if [[ "${identity_mode}" == "persistent" ]]; then
@@ -584,6 +605,7 @@ start_runner_from_config() {
     copy_runner_distribution "${runner_dir}"
   fi
 
+  write_runner_metadata "${runner_dir}" "${repo}"
   prepare_real_workdir "${runner_dir}"
   prepare_runner_hooks "${slug}"
   rm -f "${error_file}"
@@ -643,13 +665,14 @@ start_runner_from_config() {
       if [[ -n "${repair_backup}" ]]; then
         restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
         identity_mode="$(runner_identity_mode "${runner_dir}")"
-        clear_registration_request "${config_file}"
+        clear_registration_request "${request_file}"
         REGISTRATION_TOKEN=""
         REPAIR_EXISTING="false"
         printf '%s\n' "Repair failed. Previous runner identity was restored. GitHub/config.sh: ${registration_summary}" > "${error_file}"
         write_runner_runtime_state "${slug}" "${repo}" "needs-repair" "${identity_mode}" "$(cat "${error_file}")"
         activity "runner" "Repair failed for ${repo}; previous runner identity restored"
       else
+        clear_registration_request "${request_file}"
         printf '%s\n' "Registration failed. GitHub/config.sh: ${registration_summary}" > "${error_file}"
         write_runner_runtime_state "${slug}" "${repo}" "error" "unregistered" "$(cat "${error_file}")"
         activity "runner" "Clean registration failed for ${repo}; open Registration log for the GitHub error"
@@ -662,7 +685,7 @@ start_runner_from_config() {
       if [[ -n "${repair_backup}" ]]; then
         restore_runner_repair_backup "${runner_dir}" "${repair_backup}"
         identity_mode="$(runner_identity_mode "${runner_dir}")"
-        clear_registration_request "${config_file}"
+        clear_registration_request "${request_file}"
         REGISTRATION_TOKEN=""
         REPAIR_EXISTING="false"
         printf '%s\n' "Repair did not create a verified persistent identity. Previous runner identity was restored." > "${error_file}"
@@ -677,10 +700,10 @@ start_runner_from_config() {
       return 1
     fi
 
-    clear_registration_request "${config_file}"
+    clear_registration_request "${request_file}"
     activity "runner" "Persistent runner registered for ${repo}"
   elif [[ -n "${REGISTRATION_TOKEN}" ]]; then
-    clear_registration_request "${config_file}"
+    clear_registration_request "${request_file}"
   fi
 
   identity_mode="$(runner_identity_mode "${runner_dir}")"
@@ -827,20 +850,28 @@ stop_runners() {
 }
 
 start_all_runners() {
-  local config_file
+  local app_file executor repo slug request_file
+  declare -A seen_repositories=()
   rm -f "${STATE_DIR}"/runner-*.pid "${STATE_DIR}"/runner-*.name "${STATE_DIR}"/runner-*.repo "${STATE_DIR}"/runner-*.online
 
   shopt -s nullglob
-  local runner_configs=("${RUNNER_CONFIG_DIR}"/*.env)
+  local app_configs=("${APP_CONFIG_DIR}"/*.json)
   shopt -u nullglob
 
-  for config_file in "${runner_configs[@]}"; do
-    [[ "$(basename "${config_file}")" == "runner.env.example" ]] && continue
-    start_runner_from_config "${config_file}" || true
+  for app_file in "${app_configs[@]}"; do
+    executor="$(jq -r '.build.executor // empty' "${app_file}" 2>/dev/null || true)"
+    [[ "${executor}" == "github-actions" ]] || continue
+    repo="$(jq -r '.source.repository // empty' "${app_file}" 2>/dev/null || true)"
+    [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { log "invalid GitHub Actions App repository in ${app_file}"; continue; }
+    slug="$(slugify "${repo}")"
+    [[ -z "${seen_repositories[${slug}]:-}" ]] || continue
+    seen_repositories["${slug}"]=1
+    request_file="${RUNNER_REQUEST_DIR}/${slug}.json"
+    start_runner_for_repository "${repo}" "${request_file}" || true
   done
 
   if (( ${#RUNNER_PIDS[@]} == 0 )); then
-    log "No runner is ready. Add or repair one from the ForgeCore dashboard."
+    log "No App-owned GitHub Actions runner is ready."
   fi
 }
 
