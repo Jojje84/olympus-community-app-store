@@ -113,7 +113,7 @@ jobs:
           compose = yaml.safe_load(compose_text)
           runner = compose["services"]["runner"]
           if runner.get("depends_on") != ["docker"]:
-              raise SystemExit("ForgeCore beta37 recovery must preserve the live-verified beta31 runner->docker startup dependency")
+              raise SystemExit("ForgeCore beta38 must preserve the live-verified beta31 runner->docker startup dependency")
           PY
 
       - name: Test ForgeCore beta31 recovery core
@@ -123,6 +123,7 @@ jobs:
           bash olympus-forgecore/tests/runtime/runner-watchdog.sh
           bash olympus-forgecore/tests/runtime/runner-engine-v2.sh
           bash olympus-forgecore/tests/runtime/runner-restore-beta31.sh
+          python3 olympus-forgecore/tests/runtime/dashboard-repair-guard.py
 
       - name: Boot ForgeCore runner container
         shell: bash

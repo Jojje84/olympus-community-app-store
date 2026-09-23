@@ -1,5 +1,6 @@
 ForgeCore source repository: Jojje84/ForgeCore
-Source ref: restore/beta31-core
-Source commit: 4e0ab429a0537f6b3717a7108a2f93236cf42598
-Package version: 0.1.0-beta.37
+Source ref: fix/beta38-olympus-dashboard-clarity
+Source commit: ddb9dbc91f0d168153575d3ddf5b703ba7e28a68
+Package version: 0.1.0-beta.38
 Recovery baseline: de85aa4bac1b02f6a49c6c65d66fb40bcdcbcb49
+Validated ForgeCore CI run: 35818873628

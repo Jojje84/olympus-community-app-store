@@ -36,18 +36,19 @@ HTML = r'''<!doctype html>
 <style>
 :root{color-scheme:dark;--bg:#0a0f16;--panel:#101721;--panel2:#0c131c;--border:#283446;--text:#f4f7fb;--muted:#98a5b8;--green:#4ade80;--amber:#f59e0b;--red:#fb7185;--blue:#60a5fa}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% -10%,#182334 0,#0a0f16 38%);color:var(--text);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-main{max-width:1246px;margin:auto;padding:22px 18px 38px}a{color:inherit}.top{display:flex;align-items:center;gap:28px}.logo{width:122px;height:122px;border-radius:22px;overflow:hidden;border:1px solid #334155;background:#090d13;flex:0 0 auto}.logo img{width:100%;height:100%;display:block}.identity{min-width:0}.identity h1{margin:0;font-size:44px;font-weight:700;line-height:1.05;letter-spacing:-1.5px}.identity .subtitle{font-size:21px;font-weight:400;color:#b7c2d4;margin-top:8px}.identity .tagline{font-size:15px;color:var(--muted);margin-top:9px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+main{max-width:1180px;margin:auto;padding:22px 18px 38px}a{color:inherit}.top{display:flex;align-items:center;gap:20px}.logo{width:88px;height:88px;border-radius:22px;overflow:hidden;border:1px solid #334155;background:#090d13;flex:0 0 auto}.logo img{width:100%;height:100%;display:block}.identity{min-width:0}.identity h1{margin:0;font-size:38px;font-weight:700;line-height:1.05;letter-spacing:-1.5px}.identity .subtitle{font-size:18px;font-weight:400;color:#b7c2d4;margin-top:8px}.identity .tagline{font-size:15px;color:var(--muted);margin-top:9px}.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
 button,.btn,select,input{font:inherit}button,.btn{border:1px solid #344154;border-radius:10px;min-height:40px;padding:9px 14px;background:#182231;color:var(--text);font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary{background:var(--amber);border-color:#a96c05;color:#17110a}.danger{border-color:#713441;color:#ffd6dd;background:#261218}button:disabled{opacity:.55;cursor:wait}
-.tabs{display:flex;gap:40px;margin-top:27px;border-bottom:1px solid var(--border)}.tab{background:transparent;border:0;border-radius:0;padding:0 2px 14px;min-height:auto;color:#aeb9ca;font-weight:600}.tab.active{color:#fff;border-bottom:2px solid var(--blue)}.pane{display:none;padding-top:18px}.pane.active{display:block}
+.tabs{display:flex;gap:26px;margin-top:27px;border-bottom:1px solid var(--border)}.tab{background:transparent;border:0;border-radius:0;padding:0 2px 14px;min-height:auto;color:#aeb9ca;font-weight:600}.tab.active{color:#fff;border-bottom:2px solid var(--blue)}.pane{display:none;padding-top:18px}.pane.active{display:block}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card,.wide{border:1px solid var(--border);border-radius:14px;background:linear-gradient(155deg,#111923,#0e151e);padding:20px}.wide{margin-top:14px}.card h2,.wide h2{font-size:16px;font-weight:600;margin:0 0 12px}.labelrow{display:flex;align-items:center;gap:10px}.icon{width:24px;height:24px;display:grid;place-items:center;color:#c7d2e5}.dot{width:11px;height:11px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px #4ade8014}.dot.off{background:#6b7280;box-shadow:none}.dot.bad{background:var(--red);box-shadow:0 0 0 6px #fb718514}.big{font-size:25px;font-weight:800;margin-top:10px;letter-spacing:-.4px}.good{color:#a7f3d0}.muted,.small{color:var(--muted)}.small{font-size:12px;line-height:1.55}.meta{margin-top:7px;color:#b6c1d2;line-height:1.55}.bar{height:12px;border-radius:999px;background:#202b3c;overflow:hidden;margin:13px 0 8px}.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#45c979,#36a764);border-radius:inherit}.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}.service,.kv{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}.service+.service,.kv+.kv{border-top:1px solid #1d2938}.status-ok{color:var(--green);font-weight:700}.status-muted{color:var(--muted)}.paths{display:grid;gap:8px}.path{display:grid;grid-template-columns:115px 1fr;gap:10px}.path code{color:#abb7c9;overflow-wrap:anywhere}.activity{border:1px solid #1f2b3b;background:#0b1119;border-radius:10px;padding:10px 14px;min-height:105px}.activity-row{display:grid;grid-template-columns:145px 1fr;gap:12px;padding:4px 0}.activity-row time{color:#8795a8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.empty{color:var(--muted);padding:12px 0}
-.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.section-head h2{margin:0;font-size:18px}.section-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.msg{min-height:18px;margin-top:8px;font-size:12px}.ok{color:var(--green)}.warn{color:#fbbf24}.badtext{color:var(--red)}
+.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.section-head h2{margin:0;font-size:18px}.section-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.msg{min-height:18px;margin-top:8px;font-size:12px}.ok{color:var(--green)}.warn{color:#fbbf24}.badtext{color:var(--red)}.status-warn{color:#fbbf24;font-weight:700}.status-bad{color:var(--red);font-weight:700}
+.health{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;background:#0d151f}.health.good{border-color:#245a3a;background:#0d1913;color:inherit}.health.warn{border-color:#6b4b12;background:#19150c;color:inherit}.health.bad{border-color:#713441;background:#1c1014;color:inherit}.health-mark{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:900;background:#233044}.health.good .health-mark{background:#153c27;color:#8ff0b4}.health.warn .health-mark{background:#4b350d;color:#ffd27a}.health.bad .health-mark{background:#4a1e29;color:#ff9aaa}.health h2{margin:0;font-size:17px}.health p{margin:3px 0 0;color:#b8c3d3;font-size:13px}.health .btn{white-space:nowrap}.runner-summary{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.pill{border:1px solid #304055;border-radius:999px;padding:4px 8px;font-size:11px;color:#b8c3d3;background:#0b121a}.pill.good{border-color:#245a3a;color:#a7f3d0}.pill.warn{border-color:#6b4b12;color:#fcd48a}.pill.bad{border-color:#713441;color:#ffb1bf}
 form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:grid;gap:6px;color:#c6d0df;font-size:12px;font-weight:700}input,select{width:100%;padding:10px 11px;border:1px solid #344154;border-radius:9px;background:#0a111a;color:var(--text);font-size:16px;outline:none}input:focus,select:focus{border-color:#9b6914;box-shadow:0 0 0 3px #f59e0b18}.form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:9px}
 .runner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px;border:1px solid #263347;border-radius:11px;background:#0c131c;margin-top:9px}.repo{font-size:15px;font-weight:800;overflow-wrap:anywhere}
 .logbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.logbar label{min-width:240px;flex:1}.logbox{margin-top:12px;background:#070b10;border:1px solid #222f40;border-radius:10px;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:520px;overflow:auto;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c8d3e2}
 .capgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cap{border:1px solid #263347;border-radius:11px;background:#0c131c;padding:14px}.cap b{display:block;margin-bottom:5px}.cap span{color:var(--muted);font-size:12px;line-height:1.5}.note{border-left:3px solid var(--amber);background:#17140d;padding:13px 14px;border-radius:8px;color:#d6c6a6;margin-top:14px;font-size:12px;line-height:1.5}
 footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-top:24px;font-size:12px}
 @media(max-width:850px){.grid3,.split{grid-template-columns:1fr 1fr}.split .wide:last-child{grid-column:1/-1}.top{align-items:flex-start}.logo{width:88px;height:88px}.identity h1{font-size:34px}.identity .subtitle{font-size:18px}}
-@media(max-width:590px){main{padding:18px 12px 28px}.grid3,.split,.capgrid,form{grid-template-columns:1fr}.split .wide:last-child,.full,.form-actions{grid-column:auto}.top{flex-wrap:wrap}.top-actions{margin-left:0;width:100%}.tabs{gap:16px;overflow:auto}.activity-row{grid-template-columns:1fr}.path{grid-template-columns:1fr}.runner{grid-template-columns:1fr}.logo{width:64px;height:64px}.identity h1{font-size:28px}.identity .subtitle{font-size:15px}footer{flex-direction:column}}
+@media(max-width:590px){main{padding:18px 12px 28px}.health{grid-template-columns:auto 1fr}.health .btn{grid-column:1/-1;width:100%}.grid3,.split,.capgrid,form{grid-template-columns:1fr}.split .wide:last-child,.full,.form-actions{grid-column:auto}.top{flex-wrap:wrap}.top-actions{margin-left:0;width:100%}.tabs{gap:16px;overflow:auto}.activity-row{grid-template-columns:1fr}.path{grid-template-columns:1fr}.runner{grid-template-columns:1fr}.logo{width:64px;height:64px}.identity h1{font-size:28px}.identity .subtitle{font-size:15px}footer{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -66,6 +67,11 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
   </nav>
 
   <section id="overview" class="pane active">
+    <article id="healthBanner" class="health warn">
+      <div id="healthMark" class="health-mark">…</div>
+      <div><h2 id="healthTitle">Checking ForgeCore…</h2><p id="healthText">Reading runner, storage and service health.</p></div>
+      <button id="healthAction" class="btn">Open settings</button>
+    </article>
     <div class="grid3">
       <article class="card">
         <h2 class="labelrow"><span id="runnerDot" class="dot off"></span>Runner status</h2>
@@ -125,14 +131,22 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
 
   <section id="settings" class="pane">
     <article class="wide">
-      <div class="section-head"><div><h2>GitHub runners</h2><p>Add or repair repository runners without SSH. Tokens are cleared from config after registration.</p></div><div><button id="restartRunners">Restart runners</button><div id="restartMsg" class="msg"></div></div></div>
+      <div class="section-head"><div><h2>GitHub runners</h2><p>Check runner state first. Adding a runner and replacing an existing connection are separate actions.</p></div><div class="form-actions"><button id="addRunner">Add runner</button><button id="restartRunners">Restart runners</button><div id="restartMsg" class="msg"></div></div></div>
       <div id="runnerList"></div>
-      <form id="runnerForm" style="margin-top:16px">
-        <label class="full">GitHub repository<input id="repo" placeholder="Jojje84/ForgeCore" required></label>
-        <label class="full">Registration token<input id="token" type="password" placeholder="Paste the short-lived token from GitHub" autocomplete="off" required></label>
-        <div class="small full">ForgeCore uses the repository name automatically for both the runner name and its single custom label.</div>
-        <div class="form-actions"><button class="primary">Connect / repair runner</button><a id="setupLink" class="btn" href="https://github.com/" target="_blank" rel="noopener">Open GitHub runner setup ↗</a></div>
-      </form>
+      <div id="runnerFormPanel" style="margin-top:16px;display:none">
+        <div class="section-head"><div><h2 id="runnerFormTitle">Connect runner</h2><p id="runnerFormHelp">Use a fresh one-time GitHub registration token.</p></div><button id="cancelRunnerForm" type="button">Cancel</button></div>
+        <div id="runnerRepairConfirm" class="note" style="display:none">
+          <b>Repair replaces the saved GitHub runner identity.</b><br>
+          Do not use Repair for a normal restart or an online runner. Continue only when the connection must be rebuilt.
+          <div class="form-actions" style="margin-top:12px"><button id="confirmRunnerRepair" type="button" class="danger">I understand · continue to Repair</button></div>
+        </div>
+        <form id="runnerForm">
+          <label class="full">GitHub repository<input id="repo" placeholder="Jojje84/ForgeCore" required></label>
+          <label class="full">Registration token<input id="token" type="password" placeholder="Paste a fresh short-lived token from GitHub" autocomplete="off" required></label>
+          <div class="small full">ForgeCore uses the repository name automatically for both the runner name and its single custom label. The token is cleared after successful registration.</div>
+          <div class="form-actions"><button id="runnerSubmit" class="primary">Connect runner</button><a id="setupLink" class="btn" href="https://github.com/" target="_blank" rel="noopener">Open GitHub runner setup ↗</a></div>
+        </form>
+      </div>
       <div id="runnerMsg" class="msg"></div>
     </article>
 
@@ -162,7 +176,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     <article class="wide">
       <div class="section-head"><div><h2>What ForgeCore can do</h2><p>The capabilities enabled by this Umbrel package.</p></div></div>
       <div class="capgrid">
-        <div class="cap"><b>GitHub self-hosted runners</b><span>Persistent repository-level runners for multiple trusted repositories.</span></div>
+        <div class="cap"><b>GitHub self-hosted runners</b><span>Persistent repository-level runners for multiple trusted repositories. Runner name and single custom label are derived automatically from the repository name.</span></div>
         <div class="cap"><b>Private repository checkout</b><span>Authenticated Actions checkout is supported on the self-hosted runner.</span></div>
         <div class="cap"><b>Isolated Docker</b><span>CI jobs use a dedicated Docker engine instead of Umbrel's host Docker socket.</span></div>
         <div class="cap"><b>Docker Compose</b><span>A pinned Compose client is installed into persistent ForgeCore cache.</span></div>
@@ -177,12 +191,12 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.31</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">beta.38</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null;
+let lastStatus=null,cleanupBaseline=null,restartBaseline=null,runnerRepairBaseline=null,runnerFormManuallyOpen=false,runnerRepairConfirmed=false;
 
 function setTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
@@ -191,6 +205,41 @@ function setTab(name){
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 document.querySelectorAll('.open-settings').forEach(b=>b.addEventListener('click',()=>setTab('settings')));
+$('healthAction').addEventListener('click',()=>setTab('settings'));
+
+function showRunnerForm(repo='',repair=false){
+  runnerFormManuallyOpen=true;
+  runnerRepairConfirmed=false;
+  $('runnerFormPanel').style.display='block';
+  $('runnerFormTitle').textContent=repair?'Repair runner connection':'Connect runner';
+  $('runnerFormHelp').textContent=repair?'Repair is destructive and requires explicit confirmation before a token can be entered.':'Add a repository runner with a one-time GitHub registration token.';
+  $('repo').readOnly=repair;
+  if(repo)$('repo').value=repo;
+  if(!repair&&!repo)$('repo').value='';
+  $('runnerRepairConfirm').style.display=repair?'block':'none';
+  $('runnerForm').style.display=repair?'none':'grid';
+  $('runnerSubmit').textContent=repair?'Replace runner connection':'Connect runner';
+  updateRepoLink();
+  if(!repair)setTimeout(()=>$('repo').focus(),0);
+}
+function hideRunnerForm(){
+  runnerFormManuallyOpen=false;
+  runnerRepairConfirmed=false;
+  $('runnerFormPanel').style.display='none';
+  $('runnerRepairConfirm').style.display='none';
+  $('runnerForm').style.display='grid';
+  $('repo').readOnly=false;
+  $('token').value='';
+}
+$('addRunner').addEventListener('click',()=>showRunnerForm('',false));
+$('cancelRunnerForm').addEventListener('click',hideRunnerForm);
+$('confirmRunnerRepair').addEventListener('click',()=>{
+  runnerRepairConfirmed=true;
+  $('runnerRepairConfirm').style.display='none';
+  $('runnerForm').style.display='grid';
+  $('runnerFormHelp').textContent='Confirmed Repair. A successful submission will replace the saved GitHub runner identity.';
+  setTimeout(()=>$('token').focus(),0);
+});
 
 async function api(path,opts={}){
   const r=await fetch(path,{cache:'no-store',headers:{'Content-Type':'application/json'},...opts});
@@ -217,18 +266,57 @@ function renderActivity(items){
 }
 function renderStatus(s){
   lastStatus=s;
-  const runners=s.runners||[],online=runners.filter(r=>r.online).length,first=runners[0];
-  const allOnline=runners.length>0&&online===runners.length;
-  $('runnerBig').textContent=runners.length?(online+'/'+runners.length+' online'):'Not configured';
+  const runners=s.runners||[];
+  const online=runners.filter(r=>r.online);
+  const attention=runners.filter(r=>Boolean(r.error)||['error','needs-repair'].includes(r.phase));
+  const starting=runners.filter(r=>!r.online&&['queued','checking','registering','starting','connecting'].includes(r.phase));
+  const offline=runners.filter(r=>!r.online&&!attention.includes(r)&&!starting.includes(r));
+  const allOnline=runners.length>0&&online.length===runners.length;
+
+  let health='warn',healthTitle='Setup needed',healthText='Add a GitHub runner to start using ForgeCore.',healthMark='!';
+  if(s.storage_error){
+    health='bad';healthTitle='Storage needs attention';healthText=s.storage_error;healthMark='!';
+  }else if(attention.length){
+    health='bad';healthTitle='Runner needs attention';healthText=attention.length+' runner'+(attention.length===1?'':'s')+' require repair or have an error.';healthMark='!';
+  }else if(!s.manager_alive){
+    health='bad';healthTitle='Runner manager is offline';healthText='The manager heartbeat is stale. Review logs or restart the ForgeCore app.';healthMark='!';
+  }else if(!runners.length){
+    health='warn';healthTitle='No runner configured';healthText='Add a repository runner when you are ready.';healthMark='+';
+  }else if(starting.length||!s.docker_online||!s.compose_online){
+    health='warn';healthTitle='ForgeCore is starting';healthText=starting.length?'A runner connection is still being established.':'Core services are still becoming ready.';healthMark='…';
+  }else if(allOnline){
+    health='good';healthTitle='ForgeCore is ready';healthText='All configured runners and core services are available.';healthMark='✓';
+  }else{
+    health='warn';healthTitle='Some runners are offline';healthText=online.length+'/'+runners.length+' runners are online.';healthMark='…';
+  }
+  $('healthBanner').className='health '+health;
+  $('healthMark').textContent=healthMark;
+  $('healthTitle').textContent=healthTitle;
+  $('healthText').textContent=healthText;
+  $('healthAction').textContent=attention.length?'Review runners':(!runners.length?'Add runner':'Open settings');
+
+  $('runnerBig').textContent=runners.length?(online.length+'/'+runners.length+' online'):'Not configured';
   $('runnerBig').className='big'+(allOnline?' good':'');
-  $('runnerMeta').innerHTML=first?('Runner: '+esc(first.name||first.repository)+'<br>Repository: '+esc(first.repository)+'<br>Label: '+esc(first.label||first.repository.split('/').pop())+'<br>Mode: '+esc(first.mode||'unknown')+'<br>Phase: '+esc(first.phase||'idle')):'Add a GitHub repository in Settings.';
-  setDot('runnerDot',online>0,!!(first&&first.error));
-  $('svcRunner').textContent=online>0?'Running':'Offline';$('svcRunner').className=online>0?'status-ok':'status-muted';
+  $('runnerMeta').innerHTML=runners.length
+    ? '<div class="runner-summary"><span class="pill good">'+online.length+' online</span>'+
+      (starting.length?'<span class="pill warn">'+starting.length+' starting</span>':'')+
+      (attention.length?'<span class="pill bad">'+attention.length+' attention</span>':'')+
+      (offline.length?'<span class="pill">'+offline.length+' offline</span>':'')+'</div>'
+    : 'Add a GitHub repository in Settings.';
+  setDot('runnerDot',allOnline,attention.length>0);
+
+  if(!runners.length){$('svcRunner').textContent='Not configured';$('svcRunner').className='status-muted'}
+  else if(allOnline){$('svcRunner').textContent='All online';$('svcRunner').className='status-ok'}
+  else if(attention.length){$('svcRunner').textContent=online.length+'/'+runners.length+' online · attention needed';$('svcRunner').className='status-bad'}
+  else{$('svcRunner').textContent=online.length+'/'+runners.length+' online';$('svcRunner').className='status-warn'}
+
   $('svcManager').textContent=s.manager_alive?('Running · '+(s.manager_runtime_version||'unknown')):(s.storage_error?'Blocked by storage':'Offline / stale');
-  $('svcManager').className=s.manager_alive?'status-ok':(s.storage_error?'status-bad':'status-muted');
-  $('svcDocker').textContent=s.docker_online?'Running':'Offline';$('svcDocker').className=s.docker_online?'status-ok':'status-muted';
+  $('svcManager').className=s.manager_alive?'status-ok':(s.storage_error?'status-bad':'status-bad');
+  $('svcDocker').textContent=s.docker_online?'Running':(s.manager_alive?'Starting / retrying':'Offline');
+  $('svcDocker').className=s.docker_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
   $('version').textContent=(s.web_runtime_version||'dev').replace(/^0\.1\.0-/,'');
-  $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):'Unavailable';$('svcCompose').className=s.compose_online?'status-ok':'status-muted';
+  $('svcCompose').textContent=s.compose_online?('v'+(s.compose_version||'')):(s.manager_alive?'Waiting for Docker':'Unavailable');
+  $('svcCompose').className=s.compose_online?'status-ok':(s.manager_alive?'status-warn':'status-muted');
 
   const used=Number(s.disk_used_percent||0);
   $('diskBig').textContent=(s.disk_used||'—')+' / '+(s.disk_total||'—');
@@ -242,7 +330,7 @@ function renderStatus(s){
   if(s.cleanup_running){cb.disabled=true;cb.textContent='Cleanup running…';cm.className='msg warn';cm.textContent='Cleanup is running now.'}
   else if(s.cleanup_pending){cb.disabled=true;cb.textContent='Cleanup queued…';cm.className='msg warn';cm.textContent='Cleanup is queued and will start shortly.'}
   else if(cleanupBaseline!==null&&last>cleanupBaseline){cb.disabled=false;cb.textContent='Run cleanup now';cm.className='msg ok';cm.textContent='Cleanup completed: '+fmtTime(last);cleanupBaseline=null}
-  else{cb.disabled=false;cb.textContent='Run cleanup now'}
+  else{cb.disabled=false;cb.textContent='Run cleanup now';if(cleanupBaseline===null){cm.className='msg';cm.textContent=''}}
 
   const root=s.storage_display||'External ForgeCore storage';
   $('pathRunners').textContent=root+'/runners/v2';
@@ -261,21 +349,34 @@ function renderStatus(s){
   $('setThreshold').value=s.disk_cleanup_threshold_percent||85;
   $('setBuildkit').value=s.buildkit_keep_storage_gb||50;
 
-  $('runnerList').innerHTML=runners.length?runners.map(r=>'<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(r.error?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+esc(r.online?'Online':r.error?'Needs attention':'Offline')+' · Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+' · Phase: '+esc(r.phase||'idle')+((r.message||r.error)?' · '+esc(r.message||r.error):'')+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair</button></div>').join(''):'<div class="empty">No repository runner configured yet.</div>';
-  document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>{setTab('settings');$('repo').value=b.dataset.repo;updateRepoLink();$('token').focus()}));
+  $('runnerList').innerHTML=runners.length?runners.map(r=>{
+    const bad=Boolean(r.error)||['error','needs-repair'].includes(r.phase);
+    const waiting=!r.online&&['queued','checking','registering','starting','connecting'].includes(r.phase);
+    const status=r.online?'Online · listener connected':(bad?'Needs attention':(waiting?'Starting / connecting':'Offline'));
+    const detail='Runner: '+esc(r.name||r.repository.split('/').pop())+' · Label: '+esc(r.label||r.repository.split('/').pop())+' · Mode: '+esc(r.mode||'unknown')+' · Phase: '+esc(r.phase||'idle')+((r.message||r.error)?' · '+esc(r.message||r.error):'');
+    return '<div class="runner"><div><div class="labelrow"><span class="dot '+(r.online?'':'off')+' '+(bad?'bad':'')+'"></span><span class="repo">'+esc(r.repository)+'</span></div><div class="small">'+status+'<br>'+detail+'</div></div><button class="repair" data-repo="'+esc(r.repository)+'">Repair…</button></div>';
+  }).join(''):'<div class="empty">No repository runner configured yet.</div>';
+  document.querySelectorAll('.repair').forEach(b=>b.addEventListener('click',()=>showRunnerForm(b.dataset.repo,true)));
+  if(!runners.length&&!runnerFormManuallyOpen)$('runnerFormPanel').style.display='block';
+  else if(runners.length&&!runnerFormManuallyOpen)$('runnerFormPanel').style.display='none';
 
   renderActivity(s.activity||[]);
   const ms=Number(s.manager_started_epoch||0),rb=$('restartRunners'),rm=$('restartMsg');
   if(restartBaseline!==null&&ms>restartBaseline&&s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg ok';rm.textContent='Runner manager restarted and heartbeat is live.';restartBaseline=null}
   else if(!s.manager_alive){rb.disabled=false;rb.textContent='Restart runners';rm.className='msg badtext';rm.textContent=s.storage_error||'Runner manager heartbeat is stale. The runner service needs recovery.'}
+  else{rb.disabled=false;rb.textContent='Restart runners';if(restartBaseline===null){rm.className='msg';rm.textContent=''}}
+
   {
     const m=$('runnerMsg');
-    const phase=first&&first.phase?first.phase:'';
-    const message=first&&(first.message||first.error)?(first.message||first.error):'';
-    if(first&&first.online){m.className='msg ok';m.textContent='Runner is online in persistent mode.';runnerRepairBaseline=null}
-    else if(phase==='error'||phase==='needs-repair'){m.className='msg badtext';m.textContent=message||'Runner needs repair.';runnerRepairBaseline=null}
-    else if(['queued','checking','registering','starting','connecting'].includes(phase)){m.className='msg warn';m.textContent=message||('Runner phase: '+phase)}
+    const problem=attention[0]||starting[0]||offline[0]||null;
+    const phase=problem&&problem.phase?problem.phase:'';
+    const message=problem&&(problem.message||problem.error)?(problem.message||problem.error):'';
+    if(runners.length&&allOnline){m.className='msg ok';m.textContent='All configured runners are connected in persistent mode.';runnerRepairBaseline=null}
+    else if(problem&&(phase==='error'||phase==='needs-repair'||problem.error)){m.className='msg badtext';m.textContent=message||'A runner needs repair.';runnerRepairBaseline=null}
+    else if(problem&&['queued','checking','registering','starting','connecting'].includes(phase)){m.className='msg warn';m.textContent=message||('Runner phase: '+phase)}
     else if(runnerRepairBaseline!==null&&ms>runnerRepairBaseline){m.className='msg warn';m.textContent='Runner manager reloaded. Waiting for runner state…'}
+    else if(!runners.length){m.className='msg';m.textContent='Add a runner to connect ForgeCore to a repository.'}
+    else{m.className='msg';m.textContent=''}
   }
   $('updated').textContent='Last updated: '+new Date().toLocaleTimeString();
 }
@@ -295,11 +396,12 @@ $('restartRunners').addEventListener('click',async()=>{
   catch(e){restartBaseline=null;b.disabled=false;b.textContent='Restart runners';m.className='msg badtext';m.textContent=e.message}
 });
 $('runnerForm').addEventListener('submit',async ev=>{
-  ev.preventDefault();const m=$('runnerMsg');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);m.className='msg warn';m.textContent='Saving token and reloading runner manager…';
+  ev.preventDefault();const m=$('runnerMsg'),b=$('runnerSubmit');runnerRepairBaseline=Number(lastStatus?.manager_started_epoch||0);
+  b.disabled=true;b.textContent=runnerRepairConfirmed?'Replacing…':'Connecting…';m.className='msg warn';m.textContent=runnerRepairConfirmed?'Saving confirmed Repair request…':'Saving runner connection request…';
   try{
-    await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim()})});
-    $('token').value='';m.className='msg warn';m.textContent='Repair request saved. Status will persist after refresh.';setTimeout(refresh,500)
-  }catch(e){runnerRepairBaseline=null;m.className='msg badtext';m.textContent=e.message}
+    await api('/api/runners',{method:'POST',body:JSON.stringify({repository:$('repo').value.trim(),token:$('token').value.trim(),repair_existing:runnerRepairConfirmed})});
+    $('token').value='';runnerFormManuallyOpen=false;runnerRepairConfirmed=false;$('repo').readOnly=false;m.className='msg warn';m.textContent='Connection request accepted. Waiting for runner manager…';setTimeout(refresh,500)
+  }catch(e){runnerRepairBaseline=null;b.disabled=false;b.textContent=runnerRepairConfirmed?'Replace runner connection':'Connect runner';m.className='msg badtext';m.textContent=e.message}
 });
 $('settingsForm').addEventListener('submit',async ev=>{
   ev.preventDefault();const m=$('settingsMsg');m.className='msg warn';m.textContent='Saving configuration…';
@@ -323,7 +425,7 @@ async function loadLog(){
 }
 $('refreshLog').addEventListener('click',loadLog);
 
-updateRepoLink();refresh();setInterval(refresh,5000);
+updateRepoLink();$('runnerFormPanel').style.display='none';refresh();setInterval(refresh,5000);
 </script>
 </body>
 </html>'''
@@ -553,13 +655,34 @@ def save_settings(data):
     })
     append_activity("settings", "ForgeCore configuration updated")
 
+class RunnerConflictError(Exception):
+    pass
+
+def stored_runner_identity_mode(repo):
+    settings_file = RUNNER_ENGINE / slug(repo) / ".runner"
+    if not settings_file.exists():
+        return "unregistered"
+    try:
+        identity = json.loads(settings_file.read_text(encoding="utf-8-sig", errors="strict"))
+        if not isinstance(identity, dict):
+            return "invalid"
+        return "ephemeral" if bool(identity.get("Ephemeral", identity.get("ephemeral", False))) else "persistent"
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+        return "invalid"
+
 def save_runner(data):
     repo = str(data.get("repository", "")).strip()
     token = str(data.get("token", "")).strip()
+    repair_existing = data.get("repair_existing") is True
     if not REPO.fullmatch(repo):
         raise ValueError("Repository must look like owner/repository.")
     if not TOKEN.fullmatch(token):
         raise ValueError("Enter a fresh GitHub self-hosted runner registration token.")
+    identity_mode = stored_runner_identity_mode(repo)
+    if identity_mode != "unregistered" and not repair_existing:
+        raise RunnerConflictError(
+            "Runner identity already exists. No changes were made. Open Repair and explicitly confirm replacement first."
+        )
     s = slug(repo)
     dst = RD / f"{s}.env"
     for candidate in RD.glob("*.env"):
@@ -592,7 +715,7 @@ def save_runner(data):
         encoding="utf-8",
     )
     os.replace(runtime_tmp, runtime_path)
-    append_activity("runner", f"Runner registration requested for {repo}")
+    append_activity("runner", f'{"Runner repair" if repair_existing else "Runner registration"} requested for {repo}')
     (ST / "reload-runners.request").touch()
 
 def tail_text(path, max_bytes=65536):
@@ -748,6 +871,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(404, {"error": "Not found"})
                 return
             self.send_json(202, {"ok": True})
+        except RunnerConflictError as exc:
+            self.send_json(409, {"error": str(exc)})
         except ValueError as exc:
             self.send_json(400, {"error": str(exc)})
         except OSError:
