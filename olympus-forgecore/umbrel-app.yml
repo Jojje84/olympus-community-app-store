@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.39"
+version: "0.1.0-beta.40"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.39
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.40
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,11 +37,11 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 39 integrates the complete ForgeCore v2 Phase 0-9 stack and finalized
-  dashboard, fixes prerelease ancestry validation to use main/dev instead of the
-  removed v1 runtime branch, and aligns the Umbrel runtime, package metadata and
-  validation fixtures on 0.1.0-beta.39. Prerelease publication remains isolated
-  from the stable Olympus release channel.
+  Beta 40 fixes the real UmbrelOS update path for the ForgeCore v2 dashboard.
+  Existing installations now receive the current v2 dashboard through an
+  update-safe root-level template artifact instead of depending on persisted
+  data/www/index.html. The legacy administration UI remains available at /legacy,
+  and regression coverage now simulates stale dashboard data across Umbrel updates.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
