@@ -5,7 +5,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DASHBOARD = ROOT / "umbrel" / "data" / "bin" / "dashboard-server.py"
+PACKAGE_ROOT = ROOT / "umbrel" if (ROOT / "umbrel").is_dir() else ROOT
+DASHBOARD = PACKAGE_ROOT / "data" / "bin" / "dashboard-server.py"
 
 spec = importlib.util.spec_from_file_location("forgecore_dashboard", DASHBOARD)
 module = importlib.util.module_from_spec(spec)
