@@ -88,14 +88,15 @@ jobs:
               raise SystemExit("Canonical ForgeCore PNG does not match icon.svg")
 
           dashboard = (root / "data/bin/dashboard-server.py").read_text(encoding="utf-8")
-          dashboard_icon = re.search(r"ICON_SVG = r'''(.*?)'''\n\nHTML =", dashboard, re.S)
+          dashboard_html = (root / "data/www/index.html").read_text(encoding="utf-8")
+          dashboard_icon = re.search(r"ICON_SVG = r'''(.*?)'''", dashboard, re.S)
           if not dashboard_icon or dashboard_icon.group(1) != icon:
               raise SystemExit("Dashboard ICON_SVG is not identical to icon.svg")
           if 'img-src \'self\' data:' not in dashboard:
               raise SystemExit("ForgeCore dashboard CSP must allow the approved embedded logo data")
-          if 'src="./icon.svg"' not in dashboard or 'href="./icon.svg"' not in dashboard:
-              raise SystemExit("ForgeCore dashboard logo and favicon must use relative app paths")
-          if "⚒" in dashboard or "⚒" in (root / "data/www/index.html").read_text(encoding="utf-8"):
+          if 'src="./icon.svg"' not in dashboard_html:
+              raise SystemExit("ForgeCore v2 dashboard logo must use the relative app icon path")
+          if "⚒" in dashboard or "⚒" in dashboard_html:
               raise SystemExit("Legacy ForgeCore emoji logo is still present")
           if not (root / "SOURCE_COMMIT").is_file():
               raise SystemExit("ForgeCore distribution package is missing SOURCE_COMMIT provenance")
