@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.44"
+version: "0.1.0-beta.45"
 tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.44
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.45
 description: >-
   ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
   It runs persistent repository-level runners for multiple trusted repositories,
@@ -37,9 +37,9 @@ description: >-
   The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
   emulation. It is not enabled automatically by the Umbrel package.
 releaseNotes: >-
-  Beta 44 makes Apps the ownership boundary for repositories and GitHub Actions
-  runner connections. Infrastructure now focuses on shared runtime, capacity and
-  health, while compatibility support remains only for migration/runtime needs.
+  Beta 45 completes the active v1-to-v2 runtime retirement. ForgeCore now uses
+  v2 global settings, App-owned runners and transient runner requests, while
+  preserving one-time upgrade import and persistent runner identity migration.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
