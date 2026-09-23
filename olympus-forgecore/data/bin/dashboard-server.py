@@ -32,7 +32,7 @@ STORAGE_RESOLUTION = os.environ.get("FORGECORE_STORAGE_RESOLUTION", "unknown")
 RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
-WEB_BUILD = "0.1.0-beta.40"
+WEB_BUILD = "0.1.0-beta.41"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -388,7 +388,7 @@ footer{display:flex;justify-content:space-between;gap:12px;color:#778598;margin-
     </article>
   </section>
 
-  <footer><span>ForgeCore <b id="version">beta.36</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
+  <footer><span>ForgeCore <b id="version">—</b> · Simple CI. Powerful projects.</span><span id="updated">Waiting for status…</span></footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -622,8 +622,8 @@ function renderStatus(s){
   }else if(!s.manager_artifact_ok){
     $('svcManager').textContent='Runtime mismatch · '+(s.manager_artifact_build||'unknown');
     $('svcManager').className='status-bad';
-  }else if(!s.bootstrap_beta40_seen){
-    $('svcManager').textContent='Runner container has not bootstrapped beta40';
+  }else if(!s.bootstrap_beta41_seen){
+    $('svcManager').textContent='Runner container has not bootstrapped beta41';
     $('svcManager').className='status-bad';
   }else{
     $('svcManager').textContent='Bootstrap ran · manager offline';
@@ -2307,7 +2307,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta40_seen"] = "ForgeCore 0.1.0-beta.40 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta41_seen"] = "ForgeCore 0.1.0-beta.41 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2619,7 +2619,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta40_seen": bool(current.get("bootstrap_beta40_seen")),
+                "bootstrap_beta41_seen": bool(current.get("bootstrap_beta41_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
