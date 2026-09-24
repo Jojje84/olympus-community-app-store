@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""ForgeCore v2 configured store repository publisher.
+"""ForgeCore v2 Olympus Community App Store publisher.
 
 Consumes a verified immutable Umbrel package handoff and submits the package to
-the configured configured store repository. Pull-request mode never bypasses the
+the configured Olympus Community App Store. Pull-request mode never bypasses the
 store repository's own validation checks; success means the idempotent PR exists.
 """
 
@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 VERSION_RE = re.compile(r"^[0-9A-Za-z]+(?:[0-9A-Za-z.+-]*[0-9A-Za-z])?$")
-STORE_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+STORE_ID_RE = re.compile(r"^olympus-[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 class StorePublishError(RuntimeError):
@@ -305,8 +305,8 @@ def build_store_plan(job, package_artifact_root, job_artifact_root):
 
     if not store.get("enabled"):
         raise StorePublishError("Community App Store publishing is disabled in the immutable preset snapshot")
-    if community.get("provider") != "github-store-repository":
-        raise StorePublishError("Global communityStore.provider must be github-store-repository")
+    if community.get("provider") != "olympus-community-app-store":
+        raise StorePublishError("Global communityStore.provider must be olympus-community-app-store")
     repository = str(community.get("repository") or "")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise StorePublishError("Global communityStore.repository must look like owner/repository")
@@ -335,7 +335,7 @@ def build_store_plan(job, package_artifact_root, job_artifact_root):
     if not VERSION_RE.fullmatch(version):
         raise StorePublishError("Umbrel manifest version is missing or invalid")
     if version != str(release_plan.get("version") or ""):
-        raise StorePublishError("Umbrel manifest version does not match the verified release")
+        raise StorePublishError("Umbrel manifest version does not match the verified Olympus release")
     upstream = (package_root / "upstream-release.txt").read_text(encoding="utf-8").strip()
     if upstream not in {version, "v" + version}:
         raise StorePublishError("upstream-release.txt does not match the Umbrel manifest version")
@@ -368,12 +368,45 @@ def _source_commit_text(plan):
         f"Package version: {plan['version']}\n"
         f"ForgeCore job: {plan['jobId']}\n"
         f"ForgeCore config revision: {plan['configRevision']}\n"
-        f"release tag: {plan['releaseTag']}\n"
+        f"Olympus release tag: {plan['releaseTag']}\n"
     )
+
+
+STORE_IGNORE_FILE = ".forgecore-storeignore"
+
+
+def _store_ignore_rules(package_root):
+    path = Path(package_root) / STORE_IGNORE_FILE
+    if not path.is_file():
+        return []
+    rules = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        rule = raw.strip()
+        if not rule or rule.startswith("#"):
+            continue
+        if rule.startswith("/") or "\\" in rule:
+            raise StorePublishError(f"Unsafe Store ignore rule: {rule}")
+        normalized = rule.rstrip("/") + ("/" if rule.endswith("/") else "")
+        parts = normalized.rstrip("/").split("/")
+        if any(part in {"", ".", "..", ".git"} for part in parts):
+            raise StorePublishError(f"Unsafe Store ignore rule: {rule}")
+        rules.append(normalized)
+    return rules
+
+
+def _store_path_ignored(rel, rules):
+    for rule in rules:
+        if rule.endswith("/"):
+            if rel.startswith(rule):
+                return True
+        elif rel == rule:
+            return True
+    return False
 
 
 def _desired_entries(plan):
     package_root = Path(plan["packageRoot"])
+    ignore_rules = _store_ignore_rules(package_root)
     entries = {}
     for path in sorted(package_root.rglob("*")):
         if path.is_symlink():
@@ -383,6 +416,8 @@ def _desired_entries(plan):
         rel = path.relative_to(package_root).as_posix()
         if any(part == ".git" for part in rel.split("/")):
             raise StorePublishError(f"Unsafe Store package path: {rel}")
+        if rel == STORE_IGNORE_FILE or _store_path_ignored(rel, ignore_rules):
+            continue
         data = path.read_bytes()
         mode = "100755" if path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) else "100644"
         entries[f"{plan['directory']}/{rel}"] = {

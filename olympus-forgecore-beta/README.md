@@ -1,14 +1,12 @@
 # ForgeCore Beta
 
-This is the isolated clean-user beta package for ForgeCore 0.1.0-beta.55.
-
-It is intentionally published as a separate Umbrel app from the existing ForgeCore Community app:
+Clean-user ForgeCore 0.1.0-beta.56 for Umbrel.
 
 - Umbrel app ID: `olympus-forgecore-beta`
-- Community folder: `olympus-forgecore-beta`
 - Port: `8800`
 - External storage: dedicated `ForgeCore-Beta` root
 - First run: create a ForgeCore account, then add apps, destinations and runners yourself
-- No legacy ForgeCore apps, jobs, audit history, connections or runner identities are imported
+- No previous ForgeCore apps, jobs, audit history, connections or runner identities are imported
+- Dashboard starts from live or empty state; no demo apps, jobs, logs or storage values are preloaded
 
-Source commit: `2a0d25fa18e461068ffd9b2553b781bae8394409`
+Source commit: `f303ec5ce1e81e2e5f4be7405e3d5a7d0aa72252`

@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.55"
+version: "0.1.0-beta.56"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.55
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.56
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
@@ -23,9 +23,9 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 55 is the clean-user beta. It removes legacy first-run imports and preconfigured
-  project-specific destinations, adds mandatory ForgeCore account setup/login, makes destination
-  connections removable, and isolates the beta from the existing ForgeCore installation.
+  Beta 56 removes stale dashboard demo state and obsolete preview behavior, replaces hard-coded
+  sample jobs, apps, logs and storage values with live or empty states, keeps the clean first-run
+  account model, and aligns the package ID with olympus-forgecore-beta for Community Store updates.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
