@@ -24,7 +24,7 @@ description: >-
   and evaluated side by side.
 releaseNotes: >-
   Beta 55 is the clean-user beta. It removes legacy first-run imports and preconfigured
-  Olympus destinations, adds mandatory ForgeCore account setup/login, makes destination
+  project-specific destinations, adds mandatory ForgeCore account setup/login, makes destination
   connections removable, and isolates the beta from the existing ForgeCore installation.
 
 developer: Jojje84
