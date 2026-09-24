@@ -1389,17 +1389,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       <kbd>Esc</kbd>
     </div>
     <div class="command-hint">Quick navigation · press Ctrl+K anywhere</div>
-    <div id="commandResults" class="command-results">
-      <button class="command-item" data-command-text="Olympus Core app application" data-command-view="apps"><span class="command-type">APP</span><span><b>Olympus Core</b><small>Apps / olympus-core</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="ForgeCore app application" data-command-view="apps"><span class="command-type">APP</span><span><b>ForgeCore</b><small>Apps / forgecore</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="job 7fd83a Olympus Core running test" data-command-view="job-detail"><span class="command-type">JOB</span><span><b>job-pending</b><small>Olympus Core · test · running</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="release Olympus Core — stable" data-command-view="releases"><span class="command-type">RELEASE</span><span><b>Olympus Core · —</b><small>Stable release · published</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="backup restore settings configuration" data-command-view="settings" data-command-anchor="backup-restore"><span class="command-type">SETTING</span><span><b>Backup & Restore</b><small>Settings / Backup & Restore</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="storage cleanup infrastructure disk cache" data-command-view="infrastructure" data-command-anchor="storage-cleanup"><span class="command-type">INFRA</span><span><b>Storage & Cleanup</b><small>Infrastructure / Storage & Cleanup</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="maintenance mode updates ForgeCore beta" data-command-view="infrastructure" data-command-anchor="maintenanceCard"><span class="command-type">INFRA</span><span><b>Maintenance mode</b><small>Infrastructure / ForgeCore Updates</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="publishing templates release policy" data-command-view="presets"><span class="command-type">TEMPLATE</span><span><b>Publishing Templates</b><small>Reusable publishing policy</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="audit log security history changes administrator events" data-command-view="audit"><span class="command-type">AUDIT</span><span><b>Audit Log</b><small>Security and operational history</small></span><em>↵</em></button>
-    </div>
+    <div id="commandResults" class="command-results"></div>
     <div id="commandEmpty" class="command-empty hidden">No matching ForgeCore resources.</div>
     <div class="command-footer"><span>↑↓ Navigate</span><span>Enter Open</span><span>Esc Close</span></div>
   </div>
@@ -1457,10 +1447,8 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
   </div>
 </div>
 <div id="attentionPanel" class="attention-panel">
-  <div class="attention-head"><div><b>Needs attention</b><small>3 items across ForgeCore</small></div><button id="attentionClose" class="icon-btn">×</button></div>
-  <button class="attention-item" data-go="releases"><span class="att-icon fail">!</span><span><b>Store publish failed</b><small>Olympus Store · —</small></span><time>34m</time></button>
-  <button class="attention-item" data-go="releases"><span class="att-icon warn">↗</span><span><b>Store PR awaiting review</b><small>ForgeCore · current release state</small></span><time>18m</time></button>
-  <button class="attention-item" data-go="infrastructure"><span class="att-icon warn">!</span><span><b>Cache cleanup due soon</b><small>86 GB · policy runs in 2d</small></span><time>2h</time></button>
+  <div class="attention-head"><div><b>Needs attention</b><small id="attentionPanelSummary">No action required</small></div><button id="attentionClose" class="icon-btn">×</button></div>
+  <div id="attentionPanelList"><div class="compact-state">Loading current attention items…</div></div>
   <div class="attention-foot">Only items that need action appear here.</div>
 </div>
 <div id="unsavedBar" class="unsaved-bar">
@@ -1697,12 +1685,34 @@ const commandPalette=document.getElementById("commandPalette");
 const commandInput=document.getElementById("commandInput");
 const commandEmpty=document.getElementById("commandEmpty");
 let commandIndex=0;
+function commandEsc(v){return String(v??"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function visibleCommands(){return Array.from(document.querySelectorAll(".command-item")).filter(function(x){return !x.classList.contains("hidden")})}
 function paintCommandSelection(){
   const items=visibleCommands();
   items.forEach(function(x,i){x.classList.toggle("active",i===commandIndex)});
 }
+function renderCommandPalette(){
+  const host=document.getElementById("commandResults");if(!host)return;
+  const state=window.__forgecoreState||{apps:[],jobs:[]},items=[];
+  (state.apps||[]).forEach(function(app){
+    const name=app.identity?.name||app.id;
+    items.push('<button class="command-item" data-command-text="'+commandEsc(name+" "+app.id+" app application")+'" data-command-view="apps" data-command-app="'+commandEsc(app.id)+'"><span class="command-type">APP</span><span><b>'+commandEsc(name)+'</b><small>Apps / '+commandEsc(app.id)+'</small></span><em>↵</em></button>');
+  });
+  (state.jobs||[]).slice(0,20).forEach(function(job){
+    const app=(state.apps||[]).find(function(x){return x.id===job.appId}),name=app?.identity?.name||job.appId;
+    items.push('<button class="command-item" data-command-text="'+commandEsc("job "+job.id+" "+name+" "+job.status+" "+(job.jobType||""))+'" data-command-job="'+commandEsc(job.id)+'"><span class="command-type">JOB</span><span><b>'+commandEsc(job.id)+'</b><small>'+commandEsc(name+" · "+(job.jobType||"job")+" · "+job.status)+'</small></span><em>↵</em></button>');
+  });
+  items.push(
+    '<button class="command-item" data-command-text="forgecore settings runtime storage security" data-command-view="settings"><span class="command-type">SETTING</span><span><b>ForgeCore Settings</b><small>Runtime, storage and security</small></span><em>↵</em></button>',
+    '<button class="command-item" data-command-text="storage cleanup infrastructure disk cache" data-command-view="infrastructure" data-command-anchor="storage-cleanup"><span class="command-type">INFRA</span><span><b>Storage & Cleanup</b><small>Infrastructure / Storage & Cleanup</small></span><em>↵</em></button>',
+    '<button class="command-item" data-command-text="publishing templates release policy" data-command-view="presets"><span class="command-type">TEMPLATE</span><span><b>Publishing Templates</b><small>Reusable publishing policy</small></span><em>↵</em></button>',
+    '<button class="command-item" data-command-text="audit log security history changes events" data-command-view="audit"><span class="command-type">AUDIT</span><span><b>Audit Log</b><small>Security and operational history</small></span><em>↵</em></button>',
+    '<button class="command-item" data-command-text="logs runner runtime platform" data-command-view="logs"><span class="command-type">LOG</span><span><b>Logs</b><small>Platform and runner logs</small></span><em>↵</em></button>'
+  );
+  host.innerHTML=items.join("");
+}
 function openCommand(){
+  renderCommandPalette();
   commandPalette.classList.add("open");
   commandInput.value="";
   document.querySelectorAll(".command-item").forEach(function(x){x.classList.remove("hidden")});
@@ -1712,16 +1722,19 @@ function openCommand(){
 }
 function closeCommand(){commandPalette.classList.remove("open")}
 function runCommand(item){
-  if(!item) return;
+  if(!item)return;
   closeCommand();
-  const view=item.dataset.commandView;
-  if(view==="job-detail"){
-    currentDetailKind="jobs";showView("job-detail");showBreadcrumb("Jobs / job-pending");
-  }else{
-    showView(view);
+  const jobId=item.dataset.commandJob,appId=item.dataset.commandApp,view=item.dataset.commandView;
+  if(jobId&&window.__forgecoreOpenJob){window.__forgecoreOpenJob(jobId);return}
+  if(appId&&window.__forgecoreState){
+    showView("apps");
+    const app=window.__forgecoreState.apps.find(function(x){return x.id===appId});
+    if(app&&window.__forgecoreSelectApp)window.__forgecoreSelectApp(app,true);
+    return;
   }
+  if(view)showView(view);
   const anchor=item.dataset.commandAnchor;
-  if(anchor) setTimeout(function(){const el=document.getElementById(anchor);if(el) el.scrollIntoView({behavior:"smooth",block:"center"})},160);
+  if(anchor)setTimeout(function(){const el=document.getElementById(anchor);if(el)el.scrollIntoView({behavior:"smooth",block:"center"})},160);
 }
 if(commandOpen) commandOpen.addEventListener("click",openCommand);
 if(commandPalette) commandPalette.addEventListener("click",function(e){if(e.target===commandPalette) closeCommand()});
@@ -1733,7 +1746,7 @@ if(commandInput) commandInput.addEventListener("input",function(){
   });
   commandEmpty.classList.toggle("hidden",count!==0);commandIndex=0;paintCommandSelection();
 });
-document.querySelectorAll(".command-item").forEach(function(item){item.addEventListener("click",function(){runCommand(item)})});
+const commandResults=document.getElementById("commandResults");if(commandResults)commandResults.addEventListener("click",function(e){const item=e.target.closest(".command-item");if(item)runCommand(item)});
 document.addEventListener("keydown",function(e){
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();commandPalette.classList.contains("open")?closeCommand():openCommand();return}
   if(!commandPalette.classList.contains("open")) return;
@@ -2040,6 +2053,19 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   function options(values,current){return values.map(x=>'<option value="'+esc(x[0])+'" '+(String(x[0])===String(current)?"selected":"")+'>'+esc(x[1])+'</option>').join("")}
   function currentApp(){return fcState.selectedApp||fcState.apps[0]||null}
+  function runnerTransitioning(runner){
+    if(!runner||runner.online)return false;
+    const phase=String(runner.phase||"").toLowerCase();
+    if(!["queued","checking","registering","starting","connecting"].includes(phase))return false;
+    const epoch=Number(runner.stateEpoch||0);
+    return !epoch||((Date.now()/1000)-epoch)<=45;
+  }
+  function runnerStateLabel(runner){
+    if(!runner)return "Not connected";
+    if(runner.online)return "Online";
+    if(runnerTransitioning(runner))return "Reconnecting";
+    return runner.message||runner.error||runner.phase||runner.mode||"Needs attention";
+  }
   function runnerForApp(app){
     if(!app||app.build?.executor!=="github-actions")return null;
     return (fcState.status?.runners||[]).find(r=>(r.appIds||[]).includes(app.id))
@@ -2451,6 +2477,21 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     if(val)val.textContent=value;if(s)s.textContent=sub||"";
   }
+  function openAttentionItem(item){
+    if(!item)return;
+    if(item.jobId){openJob(item.jobId);return}
+    if(item.appId){
+      showView("apps");
+      const app=fcState.apps.find(x=>x.id===item.appId);
+      if(!app)return;
+      selectApp(app,true);
+      openAppTab(item.tab||"app-overview");
+      if(item.action==="publishing-connections")openAppPublishingConnections(app);
+      else if(item.action==="runner")openAppRunnerEditor(app);
+      return;
+    }
+    showView(item.view||"overview");
+  }
   function renderOverview(){
     const s=fcState.status||{},jobs=fcState.jobs,apps=fcState.apps,presets=fcState.presets;
     const running=jobs.filter(j=>["running","preparing"].includes(j.status)).length;
@@ -2544,19 +2585,29 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     if(!s.docker_online)attention.push({kind:"fail",title:"Docker runtime is unavailable",detail:"Build execution needs the ForgeCore Docker runtime.",view:"infrastructure"});
     if(s.storage_error)attention.push({kind:"fail",title:"Storage needs attention",detail:String(s.storage_error),view:"infrastructure"});
     else if(s.dependency_error)attention.push({kind:"fail",title:"Runtime dependency error",detail:String(s.dependency_error),view:"infrastructure"});
-    if(failed)attention.push({kind:"fail",title:failed+" failed job"+(failed===1?"":"s"),detail:"Open Jobs to inspect the failed execution state.",view:"jobs"});
+    if(failed){
+      const failedJob=jobs.find(j=>j.status==="failed");
+      attention.push({kind:"fail",title:failed+" failed job"+(failed===1?"":"s"),detail:"Open the failed execution state.",view:"jobs",jobId:failedJob?.id||""});
+    }
     apps.forEach(app=>{
-      const p=presetFor(app),name=app.identity?.name||app.id;
-      if(!p)attention.push({kind:"fail",title:name+" has no valid publish preset",detail:"The App references "+(app.publish?.preset||"an unknown preset")+".",view:"apps"});
-      if(app.build?.executor==="github-actions"&&!runnerForApp(app)?.online)attention.push({kind:"warn",title:name+" runner is not online",detail:"This App uses GitHub Actions and needs its App-owned runner.",view:"apps"});
-      if(p?.release?.enabled&&!s.olympus_releases?.configurationReady)attention.push({kind:"warn",title:name+" needs Olympus Releases credentials",detail:"Its publish preset enables Releases, but the global integration is not ready.",view:"settings"});
-      if(p?.store?.enabled&&!s.community_app_store?.configurationReady)attention.push({kind:"warn",title:name+" needs Community Store credentials",detail:"Its publish preset enables Store publishing, but the global integration is not ready.",view:"settings"});
+      const p=presetFor(app),name=app.identity?.name||app.id,runner=runnerForApp(app);
+      if(!p)attention.push({kind:"fail",title:name+" has no valid publish preset",detail:"The App references "+(app.publish?.preset||"an unknown preset")+".",view:"apps",appId:app.id,tab:"app-settings"});
+      if(app.build?.executor==="github-actions"&&!runner?.online&&!runnerTransitioning(runner))attention.push({kind:"warn",title:name+" runner needs attention",detail:"This App uses GitHub Actions and its App-owned runner is not connected.",view:"apps",appId:app.id,tab:"app-settings",action:"runner"});
+      if(p?.release?.enabled&&!s.olympus_releases?.configurationReady)attention.push({kind:"warn",title:name+" needs Olympus Releases credentials",detail:"Open this App's publishing connection and configure Olympus Releases.",view:"apps",appId:app.id,tab:"app-settings",action:"publishing-connections"});
+      if(p?.store?.enabled&&!s.community_app_store?.configurationReady)attention.push({kind:"warn",title:name+" needs Community Store credentials",detail:"Open this App's publishing connection and configure the Community Store.",view:"apps",appId:app.id,tab:"app-settings",action:"publishing-connections"});
     });
     const attentionCount=q("#overviewAttentionCount"),attentionList=q("#overviewAttentionList");
     if(attentionCount){attentionCount.textContent=String(attention.length);attentionCount.className="status-pill "+(attention.some(x=>x.kind==="fail")?"fail":attention.length?"queue":"neutral")}
     if(attentionList){
       attentionList.innerHTML=attention.length?attention.slice(0,6).map((item,i)=>'<button class="overview-attention-item '+(item.kind==="fail"?"fail":"")+'" data-attention-index="'+i+'"><span class="attention-dot"></span><span><b>'+esc(item.title)+'</b><small>'+esc(item.detail)+'</small></span><span>Open →</span></button>').join(""):'<div class="overview-attention-ok"><span class="check">✓</span><div><b>No action required</b><small>ForgeCore has no current issues that need your attention.</small></div></div>';
-      qa("[data-attention-index]",attentionList).forEach(btn=>btn.addEventListener("click",()=>{const item=attention[Number(btn.dataset.attentionIndex)];if(item)showView(item.view)}));
+      qa("[data-attention-index]",attentionList).forEach(btn=>btn.addEventListener("click",()=>openAttentionItem(attention[Number(btn.dataset.attentionIndex)])));
+    }
+    const attentionToggleCount=q("#attentionToggle span");if(attentionToggleCount)attentionToggleCount.textContent=String(attention.length);
+    const panelSummary=q("#attentionPanelSummary");if(panelSummary)panelSummary.textContent=attention.length?(attention.length+" item"+(attention.length===1?"":"s")+" across ForgeCore"):"No action required";
+    const panelList=q("#attentionPanelList");
+    if(panelList){
+      panelList.innerHTML=attention.length?attention.slice(0,8).map((item,i)=>'<button class="attention-item" data-panel-attention-index="'+i+'"><span class="att-icon '+(item.kind==="fail"?"fail":"warn")+'">'+(item.kind==="fail"?"!":"↗")+'</span><span><b>'+esc(item.title)+'</b><small>'+esc(item.detail)+'</small></span><time>Open</time></button>').join(""):'<div class="compact-state">No current items need action.</div>';
+      qa("[data-panel-attention-index]",panelList).forEach(btn=>btn.addEventListener("click",()=>{openAttentionItem(attention[Number(btn.dataset.panelAttentionIndex)]);q("#attentionPanel")?.classList.remove("open")}));
     }
 
     const appList=q("#overview .app-list");
@@ -2564,10 +2615,13 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       appList.innerHTML=apps.slice(0,3).map(a=>{
         const latest=latestJobFor(a),runner=runnerForApp(a),name=a.identity?.name||a.id;
         let state="Ready",stateClass="";
-        if(a.build?.executor==="github-actions"&&!runner?.online){state="Runner offline";stateClass="fail"}
+        if(a.build?.executor==="github-actions"&&!runner?.online){
+          if(runnerTransitioning(runner)){state="Runner reconnecting";stateClass="queue"}
+          else{state="Runner offline";stateClass="fail"}
+        }
         else if(latest?.status==="failed"){state="Last job failed";stateClass="fail"}
         else if(["running","preparing","queued"].includes(latest?.status)){state=latest.status;stateClass=statusClass(latest.status)}
-        const runnerText=a.build?.executor==="github-actions"?(runner?.online?"Runner online":"Runner offline"):"Native runtime";
+        const runnerText=a.build?.executor==="github-actions"?(runner?.online?"Runner online":runnerTransitioning(runner)?"Runner reconnecting":"Runner offline"):"Native runtime";
         const latestText=latest?("Last job: "+latest.status):"No jobs yet";
         return '<button class="app-card" data-live-app="'+esc(a.id)+'"><div class="app-top"><div class="app-icon">'+esc(name.charAt(0).toUpperCase())+'</div><div><div class="app-name">'+esc(name)+'</div><div class="app-id mono">'+esc(a.id)+'</div></div><span style="margin-left:auto" class="status-pill '+stateClass+'">'+esc(state)+'</span></div><div class="app-foot overview-app-foot"><span>'+esc(runnerText)+'</span><span>'+esc(latestText)+'</span><span>Delivery: '+esc(deliveryLabel(a))+'</span></div></button>';
       }).join("") || '<div class="empty">No managed apps.</div>';
@@ -2623,7 +2677,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       const auto=app.build?.targetMode==="auto";
       checks.push({ok:auto||Boolean((app.build?.targets||[]).length),label:auto?"Architectures auto-detect enabled":"Umbrel architectures selected"});
     }
-    if(app.build?.executor==="github-actions")checks.push({ok:Boolean(runner?.online),label:runner?.online?"Runner online":"Runner needs attention"});
+    if(app.build?.executor==="github-actions"){
+      const transient=runnerTransitioning(runner);
+      checks.push({ok:Boolean(runner?.online||transient),transient,label:runner?.online?"Runner online":transient?"Runner reconnecting":"Runner needs attention"});
+    }
     if(app.publish?.preset){
       checks.push({ok:Boolean(preset),label:preset?"Publish preset available":"Publish preset missing"});
       if(preset?.release?.enabled)checks.push({ok:Boolean(fcState.status?.olympus_releases?.configurationReady),label:"Release integration ready"});
@@ -2684,7 +2741,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const icon=q("#selectedAppIcon");if(icon)icon.textContent=name.charAt(0).toUpperCase();
     const meta=q("#selectedAppMeta");if(meta)meta.innerHTML='<span id="selectedAppId">'+esc(app.id)+'</span><span>•</span><span id="selectedExecutor">'+esc(exec)+'</span>'+(publishing?'<span>•</span><span>publishing: '+esc(app.publish?.preset||"configured")+'</span>':'');
     const status=q("#selectedAppStatus");if(status){status.textContent=active?(active.status==="queued"?"Queued":"Running"):needs.length?"Needs attention":"Ready";status.className="status-pill "+(active?statusClass(active.status):needs.length?"queue":"")}
-    const runnerText=exec==="github-actions"?(runner?.online?"Online":runner?(runner.phase||runner.mode||"Connecting"):"Not connected"):"Not required";
+    const runnerText=exec==="github-actions"?runnerStateLabel(runner):"Not required";
     const runnerStatus=q("#appRunnerStatus");if(runnerStatus){runnerStatus.textContent="Runner · "+runnerText;runnerStatus.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
     [q("#manageAppRunner"),q("#settingsManageRunner")].forEach(b=>{if(b)b.classList.toggle("hidden",exec!=="github-actions")});
     const publishBtn=q("#buildPublishApp");if(publishBtn)publishBtn.classList.toggle("hidden",!publishing);
@@ -2696,7 +2753,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     set("appLatestRelease",latestRelease?(releasePlan.version||releasePlan.releaseTag||"Published"):"—");
     set("appLatestReleaseSub",latestRelease?(fmtWhen(latestRelease.finishedAt||latestRelease.updatedAt)+(releasePlan.channel?" · "+releasePlan.channel:"")):"No releases yet");
     const overviewRunner=q("#overviewRunnerPill");if(overviewRunner){overviewRunner.textContent=runnerText;overviewRunner.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
-    const overviewRunnerBody=q("#overviewRunnerBody");if(overviewRunnerBody)overviewRunnerBody.textContent=exec==="github-actions"?(runner?.online?"Repository runner is online for "+repo+".":runner?"Runner is configured but not online. Use Manage runner to inspect or reconnect it.":"No repository runner is connected. Use Manage runner to connect one."):"This app uses shared ForgeCore native execution and does not need a repository runner.";
+    const overviewRunnerBody=q("#overviewRunnerBody");if(overviewRunnerBody)overviewRunnerBody.textContent=exec==="github-actions"?(runner?.online?"Repository runner is online for "+repo+".":runnerTransitioning(runner)?"Runner is reconnecting to GitHub. ForgeCore will keep the App available while this short recovery completes.":runner?"Runner is configured but not online. Use Manage runner to inspect or reconnect it.":"No repository runner is connected. Use Manage runner to connect one."):"This app uses shared ForgeCore native execution and does not need a repository runner.";
     const hp=q("#overviewHealthPill");if(hp){hp.textContent=needs.length?needs.length+" issue"+(needs.length===1?"":"s"):"Healthy";hp.className="status-pill "+(needs.length?"queue":"")}
     const hc=q("#appHealthChecks");if(hc)hc.innerHTML=health.map(x=>'<div><span class="'+(x.ok?"check":"lock-dot")+'">'+(x.ok?"✓":"●")+'</span><span>'+esc(x.label)+'</span></div>').join("");
     const activeBox=q("#appActiveJob");if(activeBox)activeBox.innerHTML=active?'<b>'+esc(active.jobType)+'</b> · '+esc(active.status)+' · <span class="mono">'+esc(active.id)+'</span>':'<span class="secondary">No active job.</span>';
@@ -2768,7 +2825,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       }
     }
     const srp=q("#settingsRunnerPill");if(srp){srp.textContent=runnerText;srp.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
-    const srb=q("#settingsRunnerBody");if(srb)srb.textContent=exec==="github-actions"?(runner?.online?"Runner online for "+repo+".":"Runner is not online. Use Manage runner to connect or repair it."):"No repository runner is required for ForgeCore native execution.";
+    const srb=q("#settingsRunnerBody");if(srb)srb.textContent=exec==="github-actions"?(runner?.online?"Runner online for "+repo+".":runnerTransitioning(runner)?"Runner is reconnecting. No action is required unless this state persists.":"Runner is not online. Use Manage runner to connect or repair it."):"No repository runner is required for ForgeCore native execution.";
     const clean=q("#cleanBuildApp"),cleanHelp=q("#cleanBuildHelp");
     if(clean){clean.disabled=exec==="github-actions";clean.title=exec==="github-actions"?"Build-without-cache is not exposed for the GitHub Actions adapter.":"Native jobs start from a fresh source workspace."}
     if(cleanHelp)cleanHelp.textContent=exec==="github-actions"?"Not available for the GitHub Actions adapter.":"Native builds already start from a fresh source workspace; this action starts that clean build path.";
@@ -2993,6 +3050,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     const update=q("#forgecore-updates");
     if(update){
+      update.classList.add("hidden");
       const pill=q(".section-title .status-pill",update);if(pill){pill.textContent="Not connected";pill.className="status-pill neutral"}
       const boxes=qa(".version-box",update);
       if(boxes[0]){const b=q("b",boxes[0]);if(b)b.textContent=s.web_build||"dev"}
@@ -3001,6 +3059,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     const maintenance=q("#maintenanceCard");
     if(maintenance){
+      maintenance.classList.add("hidden");
       const pill=q("#maintenanceStatus",maintenance);if(pill){pill.textContent="Unavailable";pill.className="status-pill neutral"}
       const title=q("#maintenanceTitle",maintenance),copy=q("#maintenanceCopy",maintenance);
       if(title)title.textContent="Maintenance API not implemented";
@@ -3044,6 +3103,8 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   function renderSettings(){
     const s=fcState.status||{};
+    q('[data-settings-anchor="backup-restore"]')?.classList.add("hidden");
+    q("#backup-restore")?.classList.add("hidden");
     const secretProvider=q("#settingsSecretProvider");if(secretProvider)secretProvider.textContent="secret://env";
     const storageRoot=q("#settingsStorageRoot");if(storageRoot)storageRoot.textContent=s.storage_display||s.storage?.root||"—";
     const cleanupInterval=q("#settingsCleanupInterval");if(cleanupInterval)cleanupInterval.textContent=(s.cleanup_interval_days||"—")+" days";
@@ -3204,7 +3265,9 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     try{
       const [status,apps,jobs,presets]=await Promise.all([api("/api/status"),api("/api/apps"),api("/api/jobs"),api("/api/publish-presets")]);
       fcState.status=status;fcState.apps=apps.apps||[];fcState.jobs=jobs.jobs||[];fcState.presets=presets.presets||[];
+      window.__forgecoreState=fcState;window.__forgecoreOpenJob=openJob;window.__forgecoreSelectApp=selectApp;
       setConnection(true);renderOverview();renderApps();renderJobs();renderReleases();renderInfrastructure();renderPresets();renderSettings();renderAudit();
+      if(typeof renderCommandPalette==="function")renderCommandPalette();
       if(currentView==="job-detail"&&fcState.selectedJob)openJob(fcState.selectedJob.id);
       if(currentView==="logs"&&document.getElementById("followLive")?.checked)loadSelectedLog();
     }catch(e){setConnection(false,e.message)}

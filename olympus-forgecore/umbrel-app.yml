@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.52"
+version: "0.1.0-beta.53"
 tagline: CI/CD and release control plane for Olympus apps
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.52
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.53
 description: >-
   ForgeCore is a self-hosted CI/CD, packaging and release control plane for Umbrel.
 
@@ -34,9 +34,10 @@ description: >-
   Older ForgeCore installations are supported through one-time upgrade importers.
   The active runtime and configuration model are v2 only.
 releaseNotes: >-
-  Beta 52 makes the dashboard app-centric. App builds, runners, outputs and
-  publishing connections are managed from each App, while ForgeCore Settings is
-  limited to runtime, storage, security and backup policy.
+  Beta 53 fixes dashboard navigation and runner-state clarity. Attention items now
+  open the exact App control that needs action, the global attention center and
+  search use live data, transient runner reconnects are no longer reported as
+  failures, and unfinished platform-only panels are hidden from the normal flow.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
