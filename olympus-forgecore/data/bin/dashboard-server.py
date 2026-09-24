@@ -37,7 +37,7 @@ RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
 COMPOSE_VERSION = "5.5.1"
-WEB_BUILD = "0.1.0-beta.49"
+WEB_BUILD = "0.1.0-beta.50"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -1853,7 +1853,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta49_seen"] = "ForgeCore 0.1.0-beta.49 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta50_seen"] = "ForgeCore 0.1.0-beta.50 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2134,7 +2134,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta49_seen": bool(current.get("bootstrap_beta49_seen")),
+                "bootstrap_beta50_seen": bool(current.get("bootstrap_beta50_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
