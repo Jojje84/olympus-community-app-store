@@ -2,16 +2,16 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.53"
+version: "0.1.0-beta.54"
 tagline: CI/CD and release control plane for Olympus apps
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.53
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.54
 description: >-
   ForgeCore is a self-hosted CI/CD, packaging and release control plane for Umbrel.
 
 
-  Apps own their source repository, executor, build/package configuration and
-  publishing policy. Jobs can run through ForgeCore's native isolated build runtime
-  or through an App-owned persistent GitHub Actions runner.
+  Apps use a Source → Build → Delivery workflow and keep source, build/package and
+  delivery choices together. Jobs can run through ForgeCore's native isolated build
+  runtime or GitHub Actions, while runner capacity is managed separately.
 
 
   ForgeCore keeps GitHub Actions Docker and native build Docker isolated from each
@@ -21,9 +21,9 @@ description: >-
 
 
   The dashboard is the normal administration surface for Apps, Jobs, Releases,
-  Infrastructure, Settings, Logs and Audit. GitHub runner registration uses
-  short-lived tokens; verified persistent runner identity is reused across normal
-  restarts.
+  Runners & Compute, Infrastructure, Settings, Logs and Audit. GitHub runner
+  registration uses short-lived tokens; verified persistent repository runner
+  identity is reused across normal restarts.
 
 
   ForgeCore can create deterministic Umbrel packages, checksums and signed release
@@ -34,10 +34,10 @@ description: >-
   Older ForgeCore installations are supported through one-time upgrade importers.
   The active runtime and configuration model are v2 only.
 releaseNotes: >-
-  Beta 53 fixes dashboard navigation and runner-state clarity. Attention items now
-  open the exact App control that needs action, the global attention center and
-  search use live data, transient runner reconnects are no longer reported as
-  failures, and unfinished platform-only panels are hidden from the normal flow.
+  Beta 54 rebuilds the dashboard around a simpler Source → Build → Delivery model.
+  Apps now have one Setup flow, destination repositories use generic user-defined
+  names, Runners & Compute is a separate workspace, and advanced delivery policies
+  remain available without blocking normal app setup.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
