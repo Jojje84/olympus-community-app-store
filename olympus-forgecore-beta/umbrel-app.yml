@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.57"
+version: "0.1.0-beta.58"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.57
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.58
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
@@ -23,10 +23,11 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 57 completes the mobile dashboard pass. Phones now use a full-width application shell with
-  touch-friendly bottom navigation, stacked mobile flows and forms, mobile-safe dialogs and logs,
-  and dedicated 390px and 320px browser layout regression checks. The clean first-run model and
-  isolated olympus-forgecore-beta package remain unchanged.
+  Beta 58 simplifies the dashboard around five primary areas: Overview, Apps, Runners, System,
+  and Logs & Activity. Jobs, Releases and reusable Delivery policies are grouped under Apps;
+  runtime health, storage, Settings and About are grouped under System; Logs and Audit are grouped
+  together. Existing backend behavior and detailed views are preserved while the top-level
+  navigation is reduced and kept mobile-friendly.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
