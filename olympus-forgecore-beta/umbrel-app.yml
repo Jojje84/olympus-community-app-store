@@ -1,10 +1,10 @@
 manifestVersion: 1
-id: forgecore-beta
+id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
 version: "0.1.0-beta.55"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/forgecore-beta/icon.svg?v=0.1.0-beta.55
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.55
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
