@@ -41,6 +41,6 @@ The readable source copies remain under `data/bin/` and `data/www/`; package val
 
 ## Administration
 
-The dashboard is the normal administration surface. Apps own repositories, executor selection, output, GitHub runner connections and publishing choices. Infrastructure reports shared runtime capacity and health. ForgeCore Settings contains only installation-wide connections, credentials, runtime/storage policy, security and backup.
+The dashboard is the normal administration surface. Apps own repositories, executor selection, runner connections, output and publishing. Publishing connection setup is opened from the App when needed. All Jobs and All Releases are aggregate history views. Infrastructure reports shared runtime capacity and health. ForgeCore Settings contains only installation runtime/storage/security/backup policy.
 
 Older installations are upgraded by narrow one-time importers. There is no parallel v1 dashboard or active v1 configuration runtime.
