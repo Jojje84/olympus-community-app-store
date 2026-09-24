@@ -512,14 +512,14 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
     <nav class="nav">
       <button class="active" data-view="overview" title="Overview"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="4" rx="2"/><rect x="14" y="11" width="7" height="10" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg><span>Overview</span></button>
       <button data-view="apps" title="Apps"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 2v4M16 2v4M3 9h18"/></svg><span>Apps</span></button>
-      <button data-view="jobs" title="Jobs"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><circle cx="3.5" cy="18" r="1.5"/></svg><span>Jobs</span></button>
-      <button data-view="releases" title="Releases"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 20h14"/><rect x="4" y="3" width="16" height="4" rx="2"/></svg><span>Releases</span></button>
+      <button data-view="jobs" title="All Jobs"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><circle cx="3.5" cy="18" r="1.5"/></svg><span>All Jobs</span></button>
+      <button data-view="releases" title="All Releases"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M5 20h14"/><rect x="4" y="3" width="16" height="4" rx="2"/></svg><span>All Releases</span></button>
       <button data-view="infrastructure" title="Infrastructure"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></svg><span>Infrastructure</span></button>
-      <button data-view="presets" title="Publish Presets"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.5"/></svg><span>Publish Presets</span></button>
     </nav>
     <div class="nav-label">System</div>
     <nav class="nav">
       <button data-view="settings" title="Settings"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05-2.78 2.78-.05-.05A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1.08 1.65V21H10v-.07A1.8 1.8 0 0 0 9 19.4a1.8 1.8 0 0 0-1.98.36l-.05.05-2.78-2.78.05-.05A1.8 1.8 0 0 0 4.6 15 1.8 1.8 0 0 0 3 13.92H3V10h.07A1.8 1.8 0 0 0 4.6 9a1.8 1.8 0 0 0-.36-1.98l-.05-.05 2.78-2.78.05.05A1.8 1.8 0 0 0 9 4.6 1.8 1.8 0 0 0 10.08 3H14a1.8 1.8 0 0 0 1 1.6 1.8 1.8 0 0 0 1.98-.36l.05-.05 2.78 2.78-.05.05A1.8 1.8 0 0 0 19.4 9 1.8 1.8 0 0 0 21 10.08V14a1.8 1.8 0 0 0-1.6 1z"/></svg><span>Settings</span></button>
+      <button data-view="presets" title="Publishing Templates"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.5"/></svg><span>Publishing Templates</span></button>
       <button data-view="audit" title="Audit Log"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.5 2.8 8.1 7 10 4.2-1.9 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg><span>Audit Log</span></button>
       <button data-view="logs" title="Logs"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m8 9 2 2-2 2M12 15h4"/></svg><span>Logs</span></button>
       <button data-view="about" title="About"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg><span>About</span></button>
@@ -581,7 +581,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       <section id="overview" class="view active">
         <div class="page-head">
           <div><h1>Overview</h1><p>Your CI/CD control plane for building, verifying, packaging and publishing Olympus apps.</p></div>
-          <div class="actions"><button class="btn" data-go="apps">Add app</button><button class="btn primary demo">Run job</button></div>
+          <div class="actions"><button class="btn primary" data-go="apps">Open Apps</button></div>
         </div>
         <div id="liveDataNote" class="note">Connecting to the ForgeCore Control API…</div>
         <div class="system-status-strip">
@@ -597,7 +597,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
           <div class="card pad"><div class="metric-label"><span>External storage</span><span class="trend warn">38% used</span></div><div class="metric">312 GB</div><div class="metric-sub">of 820 GB · /mnt/forgecore</div></div>
         </div>
 
-        <div class="grid2 section">
+        <div class="section">
           <div class="card">
             <div class="section-title"><div><h2>Active pipeline</h2><p>Immutable job snapshot · forgecore-native</p></div><span class="status-pill run">Running</span></div>
             <div class="pipeline">
@@ -611,13 +611,6 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
                 <div class="stage"><div class="bar"></div><div class="stage-name">Release</div></div>
                 <div class="stage"><div class="bar"></div><div class="stage-name">Store</div></div>
               </div>
-            </div>
-          </div>
-          <div class="card" id="overviewDeliveryCard">
-            <div class="section-title"><div><h2 id="overviewDeliveryTitle">Delivery path</h2><p id="overviewDeliverySub">Derived from each App and its publish preset</p></div></div>
-            <div class="architecture">
-              <div id="overviewDeliveryFlow" class="mini-flow"><span class="node neutral">No managed app</span></div>
-              <div id="overviewDeliveryNote" class="secondary" style="margin-top:14px">Add an App to define a real delivery path.</div>
             </div>
           </div>
         </div>
@@ -772,7 +765,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
               <div id="app-settings" class="app-tab-pane">
                 <div class="source-note app-scope-note">
-                  <div><b id="appSettingsScopeTitle">App-specific settings</b><small id="appSettingsScopeText">Source, build, output, runner and publishing choices here affect only this app. Shared service credentials remain in ForgeCore Settings.</small></div>
+                  <div><b id="appSettingsScopeTitle">App-specific settings</b><small id="appSettingsScopeText">Source, build, output, runner and publishing choices here affect only this app. Publishing connections are configured here when this app needs them.</small></div>
                   <span class="status-pill neutral">App scope</span>
                 </div>
                 <div class="grid2 section">
@@ -808,7 +801,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       </section>
 
       <section id="jobs" class="view">
-        <div class="page-head"><div><h1>Jobs</h1><p>Immutable execution snapshots with explicit queue, stage, cancellation and executor state.</p></div><div class="actions"><button id="jobsRefresh" class="btn">Refresh</button><button class="btn primary demo">Queue job</button></div></div>
+        <div class="page-head"><div><h1>All Jobs</h1><p>Cross-app execution history. Start builds and publishing from the App that owns the work.</p></div><div class="actions"><button id="jobsRefresh" class="btn">Refresh</button><button class="btn primary" data-go="apps">Open Apps</button></div></div>
         <div class="grid4">
           <div class="card pad"><div class="metric-label">Queued</div><div class="metric">2</div><div class="metric-sub">Oldest waiting 00:41</div></div>
           <div class="card pad"><div class="metric-label">Running</div><div class="metric">2</div><div class="metric-sub">1 native · 1 Actions</div></div>
@@ -821,7 +814,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
         </div>
         <div id="jobsLoading" class="card state-panel loading-state hidden"><div class="skeleton-row"><i></i><i></i><i></i></div><div class="skeleton-row"><i></i><i></i><i></i></div><div class="skeleton-row"><i></i><i></i><i></i></div><span>Refreshing jobs…</span></div>
         <div id="jobsError" class="card state-panel error-state hidden"><div class="state-glyph">!</div><div><b>Jobs could not be refreshed</b><p>ForgeCore is showing the last known job state because the Control API is unavailable.</p><button class="btn api-retry-inline">Retry connection</button></div></div>
-        <div id="jobsEmpty" class="card state-panel hidden"><div class="state-glyph">∅</div><div><b>No jobs match this view</b><p>Clear the current search/status filter or queue a new job.</p><button id="clearJobsFilters" class="btn">Clear filters</button></div></div>
+        <div id="jobsEmpty" class="card state-panel hidden"><div class="state-glyph">∅</div><div><b>No jobs match this view</b><p>Clear the current filters or open an App to start a build or publishing run.</p><button id="clearJobsFilters" class="btn">Clear filters</button></div></div>
         <div id="jobsTable" class="card table-card section"><div class="table-scroll"><table><thead><tr><th>Job ID</th><th>App</th><th>Type</th><th>Ref</th><th>Executor</th><th>Stage</th><th>Status</th><th>Started</th></tr></thead><tbody>
           <tr class="job-open" data-job-id="job-pending"><td><button class="job-link mono" data-job-id="job-pending">job-pending</button></td><td>Olympus Core</td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td>test</td><td><span class="status-pill run">Running</span></td><td>11:24</td></tr>
           <tr><td><button class="job-link mono" data-job-id="job-a9c412">job-a9c412</button></td><td>ForgeCore</td><td>build</td><td class="mono">dev</td><td class="mono">github-actions</td><td>completed</td><td><span class="status-pill">Succeeded</span></td><td>11:18</td></tr>
@@ -833,8 +826,8 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
       <section id="releases" class="view">
         <div class="page-head">
-          <div><h1>Releases</h1><p>One place for package artifacts, Olympus Releases, channels and Community App Store delivery across every managed app.</p></div>
-          <div class="actions"><button id="releaseRefresh" class="btn">Refresh</button><button class="btn primary demo">Create release</button></div>
+          <div><h1>All Releases</h1><p>Cross-app release history. Create or publish a release from the App that owns it.</p></div>
+          <div class="actions"><button id="releaseRefresh" class="btn">Refresh</button><button class="btn primary" data-go="apps">Open Apps</button></div>
         </div>
 
         <div class="grid4">
@@ -1113,133 +1106,79 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
       <section id="presets" class="view">
         <div class="page-head">
-          <div><h1>Publish Presets</h1><p>Reusable release and distribution policy shared across apps. Change a preset once, then see exactly which apps will inherit that change.</p></div>
+          <div><h1>Publishing Templates</h1><p>Advanced reusable release policy. Apps choose a template from their own Publishing settings.</p></div>
           <div class="actions"><button class="btn demo">Duplicate preset</button><button class="btn primary demo">New preset</button></div>
         </div>
-
         <div class="scope-banner">
-          <div><strong>Configuration hierarchy</strong><small>Global Settings owns connections and credentials. Presets own reusable release/store policy. Apps select a preset and may keep a small number of app-specific values.</small></div>
-          <div class="scope-path"><span class="scope-chip">Global Settings</span><span class="scope-arrow">→</span><span class="scope-chip active">Publish Preset</span><span class="scope-arrow">→</span><span class="scope-chip">App</span></div>
+          <div><strong>Template scope</strong><small>Templates define reusable release, verification and store policy. They do not choose an App, repository, runner, output or publishing destination for a specific App.</small></div>
+          <span class="status-pill neutral">Advanced</span>
         </div>
-
-        <div class="preset-layout">
+        <div class="preset-layout section">
           <div class="card preset-list">
-            <div class="preset-list-head"><div><div class="primary-text">Presets</div><div class="secondary">3 reusable policies</div></div><button class="icon-btn demo">+</button></div>
-            <div class="preset-list-body">
-              <button class="preset-item active">
-                <div class="preset-item-top"><b>olympus-default</b><span class="status-pill">Active</span></div>
-                <small>Stable releases · signed · Store via PR</small>
-                <div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>5</strong> apps</span></div>
-              </button>
-              <button class="preset-item demo">
-                <div class="preset-item-top"><b>olympus-beta</b><span class="status-pill run">Beta</span></div>
-                <small>Prerelease channel · no stable feed update</small>
-                <div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>2</strong> apps</span></div>
-              </button>
-              <button class="preset-item demo">
-                <div class="preset-item-top"><b>internal-test</b><span class="status-pill neutral">Internal</span></div>
-                <small>Build/package only · publishing disabled</small>
-                <div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>1</strong> app</span></div>
-              </button>
-            </div>
+            <div class="preset-list-head"><div><div class="primary-text">Templates</div><div class="secondary">Reusable publishing policies</div></div><button class="icon-btn demo">+</button></div>
+            <div class="preset-list-body"></div>
           </div>
-
           <div class="card preset-detail">
             <div class="preset-hero">
-              <div><h2>olympus-default</h2><p>Default production publishing policy for Olympus applications.</p></div>
-              <div class="actions"><span class="impact-pill"><strong>5 apps</strong> will inherit changes</span><button class="btn primary demo">Edit preset</button></div>
+              <div><h2>Template</h2><p>Reusable publishing policy</p></div>
+              <div class="actions"><span class="impact-pill"><strong>0 apps</strong></span><button class="btn primary demo">Edit preset</button></div>
             </div>
             <div class="preset-sections">
               <div class="preset-section">
                 <h3>Release policy</h3>
-                <div class="preset-value"><span>Release enabled</span><b>Yes</b></div>
-                <div class="preset-value"><span>Channel</span><b>Stable</b></div>
-                <div class="preset-value"><span>Tag prefix</span><b class="mono">{app.id}-</b></div>
-                <div class="preset-value"><span>Update stable feed</span><b>Yes</b></div>
+                <div class="preset-value"><span>Release enabled</span><b>—</b></div>
+                <div class="preset-value"><span>Channel</span><b>—</b></div>
+                <div class="preset-value"><span>Tag prefix</span><b>—</b></div>
+                <div class="preset-value"><span>Update channel</span><b>—</b></div>
               </div>
               <div class="preset-section">
                 <h3>Verification</h3>
-                <div class="preset-value"><span>SHA-256</span><b>Required</b></div>
-                <div class="preset-value"><span>Sigstore</span><b>Required</b></div>
-                <div class="preset-value"><span>Package manifest</span><b>Required</b></div>
-                <div class="preset-value"><span>Publish on verify failure</span><b>No</b></div>
+                <div class="preset-value"><span>SHA-256</span><b>—</b></div>
+                <div class="preset-value"><span>Sigstore</span><b>—</b></div>
+                <div class="preset-value"><span>Package manifest</span><b>—</b></div>
+                <div class="preset-value"><span>Publish on verify failure</span><b>—</b></div>
               </div>
               <div class="preset-section">
-                <h3>Community App Store</h3>
-                <div class="preset-value"><span>Store enabled</span><b>Yes</b></div>
-                <div class="preset-value"><span>Submission mode</span><b>Pull request</b></div>
-                <div class="preset-value"><span>Directory template</span><b class="mono">olympus-{app.id}</b></div>
-                <div class="preset-value"><span>Approval</span><b>Review before merge</b></div>
-              </div>
-              <div class="preset-section">
-                <h3>Inherited global connections</h3>
-                <div class="preset-value"><span>Release repository</span><b><span class="mono">Jojje84/Olympus-Releases</span> <span class="inherited">Global</span></b></div>
-                <div class="preset-value"><span>Store repository</span><b><span class="mono">olympus-community-app-store</span> <span class="inherited">Global</span></b></div>
-                <div class="preset-value"><span>Credentials</span><b>Secret references <span class="inherited">Global</span></b></div>
+                <h3>Community Store policy</h3>
+                <div class="preset-value"><span>Store enabled</span><b>—</b></div>
+                <div class="preset-value"><span>Submission mode</span><b>—</b></div>
+                <div class="preset-value"><span>Directory template</span><b>—</b></div>
+                <div class="preset-value"><span>Approval</span><b>—</b></div>
               </div>
             </div>
-            <div class="preset-usedby">
-              <div class="primary-text">Apps using this preset</div>
-              <div class="secondary">Editing this preset changes future jobs for these apps. Existing job snapshots remain unchanged.</div>
-              <div class="usedby-list"><span class="usedby">Olympus Core</span><span class="usedby">ForgeCore</span><span class="usedby">Media Hub</span><span class="usedby">Photos</span><span class="usedby">Notes</span></div>
-            </div>
+            <div class="source-note compact-note"><div><b>App assignment stays in Apps</b><small>To change which template an App uses, open Apps → the App → Settings → Publishing.</small></div></div>
           </div>
         </div>
       </section>
 
       <section id="settings" class="view">
-        <div class="page-head"><div><h1>ForgeCore Settings</h1><p>Configuration for this ForgeCore installation only. Managed Apps are configured inside their own Settings tab.</p></div><div class="actions"><button class="btn primary demo">Save changes</button></div></div>
+        <div class="page-head"><div><h1>ForgeCore Settings</h1><p>Settings for the ForgeCore installation itself. App configuration never lives here.</p></div><div class="actions"><button class="btn primary demo">Save changes</button></div></div>
         <div class="settings-section-nav" aria-label="ForgeCore Settings sections">
           <button type="button" data-settings-anchor="settings-general">General</button>
-          <button type="button" data-settings-anchor="settings-integrations">Connections</button>
           <button type="button" data-settings-anchor="settings-runtime">Runtime &amp; storage</button>
           <button type="button" data-settings-anchor="settings-security">Security</button>
           <button type="button" data-settings-anchor="backup-restore">Backup</button>
         </div>
         <div id="settings-general" class="scope-banner">
-          <div><strong>Installation scope</strong><small>This page changes ForgeCore itself: shared service connections, credentials, runtime, storage, cleanup, security and backup. It never selects a repository, executor, output, runner or publishing path for an App.</small></div>
-          <span class="status-pill neutral">ForgeCore only</span>
+          <div><strong>ForgeCore installation</strong><small>Only runtime, storage, cleanup, security, secrets and backup belong here. App repositories, runners, builds, outputs and publishing are managed from Apps.</small></div>
+          <span class="status-pill neutral">System scope</span>
         </div>
-        <div class="grid2 section">
-          <div id="settings-integrations" class="card"><div class="section-title"><div><h2>Service connections</h2><p>Endpoints and credentials available to ForgeCore. Apps choose their own delivery path elsewhere.</p></div></div><div class="form-grid">
-            <div class="field"><div class="field-label">Olympus Releases connection</div><div class="field-value"><span id="settingsReleaseRepo">Not configured</span><span id="settingsReleaseStatus" class="status-pill neutral">Needs config</span></div><div class="setting-source"><small>Repository endpoint and release credential</small></div></div>
-            <div class="field"><div class="field-label">Community Store connection</div><div class="field-value"><span id="settingsStoreRepo">Not configured</span><span id="settingsStoreStatus" class="status-pill neutral">Optional</span></div><div class="setting-source"><small>Repository endpoint and store credential</small></div></div>
-            <div class="field"><div class="field-label">Secret provider</div><div class="field-value"><span id="settingsSecretProvider" class="mono">secret://env</span><span class="status-pill neutral">ForgeCore</span></div><div class="setting-source"><small>Secret values stay outside dashboard configuration</small></div></div>
-          </div></div>
-          <div id="settings-runtime" class="card"><div class="section-title"><div><h2>Runtime &amp; storage</h2><p>Installation-wide housekeeping and disk policy</p></div></div><div class="form-grid">
-            <div class="field"><div class="field-label">Storage root</div><div class="field-value"><span id="settingsStorageRoot" class="mono">—</span><span class="status-pill neutral">Installation</span></div></div>
-            <div class="field"><div class="field-label">Cleanup interval</div><div class="field-value"><span id="settingsCleanupInterval">—</span><span class="status-pill neutral">Policy</span></div></div>
-            <div class="field"><div class="field-label">Cache max age</div><div class="field-value"><span id="settingsCacheAge">—</span><span class="status-pill neutral">Policy</span></div></div>
-            <div class="field"><div class="field-label">Disk cleanup threshold</div><div class="field-value"><span id="settingsDiskThreshold">—</span><span class="status-pill neutral">Policy</span></div></div>
-          </div></div>
-        </div>
-        <div id="settings-security" class="card section"><div class="section-title"><div><h2>Security policy</h2><p>Build and publishing permissions stay separate</p></div></div><div class="form-grid">
-          <div class="field"><div class="field-label">Untrusted forks</div><div class="field-value"><span>Persistent execution blocked</span><span class="status-pill">Enforced</span></div></div>
-          <div class="field"><div class="field-label">Host Docker socket</div><div class="field-value"><span>Never exposed to CI</span><span class="status-pill">Enforced</span></div></div>
-          <div class="field"><div class="field-label">Log redaction</div><div class="field-value"><span>Known secrets redacted</span><span class="status-pill">Enabled</span></div></div>
-          <div class="field"><div class="field-label">Publishing</div><div class="field-value"><span>Separate permission boundary</span><span class="status-pill">Enabled</span></div></div>
+        <div id="settings-runtime" class="card section"><div class="section-title"><div><h2>Runtime &amp; storage</h2><p>Installation-wide housekeeping and disk policy</p></div></div><div class="form-grid">
+          <div class="field"><div class="field-label">Storage root</div><div class="field-value"><span id="settingsStorageRoot" class="mono">—</span><span class="status-pill neutral">Installation</span></div></div>
+          <div class="field"><div class="field-label">Cleanup interval</div><div class="field-value"><span id="settingsCleanupInterval">—</span><span class="status-pill neutral">Policy</span></div></div>
+          <div class="field"><div class="field-label">Cache max age</div><div class="field-value"><span id="settingsCacheAge">—</span><span class="status-pill neutral">Policy</span></div></div>
+          <div class="field"><div class="field-label">Disk cleanup threshold</div><div class="field-value"><span id="settingsDiskThreshold">—</span><span class="status-pill neutral">Policy</span></div></div>
         </div></div>
-
+        <div id="settings-security" class="card section"><div class="section-title"><div><h2>Security</h2><p>ForgeCore-wide execution and secret policy</p></div></div><div class="form-grid">
+          <div class="field"><div class="field-label">Trusted repositories</div><div class="field-value"><span>—</span><span class="status-pill neutral">—</span></div></div>
+          <div class="field"><div class="field-label">Untrusted forks</div><div class="field-value"><span>—</span><span class="status-pill neutral">—</span></div></div>
+          <div class="field"><div class="field-label">Isolated Docker</div><div class="field-value"><span>—</span><span class="status-pill neutral">—</span></div></div>
+          <div class="field"><div class="field-label">Publishing permission</div><div class="field-value"><span>—</span><span class="status-pill neutral">—</span></div></div>
+          <div class="field"><div class="field-label">Secret provider</div><div class="field-value"><span id="settingsSecretProvider" class="mono">secret://env</span><span class="status-pill neutral">ForgeCore</span></div></div>
+        </div></div>
         <div class="card section backup-card" id="backup-restore">
-          <div class="section-title"><div><h2>Backup & Restore</h2><p>Protect ForgeCore configuration and control-plane state without backing up disposable CI cache.</p></div><span class="status-pill">Backup healthy</span></div>
-          <div class="backup-layout">
-            <div class="backup-summary">
-              <div class="backup-last"><span>Last successful backup</span><b>Not available</b><small>Backup API not implemented</small></div>
-              <div class="backup-actions"><button id="createBackup" class="btn primary">Create backup</button><button id="restoreBackup" class="btn">Restore…</button></div>
-            </div>
-            <div class="backup-content">
-              <div><span class="check">✓</span><span><b>Global configuration</b><small>Integrations, security policy and runtime settings</small></span></div>
-              <div><span class="check">✓</span><span><b>Apps & publish presets</b><small>App registry, build configuration and publishing policy</small></span></div>
-              <div><span class="check">✓</span><span><b>Control-plane state</b><small>Job metadata, activity and configuration snapshots</small></span></div>
-              <div><span class="lock-dot">●</span><span><b>Excluded by design</b><small>Build cache, workspaces and disposable Docker layers</small></span></div>
-            </div>
-          </div>
-          <div class="backup-history">
-            <div class="backup-history-head"><b>Recent backups</b><span>Retention: 14 daily · 8 weekly</span></div>
-            <div class="backup-row"><span class="status-pill">Verified</span><b>forgecore-backup-2026-09-23-1142.tar.zst</b><span>18.6 MB</span><time>Today 11:42</time></div>
-            <div class="backup-row"><span class="status-pill">Verified</span><b>forgecore-backup-2026-09-22-0300.tar.zst</b><span>18.4 MB</span><time>Yesterday</time></div>
-            <div class="backup-row"><span class="status-pill neutral">Weekly</span><b>forgecore-backup-2026-W38.tar.zst</b><span>17.9 MB</span><time>4d ago</time></div>
-          </div>
+          <div class="section-title"><div><h2>Backup &amp; Restore</h2><p>Protect ForgeCore configuration and control-plane state without backing up disposable CI cache.</p></div><span class="status-pill neutral">Not implemented</span></div>
+          <div class="backup-layout"><div class="live-unavailable"><div class="state-glyph">—</div><div><b>Backup &amp; Restore is not connected to the Control API yet</b><p>No backup history is shown until backup state and restore validation exist server-side.</p></div></div></div>
         </div>
       </section>
 
@@ -1426,8 +1365,8 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
           <div class="architecture about-architecture">
             <div class="secondary">Installation-wide infrastructure stays separate from reusable publish policy and per-app build configuration.</div>
             <div class="arch-flow">
-              <div class="arch-node"><b>ForgeCore Global</b><span>runtime · integrations · storage · secrets</span></div><span class="arch-arrow">→</span>
-              <div class="arch-node"><b>Publish Preset</b><span>release · channel · store policy</span></div><span class="arch-arrow">→</span>
+              <div class="arch-node"><b>ForgeCore System</b><span>runtime · integrations · storage · secrets</span></div><span class="arch-arrow">→</span>
+              <div class="arch-node"><b>Publishing Template</b><span>release · channel · store policy</span></div><span class="arch-arrow">→</span>
               <div class="arch-node"><b>App Configuration</b><span>source · build · package · targets</span></div><span class="arch-arrow">→</span>
               <div class="arch-node"><b>Build / Publish Job</b><span>immutable resolved snapshot</span></div>
             </div>
@@ -1458,7 +1397,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
       <button class="command-item" data-command-text="backup restore settings configuration" data-command-view="settings" data-command-anchor="backup-restore"><span class="command-type">SETTING</span><span><b>Backup & Restore</b><small>Settings / Backup & Restore</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="storage cleanup infrastructure disk cache" data-command-view="infrastructure" data-command-anchor="storage-cleanup"><span class="command-type">INFRA</span><span><b>Storage & Cleanup</b><small>Infrastructure / Storage & Cleanup</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="maintenance mode updates ForgeCore beta" data-command-view="infrastructure" data-command-anchor="maintenanceCard"><span class="command-type">INFRA</span><span><b>Maintenance mode</b><small>Infrastructure / ForgeCore Updates</small></span><em>↵</em></button>
-      <button class="command-item" data-command-text="publish presets olympus default beta" data-command-view="presets"><span class="command-type">PRESET</span><span><b>Publish Presets</b><small>Reusable release policy</small></span><em>↵</em></button>
+      <button class="command-item" data-command-text="publishing templates release policy" data-command-view="presets"><span class="command-type">TEMPLATE</span><span><b>Publishing Templates</b><small>Reusable publishing policy</small></span><em>↵</em></button>
       <button class="command-item" data-command-text="audit log security history changes administrator events" data-command-view="audit"><span class="command-type">AUDIT</span><span><b>Audit Log</b><small>Security and operational history</small></span><em>↵</em></button>
     </div>
     <div id="commandEmpty" class="command-empty hidden">No matching ForgeCore resources.</div>
@@ -1530,7 +1469,7 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 </div>
 <div id="toast" class="toast">Preview interaction only</div>
 <script>
-const names={overview:"Overview",apps:"Apps",jobs:"Jobs","job-detail":"Job · job-pending",releases:"Releases",infrastructure:"Infrastructure",presets:"Publish Presets",settings:"Settings",account:"Profile & Account",audit:"Audit Log",logs:"Logs",about:"About"};
+const names={overview:"Overview",apps:"Apps",jobs:"All Jobs","job-detail":"Job · job-pending",releases:"All Releases",infrastructure:"Infrastructure",presets:"Publishing Templates",settings:"ForgeCore Settings",account:"Profile & Account",audit:"Audit Log",logs:"Logs",about:"About"};
 const topBreadcrumb=document.getElementById("topBreadcrumb");
 const crumb=document.getElementById("crumb");
 function hideBreadcrumb(){if(topBreadcrumb) topBreadcrumb.classList.add("hidden")}
@@ -2448,28 +2387,38 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
 
   function openSettingsEditor(){
+    const s=fcState.status||{};
+    const body='<div class="admin-section"><h3>ForgeCore installation</h3><p>Only runtime and storage policy are changed here. App and publishing configuration stays inside Apps.</p></div>'+
+      '<div class="admin-section"><h3>Runtime & storage</h3><form id="cleanupPolicyForm" class="admin-form-grid">'+
+      field("cleanup","Cleanup interval (days)",s.cleanup_interval_days||7,"number",'required min="1" max="365"')+field("cache","Cache max age (days)",s.cache_max_age_days||14,"number",'required min="1" max="365"')+
+      field("workspace","Workspace max age (days)",s.workspace_max_age_days||30,"number",'required min="1" max="365"')+field("threshold","Disk cleanup threshold (%)",s.disk_cleanup_threshold_percent||85,"number",'required min="50" max="99"')+
+      field("buildkit","BuildKit keep storage (GB)",s.buildkit_keep_storage_gb||50,"number",'required min="1" max="1000"')+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save runtime policy</button></div><div id="cleanupPolicyMsg" class="full admin-error"></div></form></div>';
+    openAdmin({title:"ForgeCore settings",sub:"Runtime and storage policy for this ForgeCore installation.",body,hideSave:true});
+    q("#cleanupPolicyForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#cleanupPolicyMsg"),data={cleanup_interval_days:Number(f.elements.cleanup.value),cache_max_age_days:Number(f.elements.cache.value),workspace_max_age_days:Number(f.elements.workspace.value),disk_cleanup_threshold_percent:Number(f.elements.threshold.value),buildkit_keep_storage_gb:Number(f.elements.buildkit.value)};try{await api("/api/settings",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Runtime policy saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+  }
+
+  function openAppPublishingConnections(app){
+    if(!app)return;
+    const preset=fcState.presets.find(p=>p.id===app.publish?.preset)||null;
+    const releaseEnabled=Boolean(preset?.release?.enabled),storeEnabled=Boolean(preset?.store?.enabled);
     const s=fcState.status||{},rel=s.olympus_releases||{},sign=rel.signing||{},store=s.community_app_store||{};
-    const body='<div class="admin-section"><h3>ForgeCore installation</h3><p>Only ForgeCore-wide connections, credentials and storage policy are changed here. Managed App configuration is never edited from this dialog.</p></div>'+
-      '<div class="admin-section"><h3>Olympus Releases</h3><p>Secret values stay outside ForgeCore; only secret://env references are stored.</p><form id="releaseAdminForm" class="admin-form-grid">'+
+    let body='<div class="admin-section"><h3>'+esc(appName(app))+' publishing</h3><p>Configure only the destinations this App uses. Connection credentials are saved once and reused automatically by other Apps that use the same destination.</p></div>';
+    if(releaseEnabled)body+='<div class="admin-section"><h3>Olympus Releases</h3><form id="releaseAdminForm" class="admin-form-grid">'+
       field("repository","Repository",rel.repository||"Jojje84/Olympus-Releases","text","required")+field("authRef","Credential reference",rel.authRef||"","text",'placeholder="secret://env/FORGECORE_RELEASE_TOKEN"')+
       field("signingEnabled","Sigstore signing",options([["true","Configured"],["false","Not configured"]],rel.signingConfigured?"true":"false"),"select")+
       field("signingEncoding","Signing encoding",options([["base64","Base64"],["plain","Plain"]],sign.encoding||"base64"),"select")+
       field("privateKeyRef","Private key reference",sign.privateKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PRIVATE_KEY_B64"')+
       field("publicKeyRef","Public key reference",sign.publicKeyRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PUBLIC_KEY_B64"')+
       field("passwordRef","Password reference",sign.passwordRef||"","text",'placeholder="secret://env/FORGECORE_COSIGN_PASSWORD"')+
-      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Olympus Releases</button></div><div id="releaseAdminMsg" class="full admin-error"></div></form></div>'+
-      '<div class="admin-section"><h3>Community App Store</h3><form id="storeAdminForm" class="admin-form-grid">'+
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Olympus Releases</button></div><div id="releaseAdminMsg" class="full admin-error"></div></form></div>';
+    if(storeEnabled)body+='<div class="admin-section"><h3>Community Store</h3><form id="storeAdminForm" class="admin-form-grid">'+
       field("repository","Repository",store.repository||"Jojje84/olympus-community-app-store","text","required")+field("authRef","Credential reference",store.authRef||"","text",'placeholder="secret://env/FORGECORE_COMMUNITY_STORE_TOKEN"')+
-      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Community Store</button></div><div id="storeAdminMsg" class="full admin-error"></div></form></div>'+
-      '<div class="admin-section"><h3>Cleanup & storage policy</h3><form id="cleanupPolicyForm" class="admin-form-grid">'+
-      field("cleanup","Cleanup interval (days)",s.cleanup_interval_days||7,"number",'required min="1" max="365"')+field("cache","Cache max age (days)",s.cache_max_age_days||14,"number",'required min="1" max="365"')+
-      field("workspace","Workspace max age (days)",s.workspace_max_age_days||30,"number",'required min="1" max="365"')+field("threshold","Disk cleanup threshold (%)",s.disk_cleanup_threshold_percent||85,"number",'required min="50" max="99"')+
-      field("buildkit","BuildKit keep storage (GB)",s.buildkit_keep_storage_gb||50,"number",'required min="1" max="1000"')+
-      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save cleanup policy</button></div><div id="cleanupPolicyMsg" class="full admin-error"></div></form></div>';
-    openAdmin({title:"ForgeCore settings",sub:"Installation connections, credentials and storage policy only.",body,hideSave:true});
-    q("#releaseAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#releaseAdminMsg"),enabled=f.elements.signingEnabled.value==="true",data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim(),signingEnabled:enabled,signingEncoding:f.elements.signingEncoding.value,privateKeyRef:f.elements.privateKeyRef.value.trim(),publicKeyRef:f.elements.publicKeyRef.value.trim(),passwordRef:f.elements.passwordRef.value.trim()};try{await api("/api/integrations/olympus-releases",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Olympus Releases saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
-    q("#storeAdminForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#storeAdminMsg"),data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim()};try{await api("/api/integrations/community-app-store",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Community Store saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
-    q("#cleanupPolicyForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#cleanupPolicyMsg"),data={cleanup_interval_days:Number(f.elements.cleanup.value),cache_max_age_days:Number(f.elements.cache.value),workspace_max_age_days:Number(f.elements.workspace.value),disk_cleanup_threshold_percent:Number(f.elements.threshold.value),buildkit_keep_storage_gb:Number(f.elements.buildkit.value)};try{await api("/api/settings",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Cleanup policy saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+      '<div class="full admin-inline-actions"><button class="btn primary" type="submit">Save Community Store</button></div><div id="storeAdminMsg" class="full admin-error"></div></form></div>';
+    if(!releaseEnabled&&!storeEnabled)body+='<div class="admin-section"><h3>No external destination</h3><p>The selected publishing template does not use Olympus Releases or the Community Store.</p></div>';
+    openAdmin({title:"Publishing connections · "+appName(app),sub:"Connection setup for this App's selected publishing path.",body,hideSave:true});
+    const releaseForm=q("#releaseAdminForm");if(releaseForm)releaseForm.addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#releaseAdminMsg"),enabled=f.elements.signingEnabled.value==="true",data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim(),signingEnabled:enabled,signingEncoding:f.elements.signingEncoding.value,privateKeyRef:f.elements.privateKeyRef.value.trim(),publicKeyRef:f.elements.publicKeyRef.value.trim(),passwordRef:f.elements.passwordRef.value.trim()};try{await api("/api/integrations/olympus-releases",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Olympus Releases saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
+    const storeForm=q("#storeAdminForm");if(storeForm)storeForm.addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,m=q("#storeAdminMsg"),data={repository:f.elements.repository.value.trim(),authRef:f.elements.authRef.value.trim()};try{await api("/api/integrations/community-app-store",{method:"POST",body:JSON.stringify(data)});m.className="full admin-success";m.textContent="Community Store saved.";await refreshLive()}catch(err){m.className="full admin-error";m.textContent=err.message}});
   }
 
   function setConnection(ok,error){
@@ -2578,31 +2527,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       }
     }
 
-    const deliveryTitle=q("#overviewDeliveryTitle"),deliverySub=q("#overviewDeliverySub"),deliveryFlow=q("#overviewDeliveryFlow"),deliveryNote=q("#overviewDeliveryNote");
-    if(deliveryFlow){
-      if(apps.length===1){
-        const app=apps[0],p=presetFor(app),nodes=deliveryNodes(app),missing=[];
-        if(p?.release?.enabled&&!s.olympus_releases?.configurationReady)missing.push("Olympus Releases credentials");
-        if(p?.store?.enabled&&!s.community_app_store?.configurationReady)missing.push("Community Store credentials");
-        if(app.build?.executor==="github-actions"&&!runnerForApp(app)?.online)missing.push("GitHub Actions runner");
-        if(deliveryTitle)deliveryTitle.textContent="Delivery path · "+(app.identity?.name||app.id);
-        if(deliverySub)deliverySub.textContent="Derived from App configuration and preset "+(app.publish?.preset||"—");
-        deliveryFlow.innerHTML=nodes.map((n,i)=>(i?'<span class="arrow">→</span>':'')+'<span class="node '+(n.attention?"attention":"")+'">'+esc(n.label)+'</span>').join("");
-        if(deliveryNote)deliveryNote.textContent=!p?"Publish preset is missing.":missing.length?("Needs attention: "+missing.join(" · ")):("Configured delivery: "+deliveryLabel(app));
-      }else if(apps.length>1){
-        const counts={};
-        apps.forEach(app=>{const k=deliveryLabel(app);counts[k]=(counts[k]||0)+1});
-        if(deliveryTitle)deliveryTitle.textContent="Delivery paths";
-        if(deliverySub)deliverySub.textContent=apps.length+" managed Apps · each path comes from its own publish preset";
-        deliveryFlow.innerHTML=Object.entries(counts).map(([label,count])=>'<span class="node">'+esc(String(count)+" × "+label)+'</span>').join("");
-        if(deliveryNote)deliveryNote.textContent="Open an App to inspect its exact source, executor, package and publishing path.";
-      }else{
-        if(deliveryTitle)deliveryTitle.textContent="Delivery path";
-        if(deliverySub)deliverySub.textContent="Derived from each App and its publish preset";
-        deliveryFlow.innerHTML='<span class="node neutral">No managed app</span>';
-        if(deliveryNote)deliveryNote.textContent="Add an App to define a real delivery path.";
-      }
-    }
+
 
     const recentBody=q("#overview .table-card tbody");
     if(recentBody){
@@ -2806,7 +2731,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
 
     const scopeTitle=q("#appSettingsScopeTitle"),scopeText=q("#appSettingsScopeText");
     if(scopeTitle)scopeTitle.textContent=name+" settings";
-    if(scopeText)scopeText.textContent="Changes here affect only "+name+". Shared service credentials remain in ForgeCore Settings.";
+    if(scopeText)scopeText.textContent="Changes here affect only "+name+". Publishing connections are configured here when this app needs them.";
     const settings=q("#appSettingsSummary");if(settings){
       const rows=[["Source",friendlyProvider(app.source?.provider)+" · "+repo],["Branch",app.source?.defaultBranch||"—"],["Executor",exec],["Output",app.package?.format==="umbrel"?"Umbrel package":"Artifact"]];
       if(app.package?.format==="umbrel"){
@@ -2831,13 +2756,15 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
     if(publishingConnection){
       if(!publishing){
-        publishingConnection.innerHTML='Publishing is disabled for this app. Shared ForgeCore integrations are not required.';
+        publishingConnection.innerHTML='Publishing is disabled for this app. No release or store connection is required.';
       }else{
         const releaseEnabled=Boolean(preset?.release?.enabled),storeEnabled=Boolean(preset?.store?.enabled),parts=[];
-        if(releaseEnabled)parts.push('Olympus Releases: <b>'+esc(fcState.status?.olympus_releases?.repository||"Not configured")+'</b> · '+(fcState.status?.olympus_releases?.configurationReady?"connected":"shared integration needs configuration"));
-        if(storeEnabled)parts.push('Community Store: <b>'+esc(fcState.status?.community_app_store?.repository||"Not configured")+'</b> · '+(fcState.status?.community_app_store?.configurationReady?"connected":"shared integration needs configuration"));
-        publishingConnection.innerHTML=parts.join("<br>")+'<div class="admin-inline-actions" style="padding-top:8px"><button id="openGlobalIntegrations" class="btn">Open ForgeCore integrations</button></div>';
-        const globalBtn=q("#openGlobalIntegrations");if(globalBtn)globalBtn.addEventListener("click",()=>{showView("settings");setTimeout(()=>document.getElementById("settings-integrations")?.scrollIntoView({behavior:"smooth",block:"start"}),0)});
+        if(releaseEnabled)parts.push('Olympus Releases · <b>'+(fcState.status?.olympus_releases?.configurationReady?"Ready":"Needs setup")+'</b>');
+        if(storeEnabled)parts.push('Community Store · <b>'+(fcState.status?.community_app_store?.configurationReady?"Ready":"Needs setup")+'</b>');
+        if(!parts.length)parts.push('This publishing template does not require an external destination.');
+        publishingConnection.innerHTML=parts.join("<br>")+'<div class="admin-inline-actions" style="padding-top:8px"><button id="configureAppPublishingConnections" class="btn">Publishing connections</button><button id="manageAppPublishingTemplate" class="btn">Publishing template</button></div>';
+        const connectionBtn=q("#configureAppPublishingConnections");if(connectionBtn)connectionBtn.addEventListener("click",()=>openAppPublishingConnections(app));
+        const templateBtn=q("#manageAppPublishingTemplate");if(templateBtn)templateBtn.addEventListener("click",()=>showView("presets"));
       }
     }
     const srp=q("#settingsRunnerPill");if(srp){srp.textContent=runnerText;srp.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
@@ -3096,92 +3023,44 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   function renderPresets(){
     const apps=fcState.apps,presets=fcState.presets,list=q("#presets .preset-list-body");
-    const head=q("#presets .preset-list-head .secondary");if(head)head.textContent=presets.length+" reusable polic"+(presets.length===1?"y":"ies");
+    const head=q("#presets .preset-list-head .secondary");if(head)head.textContent=presets.length+" publishing template"+(presets.length===1?"":"s");
     function showPreset(p){
       if(!p)return;fcState.selectedPreset=p;
       qa("#presets .preset-item").forEach(x=>x.classList.toggle("active",x.dataset.presetId===p.id));
       const hero=q("#presets .preset-hero"),h2=hero?q("h2",hero):null,desc=hero?q("p",hero):null;
       const used=apps.filter(a=>a.publish?.preset===p.id);
-      if(h2)h2.textContent=p.id;if(desc)desc.textContent=p.name||"Publish preset";
+      if(h2)h2.textContent=p.id;if(desc)desc.textContent=p.name||"Publishing template";
       const impact=hero?q(".impact-pill strong",hero):null;if(impact)impact.textContent=used.length+" app"+(used.length===1?"":"s");
       const sections=qa("#presets .preset-section");
-      const setVals=(section,values)=>{
-        if(!section)return;qa(".preset-value",section).forEach((row,i)=>{if(!values[i])return;const a=q("span",row),b=q("b",row);if(a)a.textContent=values[i][0];if(b)b.textContent=values[i][1]});
-      };
-      setVals(sections[0],[
-        ["Release enabled",p.release?.enabled?"Yes":"No"],
-        ["Channel",p.release?.channel||"—"],
-        ["Tag prefix",p.release?.tagPrefixTemplate||"—"],
-        ["Update channel",p.release?.updateChannel?"Yes":"No"]
-      ]);
-      setVals(sections[1],[
-        ["SHA-256",p.verification?.sha256?"Required":"No"],
-        ["Sigstore",p.verification?.sigstore?"Required":"No"],
-        ["Package manifest","Required"],
-        ["Publish on verify failure","No"]
-      ]);
-      setVals(sections[2],[
-        ["Store enabled",p.store?.enabled?"Yes":"No"],
-        ["Submission mode",p.store?.enabled?(p.store?.mode||"—"):((p.store?.mode||"Configured")+" · inactive")],
-        ["Directory template",p.store?.enabled?(p.store?.directoryTemplate||"—"):((p.store?.directoryTemplate||"Configured")+" · inactive")],
-        ["Approval",p.store?.enabled?(p.store?.mode==="pull-request"?"Review before merge":"Direct publish"):"Inactive while store publishing is disabled"]
-      ]);
-      const s=fcState.status||{};
-      setVals(sections[3],[
-        ["Release repository",s.olympus_releases?.repository||"Not configured"],
-        ["Store repository",s.community_app_store?.repository||"Not configured"],
-        ["Credentials","Secret references only"]
-      ]);
-      const usedList=q("#presets .usedby-list");
-      if(usedList)usedList.innerHTML=used.length?used.map(a=>'<span class="usedby">'+esc(a.identity?.name||a.id)+'</span>').join(""):'<span class="secondary">No apps currently use this preset.</span>';
-      const usedCopy=q("#presets .preset-usedby .secondary");if(usedCopy)usedCopy.textContent="Changing this preset affects future jobs for "+used.length+" app"+(used.length===1?"":"s")+". Existing job snapshots remain unchanged.";
+      const setVals=(section,values)=>{if(!section)return;qa(".preset-value",section).forEach((row,i)=>{if(!values[i])return;const a=q("span",row),b=q("b",row);if(a)a.textContent=values[i][0];if(b)b.textContent=values[i][1]})};
+      setVals(sections[0],[["Release enabled",p.release?.enabled?"Yes":"No"],["Channel",p.release?.channel||"—"],["Tag prefix",p.release?.tagPrefixTemplate||"—"],["Update channel",p.release?.updateChannel?"Yes":"No"]]);
+      setVals(sections[1],[["SHA-256",p.verification?.sha256?"Required":"No"],["Sigstore",p.verification?.sigstore?"Required":"No"],["Package manifest","Required"],["Publish on verify failure","No"]]);
+      setVals(sections[2],[["Store enabled",p.store?.enabled?"Yes":"No"],["Submission mode",p.store?.enabled?(p.store?.mode||"—"):"Inactive"],["Directory template",p.store?.enabled?(p.store?.directoryTemplate||"—"):"Inactive"],["Approval",p.store?.enabled?(p.store?.mode==="pull-request"?"Review before merge":"Direct publish"):"Inactive"]]);
     }
-    if(list)list.innerHTML=presets.map((p,i)=>{
-      const used=apps.filter(a=>a.publish?.preset===p.id).length,channel=p.release?.channel||"—";
-      return '<button class="preset-item '+(i===0?"active":"")+'" data-preset-id="'+esc(p.id)+'"><div class="preset-item-top"><b>'+esc(p.id)+'</b><span class="status-pill '+(channel==="stable"?"":"run")+'">'+esc(channel)+'</span></div>'+
-        '<small>'+esc(p.name||p.id)+' · Store '+(p.store?.enabled?"enabled":"disabled")+'</small><div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>'+used+'</strong> apps</span></div></button>';
-    }).join("") || '<div class="empty">No publish presets configured.</div>';
+    if(list)list.innerHTML=presets.map((p,i)=>{const used=apps.filter(a=>a.publish?.preset===p.id).length,channel=p.release?.channel||"—";return '<button class="preset-item '+(i===0?"active":"")+'" data-preset-id="'+esc(p.id)+'"><div class="preset-item-top"><b>'+esc(p.id)+'</b><span class="status-pill '+(channel==="stable"?"":"run")+'">'+esc(channel)+'</span></div><small>'+esc(p.name||p.id)+' · Store '+(p.store?.enabled?"enabled":"disabled")+'</small><div class="setting-source"><small>Used by</small><span class="impact-pill"><strong>'+used+'</strong> apps</span></div></button>'}).join("") || '<div class="empty">No publishing templates configured.</div>';
     qa("#presets .preset-item").forEach(b=>b.addEventListener("click",()=>showPreset(presets.find(x=>x.id===b.dataset.presetId))));
     showPreset(presets[0]);
     q("#presets")?.classList.add("live-ready");
   }
   function renderSettings(){
     const s=fcState.status||{};
-    const releaseRepo=q("#settingsReleaseRepo"),releaseStatus=q("#settingsReleaseStatus");
-    if(releaseRepo)releaseRepo.textContent=s.olympus_releases?.repository||"Not configured";
-    if(releaseStatus){releaseStatus.textContent=s.olympus_releases?.configurationReady?"Ready":"Needs config";releaseStatus.className="status-pill "+(s.olympus_releases?.configurationReady?"":"queue")}
-    const storeRepo=q("#settingsStoreRepo"),storeStatus=q("#settingsStoreStatus");
-    if(storeRepo)storeRepo.textContent=s.community_app_store?.repository||"Not configured";
-    if(storeStatus){storeStatus.textContent=s.community_app_store?.configurationReady?"Ready":"Optional";storeStatus.className="status-pill "+(s.community_app_store?.configurationReady?"":"neutral")}
     const secretProvider=q("#settingsSecretProvider");if(secretProvider)secretProvider.textContent="secret://env";
     const storageRoot=q("#settingsStorageRoot");if(storageRoot)storageRoot.textContent=s.storage_display||s.storage?.root||"—";
     const cleanupInterval=q("#settingsCleanupInterval");if(cleanupInterval)cleanupInterval.textContent=(s.cleanup_interval_days||"—")+" days";
     const cacheAge=q("#settingsCacheAge");if(cacheAge)cacheAge.textContent=(s.cache_max_age_days||"—")+" days";
     const diskThreshold=q("#settingsDiskThreshold");if(diskThreshold)diskThreshold.textContent=(s.disk_cleanup_threshold_percent||"—")+"%";
-
     const security=s.security||{},runtime=s.runtime||{},securityFields=qa("#settings-security .field");
     const securityValues=[
       ["Trusted repositories",security.trustedRepositoriesOnly?"Required":"Not required",security.trustedRepositoriesOnly?"Enforced":"Review"],
       ["Untrusted forks",security.allowUntrustedForks?"Allowed":"Blocked",security.allowUntrustedForks?"Review":"Enforced"],
       ["Isolated Docker",runtime.isolatedDocker?"Enabled":"Disabled",runtime.isolatedDocker?"Enforced":"Review"],
-      ["Publishing",security.publishRequiresExplicitPermission?"Explicit permission required":"No explicit permission gate",security.publishRequiresExplicitPermission?"Enabled":"Review"]
+      ["Publishing permission",security.publishRequiresExplicitPermission?"Explicit permission required":"No explicit permission gate",security.publishRequiresExplicitPermission?"Enabled":"Review"],
+      ["Secret provider","secret://env","ForgeCore"]
     ];
-    securityFields.forEach((field,i)=>{
-      if(!securityValues[i])return;
-      const label=q(".field-label",field),value=q(".field-value span:first-child",field),pill=q(".status-pill",field);
-      if(label)label.textContent=securityValues[i][0];
-      if(value)value.textContent=securityValues[i][1];
-      if(pill){pill.textContent=securityValues[i][2];pill.className="status-pill "+(securityValues[i][2]==="Review"?"queue":"")}
-    });
-
+    securityFields.forEach((field,i)=>{if(!securityValues[i])return;const label=q(".field-label",field),value=q(".field-value span:first-child",field),pill=q(".status-pill",field);if(label)label.textContent=securityValues[i][0];if(value)value.textContent=securityValues[i][1];if(pill){pill.textContent=securityValues[i][2];pill.className="status-pill "+(securityValues[i][2]==="Review"?"queue":"neutral")}});
     q("#settings")?.classList.add("live-ready");
-    const backup=q("#backup-restore");
-    if(backup){
-      const titlePill=q(".section-title .status-pill",backup);if(titlePill){titlePill.textContent="Not implemented";titlePill.className="status-pill neutral"}
-      const layout=q(".backup-layout",backup);if(layout)layout.innerHTML='<div class="live-unavailable"><div class="state-glyph">—</div><div><b>Backup & Restore is not connected to the Control API yet</b><p>No backup history is shown because ForgeCore has no backup endpoint in the current live runtime. This screen will become active only when backup state and restore validation exist server-side.</p></div></div>';
-      const history=q(".backup-history",backup);if(history)history.classList.add("hidden");
-    }
   }
+
   async function renderLogs(){
     const select=q("#logStream"),panel=q("#logPanel"),sum=q("#logs .log-summary");if(!select||!panel)return;
     try{
@@ -3275,8 +3154,9 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(label==="new app"||label==="add app"){b.addEventListener("click",()=>openAppEditor(null,false));return}
       if(label==="edit configuration"){b.addEventListener("click",()=>openAppEditor(currentApp(),false));return}
       if(label==="edit steps"){b.addEventListener("click",()=>openAppEditor(currentApp(),true));return}
-      if(label==="run job"||label==="queue job"||label==="queue new job"||label==="queue build"){b.addEventListener("click",()=>openJobEditor("build",currentApp()));return}
-      if(label==="build & publish"||label==="create release"){b.addEventListener("click",()=>openJobEditor("build-and-publish",currentApp()));return}
+      if(label==="run job"||label==="queue job"||label==="queue new job"||label==="queue build"){b.addEventListener("click",()=>{showView("apps");showToast("Choose an App to start a build.")});return}
+      if(label==="build & publish"){b.addEventListener("click",()=>openJobEditor("build-and-publish",currentApp()));return}
+      if(label==="create release"){b.addEventListener("click",()=>{showView("apps");showToast("Choose an App to create a release.")});return}
       if(label==="new preset"){b.addEventListener("click",()=>openPresetEditor(null,false));return}
       if(label==="edit preset"||label==="edit policy"){b.addEventListener("click",()=>openPresetEditor(currentPreset(),false));return}
       if(label==="duplicate preset"){b.addEventListener("click",()=>openPresetEditor(currentPreset(),true));return}
