@@ -14,6 +14,8 @@ import hashlib
 import importlib.util
 import json
 import os
+import platform
+import re
 import selectors
 import shutil
 import signal
@@ -35,6 +37,8 @@ MAX_LOG_LINE = 64 * 1024
 WORKSPACES = STORAGE_ROOT / "workspaces"
 LOG_ROOT = STORAGE_ROOT / "logs" / "jobs"
 ARTIFACT_ROOT = STORAGE_ROOT / "artifacts"
+STATE_ROOT = APP_ROOT / "state"
+CAPABILITIES_FILE = STATE_ROOT / "native-capabilities.json"
 
 
 class NativeExecutionError(RuntimeError):
@@ -134,6 +138,66 @@ def secret_from_ref(ref):
         raise NativeExecutionError(f"Required secret environment variable is missing: {name}")
     return value
 
+def secret_ref_available(ref):
+    ref = str(ref or "")
+    prefix = "secret://env/"
+    if not ref.startswith(prefix):
+        return False
+    name = ref[len(prefix):]
+    return bool(name and os.environ.get(name))
+
+def host_architecture_target():
+    machine = platform.machine().lower()
+    if machine in {"x86_64", "amd64"}:
+        return "amd64"
+    if machine in {"aarch64", "arm64"}:
+        return "arm64"
+    if machine.startswith("armv7") or machine == "armhf":
+        return "armv7"
+    return None
+
+def detect_workspace_targets(workspace):
+    workspace = Path(workspace)
+    patterns = {
+        "amd64": re.compile(r"(?<![A-Za-z0-9_])(?:amd64|x86_64|linux/amd64)(?![A-Za-z0-9_])", re.I),
+        "arm64": re.compile(r"(?<![A-Za-z0-9_])(?:arm64|aarch64|linux/arm64)(?![A-Za-z0-9_])", re.I),
+        "armv7": re.compile(r"(?<![A-Za-z0-9_])(?:armv7|armhf|linux/arm/v7)(?![A-Za-z0-9_])", re.I),
+    }
+    detected = set()
+    scanned = 0
+    total_bytes = 0
+    allowed_suffixes = {".yml", ".yaml", ".json", ".toml", ".sh", ".env", ".mk", ".txt"}
+    for path in workspace.rglob("*"):
+        if scanned >= 200 or total_bytes >= 4 * 1024 * 1024:
+            break
+        if not path.is_file():
+            continue
+        name = path.name.lower()
+        if not (
+            path.suffix.lower() in allowed_suffixes
+            or name.startswith("dockerfile")
+            or name in {"makefile", "containerfile"}
+        ):
+            continue
+        try:
+            size = path.stat().st_size
+        except OSError:
+            continue
+        if size > 512 * 1024:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        scanned += 1
+        total_bytes += size
+        for target, pattern in patterns.items():
+            if pattern.search(text):
+                detected.add(target)
+        if detected == {"amd64", "arm64", "armv7"}:
+            break
+    return [target for target in ("amd64", "arm64", "armv7") if target in detected]
+
 
 class Redactor:
     def __init__(self, values=None):
@@ -189,6 +253,10 @@ class NativeExecutionEngine:
         ensure_private_dir(WORKSPACES)
         ensure_private_dir(LOG_ROOT)
         ensure_private_dir(ARTIFACT_ROOT)
+        ensure_private_dir(STATE_ROOT)
+        self._target_cache = {}
+        self._last_capabilities_write = 0.0
+        self._refresh_capabilities(force=True)
         self._recover_orphaned_jobs()
 
     def _recover_orphaned_jobs(self):
@@ -214,7 +282,39 @@ class NativeExecutionEngine:
             except Exception as exc:
                 print(f"[native] could not recover orphaned job {job_id}: {exc}", flush=True)
 
+    def _refresh_capabilities(self, force=False):
+        now = time.time()
+        if not force and now - self._last_capabilities_write < 10:
+            return
+        self._last_capabilities_write = now
+        try:
+            global_config = self.control.ensure_global_config()
+            github = global_config.get("github") or {}
+            releases = global_config.get("releases") or {}
+            store = global_config.get("communityStore") or {}
+            signing = releases.get("signing") or {}
+            github_ref = github.get("authRef")
+            source_available = secret_ref_available(github_ref) if github_ref else bool(
+                os.environ.get("FORGECORE_GITHUB_TOKEN") or os.environ.get("FORGECORE_SOURCE_TOKEN")
+            )
+            payload = {
+                "schemaVersion": 1,
+                "kind": "ForgeCoreNativeCapabilities",
+                "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "builderArchitecture": host_architecture_target() or platform.machine(),
+                "sourceCredentialAvailable": source_available,
+                "releaseCredentialAvailable": secret_ref_available(releases.get("authRef")),
+                "storeCredentialAvailable": secret_ref_available(store.get("authRef")),
+                "signingPrivateKeyAvailable": secret_ref_available(signing.get("privateKeyRef")),
+                "signingPublicKeyAvailable": secret_ref_available(signing.get("publicKeyRef")),
+                "signingPasswordAvailable": secret_ref_available(signing.get("passwordRef")),
+            }
+            write_private_json(CAPABILITIES_FILE, payload)
+        except Exception as exc:
+            print(f"[native] capability status warning: {exc}", flush=True)
+
     def run_once(self):
+        self._refresh_capabilities()
         job = self.adapter.claim()
         if job is None:
             return False
@@ -382,19 +482,50 @@ class NativeExecutionEngine:
         return self._isolated_runtime
 
     @staticmethod
-    def _base_isolated_env(job):
+    def _base_isolated_env(job, targets=None):
         app = job.get("snapshot", {}).get("app", {})
+        effective = targets if targets is not None else app.get("build", {}).get("targets", [])
         return {
             "CI": "true",
             "FORGECORE_JOB_ID": job["id"],
             "FORGECORE_APP_ID": job["appId"],
-            "FORGECORE_TARGETS": ",".join(app.get("build", {}).get("targets", [])),
+            "FORGECORE_TARGETS": ",".join(effective),
         }
+
+    def _effective_targets(self, job, workspace, log=None):
+        job_id = job.get("id")
+        if not hasattr(self, "_target_cache"):
+            self._target_cache = {}
+        if job_id in self._target_cache:
+            return self._target_cache[job_id]
+        build = (job.get("snapshot", {}).get("app", {}).get("build") or {})
+        configured = [target for target in build.get("targets", []) if target in {"amd64", "arm64", "armv7"}]
+        if build.get("targetMode") != "auto":
+            targets = configured
+        else:
+            detected = detect_workspace_targets(workspace)
+            if detected:
+                targets = detected
+                if log:
+                    log.write("[build] auto-detected architectures: " + ", ".join(targets))
+            elif configured:
+                targets = configured
+                if log:
+                    log.write("[build] architecture auto-detect found no explicit declarations; using saved fallback: " + ", ".join(targets))
+            else:
+                host = host_architecture_target()
+                targets = [host] if host else []
+                if log:
+                    log.write("[build] architecture auto-detect found no explicit declarations; using builder architecture: " + (host or "unknown"))
+        self._target_cache[job_id] = targets
+        return targets
 
     def _run_configured_steps(self, job, stage, workspace, log, redactor):
         build = job["snapshot"]["app"].get("build") or {}
         steps = [step for step in build.get("steps", []) if step.get("stage") == stage]
         runtime_config = self._runtime_config(job)
+        targets = self._effective_targets(job, workspace, log)
+        target_env = ",".join(targets)
         isolated = self._isolated_enabled(job)
         runtime = self._get_isolated_runtime() if isolated and steps else None
         image = str(runtime_config.get("buildImage") or "python:3.13")
@@ -420,8 +551,9 @@ class NativeExecutionEngine:
                 redactor.add(value)
             log.write(f"[{stage}] step {index}/{len(steps)}: {name}")
             if isolated:
-                isolated_env = self._base_isolated_env(job)
+                isolated_env = self._base_isolated_env(job, targets)
                 isolated_env.update(env)
+                isolated_env["FORGECORE_TARGETS"] = target_env
                 log.write(f"[isolated] image={image} network={network_mode} memory={memory_mib}MiB cpus={cpus:g} pids={pids_limit}")
                 try:
                     runtime.run_step(
@@ -439,9 +571,11 @@ class NativeExecutionEngine:
                 except Exception as exc:
                     raise NativeExecutionError(str(exc)) from exc
             else:
+                step_env = dict(env)
+                step_env["FORGECORE_TARGETS"] = target_env
                 self._run_process(
                     ["/bin/sh", "-lc", step["run"]], cwd, log, redactor, timeout, job,
-                    extra_env=env, command_label=name,
+                    extra_env=step_env, command_label=name,
                 )
         return len(steps)
 
@@ -606,6 +740,7 @@ class NativeExecutionEngine:
             "appId": job["appId"],
             "format": app["package"]["format"],
             "sourcePath": app["package"]["sourcePath"],
+            "targets": self._effective_targets(job, workspace, log),
             **({"sourceRevision": source_revision} if source_revision else {}),
             "fileCount": len(entries),
             "totalBytes": total,
