@@ -492,7 +492,13 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 .review-grid span{display:block;color:var(--muted);font-size:9px}.review-grid b{display:block;margin-top:3px;font-size:10px}
 .advanced-build-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .advanced-build-row b,.advanced-build-row small{display:block}.advanced-build-row small{margin-top:4px;color:var(--muted);font-size:9px}
-@media(max-width:820px){.wizard-step,.review-grid{grid-template-columns:1fr}.wizard-step .full{grid-column:auto}.advanced-build-row{align-items:flex-start;flex-direction:column}}
+.architecture-hint{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:9px;line-height:1.5}
+.architecture-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.architecture-option{display:flex!important;grid-template-columns:none!important;align-items:flex-start;gap:8px!important;padding:10px;border:1px solid var(--border);border-radius:9px;color:var(--text)!important}
+.architecture-option input{width:auto!important;margin-top:2px}.architecture-option span,.architecture-option b,.architecture-option small{display:block}.architecture-option small{margin-top:3px;color:var(--muted);font-size:8px}
+.publish-preflight{grid-column:1/-1;border:1px solid var(--border);border-radius:10px;padding:11px;margin-top:4px}.publish-preflight-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.publish-preflight-head b{font-size:10px}.publish-preflight-head span{font-size:9px;color:var(--muted)}
+.publish-preflight-list{display:grid;gap:6px;margin-top:10px}.publish-preflight-item{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;align-items:start;padding:7px 0;border-top:1px solid var(--border)}.publish-preflight-item:first-child{border-top:0}.publish-preflight-item b,.publish-preflight-item small{display:block}.publish-preflight-item b{font-size:9px}.publish-preflight-item small{margin-top:2px;color:var(--muted);font-size:8px;line-height:1.4}.publish-preflight-item .ok{color:var(--green)}.publish-preflight-item .bad{color:var(--amber)}
+@media(max-width:820px){.wizard-step,.review-grid{grid-template-columns:1fr}.wizard-step .full{grid-column:auto}.advanced-build-row{align-items:flex-start;flex-direction:column}.architecture-options{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2108,7 +2114,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       id:seedSlug,
       identity:{name:seedBase},
       source:{provider:"github",repository:seedRepository||"",defaultBranch:"main",private:true},
-      build:{executor:seedRepository?"github-actions":"forgecore-native",steps:[]},
+      build:{executor:seedRepository?"github-actions":"forgecore-native",targetMode:"auto",steps:[]},
       package:{format:"artifact",sourcePath:"dist"}
     };
     const presetOptions=fcState.presets.map(p=>[p.id,(p.name||p.id)+" · "+p.id]);
@@ -2137,7 +2143,15 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       '<section class="wizard-step hidden" data-wizard-step="3"><h3>Output</h3><p>Choose what ForgeCore should hand off after a successful build.</p>'+
         field("outputFormat","Output",options([["artifact","Artifact"],["umbrel","Umbrel package"]],a.package?.format||"artifact"),"select","required")+
         field("sourcePath","Output source path",a.package?.sourcePath||"dist","text",'required placeholder="dist"')+
-        '<div id="appTargetsWrap" class="full">'+field("targets","Architectures",(a.build?.targets||[]).join(","),"text",'placeholder="amd64,arm64" data-full')+'</div>'+
+        '<div id="appArchitectureWrap" class="full">'+
+          field("targetMode","Architectures",options([["auto","Auto detect (recommended)"],["manual","Choose manually"]],a.build?.targetMode||"auto"),"select","data-full")+
+          '<div id="appAutoTargetsHint" class="architecture-hint"></div>'+
+          '<div id="appManualTargets" class="architecture-options">'+
+            '<label class="architecture-option"><input type="checkbox" data-target-arch value="amd64" '+((a.build?.targets||[]).includes("amd64")?"checked":"")+'><span><b>amd64</b><small>Intel / AMD 64-bit</small></span></label>'+
+            '<label class="architecture-option"><input type="checkbox" data-target-arch value="arm64" '+((a.build?.targets||[]).includes("arm64")?"checked":"")+'><span><b>arm64</b><small>Modern 64-bit ARM</small></span></label>'+
+            '<label class="architecture-option"><input type="checkbox" data-target-arch value="armv7" '+((a.build?.targets||[]).includes("armv7")?"checked":"")+'><span><b>armv7</b><small>Legacy 32-bit ARM</small></span></label>'+
+          '</div>'+
+        '</div>'+
       '</section>'+
       '<section class="wizard-step hidden" data-wizard-step="4"><h3>Publishing</h3><p>Publishing is optional. Apps that only need build artifacts do not need Olympus or a publish preset.</p>'+
         field("publishMode","Publishing",options([["none","No publishing"],["preset","Use publish preset"]],hasPublishing?"preset":"none"),"select","required")+
@@ -2164,7 +2178,12 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         try{steps=JSON.parse(form.elements.steps.value||"[]");if(!Array.isArray(steps))throw new Error("Build steps must be a JSON array.");}
         catch(e){msg.textContent=e.message;return}
         const format=form.elements.outputFormat.value;
-        const targets=format==="umbrel"?form.elements.targets.value.split(",").map(x=>x.trim()).filter(Boolean):[];
+        const targetMode=format==="umbrel"?form.elements.targetMode.value:"";
+        let targets=[];
+        if(format==="umbrel"){
+          if(targetMode==="manual")targets=qa("[data-target-arch]:checked",form).map(x=>x.value);
+          else targets=(a.build?.targets||[]).filter(x=>["amd64","arm64","armv7"].includes(x));
+        }
         const identity={name:form.elements.name.value.trim()};
         const publishMode=form.elements.publishMode.value;
         const selectedPreset=publishMode==="preset"?fcState.presets.find(p=>p.id===form.elements.preset.value):null;
@@ -2173,6 +2192,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
           if(storeId)identity.storeId=storeId;
         }
         const build={executor:form.elements.executor.value};
+        if(format==="umbrel")build.targetMode=targetMode||"auto";
         if(targets.length)build.targets=targets;
         if(steps.length)build.steps=steps;
         const data={
@@ -2192,19 +2212,23 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       }
     });
     const form=q("#appAdminForm"),prev=q("#appWizardPrev"),next=q("#appWizardNext");
-    const presetSelect=form.elements.preset,publishMode=form.elements.publishMode,formatSelect=form.elements.outputFormat;
+    const presetSelect=form.elements.preset,publishMode=form.elements.publishMode,formatSelect=form.elements.outputFormat,targetModeSelect=form.elements.targetMode;
+    const latestDetected=(fcState.jobs.filter(j=>j.appId===a.id&&j.outputs?.artifact?.targets?.length).sort((x,y)=>String(y.finishedAt||y.updatedAt||"").localeCompare(String(x.finishedAt||x.updatedAt||"")))[0]?.outputs?.artifact?.targets)||[];
     let step=focusSteps?2:0;
     function selectedPreset(){return fcState.presets.find(p=>p.id===presetSelect.value)||null}
     function syncConditional(){
-      const umbrel=formatSelect.value==="umbrel",publishing=publishMode.value==="preset",preset=selectedPreset(),store=publishing&&Boolean(preset?.store?.enabled);
-      q("#appTargetsWrap",form).classList.toggle("hidden",!umbrel);
-      form.elements.targets.required=umbrel;
+      const umbrel=formatSelect.value==="umbrel",autoTargets=targetModeSelect.value==="auto",publishing=publishMode.value==="preset",preset=selectedPreset(),store=publishing&&Boolean(preset?.store?.enabled);
+      q("#appArchitectureWrap",form).classList.toggle("hidden",!umbrel);
+      q("#appManualTargets",form).classList.toggle("hidden",!umbrel||autoTargets);
+      q("#appAutoTargetsHint",form).classList.toggle("hidden",!umbrel||!autoTargets);
+      const hint=q("#appAutoTargetsHint",form);
+      if(hint)hint.textContent=latestDetected.length?"Last successful build detected: "+latestDetected.join(" · ")+". ForgeCore will detect again on the next build.":((a.build?.targets||[]).length?"ForgeCore will auto-detect from the checked-out source. Saved "+a.build.targets.join(" · ")+" values remain a safe fallback if no explicit architecture declarations are found.":"ForgeCore will inspect the checked-out source at build time. If nothing explicit is found, it uses the native builder architecture.");
       q("#appPresetWrap",form).classList.toggle("hidden",!publishing);
       presetSelect.required=publishing;
       q("#appStoreIdWrap",form).classList.toggle("hidden",!store);
       form.elements.storeId.required=store;
       const help=q("#appPublishingHelp",form);
-      if(help)help.textContent=!publishing?"No publish stages will be added to this app's pipeline.":store?"The selected preset includes Community App Store delivery, so an Olympus Store ID is required.":"The selected preset publishes releases but does not require an Olympus Store ID.";
+      if(help)help.textContent=!publishing?"No publish stages will be added to this app's pipeline.":form.elements.executor.value!=="forgecore-native"?"Dashboard publishing currently runs through the ForgeCore native executor. Switch executor before the publish preflight can pass.":store?"The selected preset includes Community App Store delivery, so an Olympus Store ID is required.":"The selected preset publishes releases but does not require an Olympus Store ID.";
       const pathLabel=form.elements.sourcePath.closest("label")?.querySelector("span");
       if(pathLabel)pathLabel.textContent=umbrel?"Umbrel package source":"Artifact source path";
     }
@@ -2214,7 +2238,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
         ["App",form.elements.name.value.trim()||"—"],
         ["Source",(form.elements.sourceProvider.options[form.elements.sourceProvider.selectedIndex]?.text||"—")+" · "+(form.elements.repository.value.trim()||"—")],
         ["Build",form.elements.executor.options[form.elements.executor.selectedIndex]?.text||"—"],
-        ["Output",formatSelect.options[formatSelect.selectedIndex]?.text+(formatSelect.value==="umbrel"&&form.elements.targets.value.trim()?" · "+form.elements.targets.value.trim():"")],
+        ["Output",formatSelect.options[formatSelect.selectedIndex]?.text+(formatSelect.value==="umbrel"?(targetModeSelect.value==="auto"?" · Auto detect":" · "+(qa("[data-target-arch]:checked",form).map(x=>x.value).join(", ")||"Select architectures")):"")],
         ["Publishing",publishing?(preset?.name||preset?.id||"Preset"):"None"],
         ["Store ID",store?(form.elements.storeId.value.trim()||"Required"):"Not used"]
       ];
@@ -2232,12 +2256,18 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     prev.addEventListener("click",()=>showStep(step-1));
     next.addEventListener("click",()=>{
       syncConditional();
+      const msg=q("#appAdminMsg");
+      if(msg)msg.textContent="";
+      if(step===3&&formatSelect.value==="umbrel"&&targetModeSelect.value==="manual"&&!qa("[data-target-arch]:checked",form).length){
+        if(msg)msg.textContent="Select at least one architecture, or use Auto detect.";
+        return;
+      }
       const pane=q('[data-wizard-step="'+step+'"]',form);
       const invalid=qa("input:invalid,select:invalid,textarea:invalid",pane).find(el=>!el.closest(".hidden"));
       if(invalid){invalid.reportValidity();return}
       showStep(step+1);
     });
-    [publishMode,presetSelect,formatSelect].forEach(el=>el&&el.addEventListener("change",syncConditional));
+    [publishMode,presetSelect,formatSelect,targetModeSelect,form.elements.executor].forEach(el=>el&&el.addEventListener("change",syncConditional));
     qa("input,select,textarea",form).forEach(el=>el.addEventListener("input",()=>{if(step===progress.length-1)updateReview()}));
     showStep(step);
     if(focusSteps){const details=q("#appBuildAdvanced",form);if(details)details.open=true;const el=form.elements.steps;if(el)setTimeout(()=>el.focus(),0)}
@@ -2296,20 +2326,42 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const selected=app||currentApp()||fcState.apps[0],type=defaultType||"build",appOptions=fcState.apps.map(a=>[a.id,(a.identity?.name||a.id)+" · "+a.id]);
     const body='<form id="jobAdminForm" class="admin-form-grid">'+
       field("appId","App",options(appOptions,selected.id),"select","required")+
-      field("jobType","Action",options([["build","Build"],["publish","Publish"],["build-and-publish","Build & publish"]],type),"select")+
-      field("ref","Branch",selected.source?.defaultBranch||"main","text",'required data-full')+
-      '<div class="full admin-help">Enter a branch such as main. Advanced Git refs are also accepted when entered as refs/…</div>'+
-      '<label id="jobArtifactField" class="full"><span>Artifact source</span><select class="select" name="artifactSource"></select><small class="admin-help">Native publish-only jobs reuse a succeeded build artifact.</small></label>'+
+      field("jobType","Action",options([["build","Build"],["publish","Publish existing artifact"],["build-and-publish","Build & publish"]],type),"select")+
+      field("ref",type==="build"?"Branch":"Version tag",type==="build"?(selected.source?.defaultBranch||"main"):"","text",(type==="build"?'required data-full placeholder="main"':'required data-full placeholder="v1.2.3"'))+
+      '<div id="jobRefHelp" class="full admin-help"></div>'+
+      '<label id="jobArtifactField" class="full"><span>Artifact source</span><select class="select" name="artifactSource"></select><small class="admin-help">Publish-only reuses a succeeded native build artifact.</small></label>'+
+      '<div id="jobPublishPreflight" class="publish-preflight hidden">'+
+        '<div class="publish-preflight-head"><div><b>Publish readiness</b><span id="publishPreflightStatus">Not checked</span></div><button id="runPublishPreflight" class="btn" type="button">Check readiness</button></div>'+
+        '<div id="publishPreflightList" class="publish-preflight-list"></div>'+
+        '<label id="publishConfirmWrap" class="architecture-option"><input name="publishConfirm" type="checkbox"><span><b>Confirm publishing</b><small>I understand this run can create a release and, when enabled, a Community Store pull request.</small></span></label>'+
+      '</div>'+
       '<div id="jobAdminMsg" class="full admin-error"></div></form>';
-    const actionLabel=t=>t==="publish"?"Start publish":t==="build-and-publish"?"Build & publish":"Start build";
+    const actionLabel=t=>t==="publish"?"Publish version":t==="build-and-publish"?"Build & publish":"Start build";
     const appName=a=>a?.identity?.name||a?.id||"App";
-    const normalizeRef=value=>{value=String(value||"").trim();return value.startsWith("refs/")?value:"refs/heads/"+value};
+    const isPublishing=t=>t==="publish"||t==="build-and-publish";
+    const normalizeRef=(value,jobType)=>{
+      value=String(value||"").trim();
+      if(!isPublishing(jobType))return value.startsWith("refs/")?value:"refs/heads/"+value;
+      if(value.startsWith("refs/tags/"))return value;
+      if(value.startsWith("refs/"))return value;
+      if(!value.startsWith("v"))value="v"+value;
+      return "refs/tags/"+value;
+    };
+    let preflightReady=false,preflightRef="",preflightAppId="";
     openAdmin({title:"Run "+appName(selected),sub:"ForgeCore snapshots the selected App configuration when the run is created.",body,saveLabel:actionLabel(type),
       onSave:async()=>{
-        const f=q("#jobAdminForm"),msg=q("#jobAdminMsg"),data={appId:f.elements.appId.value,jobType:f.elements.jobType.value,trigger:{type:"manual",ref:normalizeRef(f.elements.ref.value)}},appNow=fcState.apps.find(a=>a.id===f.elements.appId.value);
-        if(data.jobType==="publish"&&appNow?.build?.executor==="forgecore-native"){
-          if(!f.elements.artifactSource.value){msg.textContent="Select a succeeded build artifact first.";return}
-          data.artifactSource={jobId:f.elements.artifactSource.value};
+        const form=q("#jobAdminForm"),msg=q("#jobAdminMsg"),jobType=form.elements.jobType.value,publishing=isPublishing(jobType),ref=normalizeRef(form.elements.ref.value,jobType),appNow=fcState.apps.find(a=>a.id===form.elements.appId.value);
+        if(publishing){
+          if(!form.elements.publishConfirm.checked){msg.textContent="Confirm publishing before starting the run.";return}
+          if(!preflightReady||preflightRef!==ref||preflightAppId!==appNow?.id){
+            const ok=await runPreflight();
+            if(!ok){msg.textContent="Publish preflight must be green before this run can start.";return}
+          }
+        }
+        const data={appId:form.elements.appId.value,jobType,trigger:{type:publishing?"git-ref":"manual",ref}};
+        if(jobType==="publish"&&appNow?.build?.executor==="forgecore-native"){
+          if(!form.elements.artifactSource.value){msg.textContent="Select a succeeded build artifact first.";return}
+          data.artifactSource={jobId:form.elements.artifactSource.value};
         }
         try{
           adminSave.disabled=true;
@@ -2317,18 +2369,71 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
           closeAdmin();await refreshLive();showToast(actionLabel(data.jobType)+" · "+d.job.id);
         }catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}
       }});
-    const f=q("#jobAdminForm"),artifact=q("#jobArtifactField");
-    function syncJobForm(resetBranch){
-      const a=fcState.apps.find(x=>x.id===f.elements.appId.value),publish=f.elements.jobType.value==="publish",native=a?.build?.executor==="forgecore-native";
-      if(resetBranch)f.elements.ref.value=a?.source?.defaultBranch||"main";
-      artifact.classList.toggle("hidden",!(publish&&native));
-      const candidates=fcState.jobs.filter(j=>j.appId===a?.id&&j.status==="succeeded"&&["build","build-and-publish"].includes(j.jobType)&&j.outputs?.artifact?.sourceRevision);
-      f.elements.artifactSource.innerHTML=candidates.map(j=>'<option value="'+esc(j.id)+'">'+esc(j.id)+' · '+esc(String(j.outputs.artifact.sourceRevision).slice(0,12))+'</option>').join("")||'<option value="">No reusable build artifacts</option>';
-      if(adminTitle)adminTitle.textContent="Run "+appName(a);
-      if(adminSave)adminSave.textContent=actionLabel(f.elements.jobType.value);
+    const form=q("#jobAdminForm"),artifact=q("#jobArtifactField"),preflight=q("#jobPublishPreflight"),preflightList=q("#publishPreflightList"),preflightStatus=q("#publishPreflightStatus"),confirm=form.elements.publishConfirm,refInput=form.elements.ref,refLabel=refInput.closest("label")?.querySelector("span"),refHelp=q("#jobRefHelp");
+    function updatePublishSaveState(){
+      const publishing=isPublishing(form.elements.jobType.value);
+      adminSave.disabled=publishing&&(!preflightReady||!confirm.checked);
     }
-    f.elements.appId.addEventListener("change",()=>syncJobForm(true));
-    f.elements.jobType.addEventListener("change",()=>syncJobForm(false));
+    function invalidatePreflight(){
+      preflightReady=false;preflightRef="";preflightAppId="";
+      if(preflightStatus)preflightStatus.textContent="Not checked";
+      if(preflightList)preflightList.innerHTML="";
+      confirm.checked=false;updatePublishSaveState();
+    }
+    function renderPreflight(data){
+      preflightReady=Boolean(data.ready);
+      preflightRef=data.ref||"";
+      preflightAppId=data.appId||"";
+      if(preflightStatus){
+        preflightStatus.textContent=data.ready?"Ready to publish":"Needs attention";
+        preflightStatus.className=data.ready?"status-pill":"status-pill queue";
+      }
+      if(preflightList)preflightList.innerHTML=(data.checks||[]).map(item=>'<div class="publish-preflight-item"><span class="'+(item.ok?"ok":"bad")+'">'+(item.ok?"✓":"!")+'</span><div><b>'+esc(item.label)+'</b><small>'+esc(item.detail||"")+'</small></div></div>').join("");
+      updatePublishSaveState();
+    }
+    async function runPreflight(){
+      const jobType=form.elements.jobType.value;
+      if(!isPublishing(jobType))return true;
+      const a=fcState.apps.find(x=>x.id===form.elements.appId.value);
+      const raw=String(refInput.value||"").trim();
+      if(!raw){q("#jobAdminMsg").textContent="Enter a version tag such as v1.2.3.";return false}
+      const ref=normalizeRef(raw,jobType);
+      if(!ref.startsWith("refs/tags/v")){q("#jobAdminMsg").textContent="Publishing requires a v-prefixed version tag such as v1.2.3.";return false}
+      try{
+        const button=q("#runPublishPreflight");if(button)button.disabled=true;
+        q("#jobAdminMsg").textContent="";
+        if(preflightStatus){preflightStatus.textContent="Checking…";preflightStatus.className=""}
+        const data=await api("/api/apps/"+encodeURIComponent(a.id)+"/publish-preflight",{method:"POST",body:JSON.stringify({ref})});
+        renderPreflight(data);
+        return Boolean(data.ready);
+      }catch(err){
+        preflightReady=false;
+        if(preflightStatus){preflightStatus.textContent="Check failed";preflightStatus.className="status-pill fail"}
+        if(preflightList)preflightList.innerHTML='<div class="publish-preflight-item"><span class="bad">!</span><div><b>Preflight error</b><small>'+esc(err.message)+'</small></div></div>';
+        updatePublishSaveState();return false;
+      }finally{const button=q("#runPublishPreflight");if(button)button.disabled=false}
+    }
+    function syncJobForm(resetRef){
+      const a=fcState.apps.find(x=>x.id===form.elements.appId.value),jobType=form.elements.jobType.value,publishing=isPublishing(jobType),publishOnly=jobType==="publish",native=a?.build?.executor==="forgecore-native";
+      if(resetRef)refInput.value=publishing?"":(a?.source?.defaultBranch||"main");
+      if(refLabel)refLabel.textContent=publishing?"Version tag":"Branch";
+      refInput.placeholder=publishing?"v1.2.3":"main";
+      if(refHelp)refHelp.textContent=publishing?"Enter a release version such as v1.2.3. ForgeCore converts it to refs/tags/v1.2.3 and validates publishing before queueing.":"Enter a branch such as main. Advanced Git refs are also accepted when entered as refs/….";
+      artifact.classList.toggle("hidden",!(publishOnly&&native));
+      preflight.classList.toggle("hidden",!publishing);
+      const candidates=fcState.jobs.filter(j=>j.appId===a?.id&&j.status==="succeeded"&&["build","build-and-publish"].includes(j.jobType)&&j.outputs?.artifact?.sourceRevision);
+      form.elements.artifactSource.innerHTML=candidates.map(j=>'<option value="'+esc(j.id)+'">'+esc(j.id)+' · '+esc(String(j.outputs.artifact.sourceRevision).slice(0,12))+'</option>').join("")||'<option value="">No reusable build artifacts</option>';
+      if(adminTitle)adminTitle.textContent="Run "+appName(a);
+      if(adminSub)adminSub.textContent=publishing?"Versioned publishing runs require a green preflight before ForgeCore can queue them.":"ForgeCore snapshots the selected App configuration when the run is created.";
+      if(adminSave)adminSave.textContent=actionLabel(jobType);
+      invalidatePreflight();
+      if(!publishing)adminSave.disabled=false;
+    }
+    form.elements.appId.addEventListener("change",()=>syncJobForm(true));
+    form.elements.jobType.addEventListener("change",()=>syncJobForm(true));
+    refInput.addEventListener("input",()=>{if(isPublishing(form.elements.jobType.value))invalidatePreflight()});
+    confirm.addEventListener("change",updatePublishSaveState);
+    q("#runPublishPreflight").addEventListener("click",runPreflight);
     syncJobForm(false);
   }
 
@@ -2579,7 +2684,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     const preset=presetForApp(app),runner=runnerForApp(app),checks=[];
     checks.push({ok:Boolean(app.source?.repository&&app.source?.defaultBranch),label:"Source configured"});
     checks.push({ok:Boolean(app.package?.format&&app.package?.sourcePath),label:"Output configured"});
-    if(app.package?.format==="umbrel")checks.push({ok:Boolean((app.build?.targets||[]).length),label:"Umbrel architectures selected"});
+    if(app.package?.format==="umbrel"){
+      const auto=app.build?.targetMode==="auto";
+      checks.push({ok:auto||Boolean((app.build?.targets||[]).length),label:auto?"Architectures auto-detect enabled":"Umbrel architectures selected"});
+    }
     if(app.build?.executor==="github-actions")checks.push({ok:Boolean(runner?.online),label:runner?.online?"Runner online":"Runner needs attention"});
     if(app.publish?.preset){
       checks.push({ok:Boolean(preset),label:preset?"Publish preset available":"Publish preset missing"});
@@ -2669,7 +2777,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     qa("#pipelineBuildSteps .pipeline-move").forEach(b=>b.addEventListener("click",()=>movePipelineStep(Number(b.dataset.index),Number(b.dataset.dir))));
     const output=q("#pipelineOutput");if(output){
       const rows=[["Format",app.package?.format==="umbrel"?"Umbrel package":"Artifact"],["Source path",app.package?.sourcePath||"—"]];
-      if((app.build?.targets||[]).length)rows.push(["Architectures",(app.build.targets||[]).join(", ")]);
+      if(app.package?.format==="umbrel"){
+        const detected=latestBuild?.outputs?.artifact?.targets||[];
+        rows.push(["Architectures",app.build?.targetMode==="auto"?(detected.length?"Auto · "+detected.join(", "):"Auto detect"):(app.build?.targets||[]).join(", ")||"Not selected"]);
+      }
       output.innerHTML=rows.map(x=>'<div><span>'+esc(x[0])+'</span><b class="'+(x[0]==="Source path"?"mono":"")+'">'+esc(x[1])+'</b></div>').join("");
     }
 
@@ -2685,7 +2796,10 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
 
     const settings=q("#appSettingsSummary");if(settings){
       const rows=[["Source",friendlyProvider(app.source?.provider)+" · "+repo],["Branch",app.source?.defaultBranch||"—"],["Executor",exec],["Output",app.package?.format==="umbrel"?"Umbrel package":"Artifact"],["Publishing",publishing?(app.publish?.preset||"Configured"):"None"]];
-      if((app.build?.targets||[]).length)rows.splice(4,0,["Architectures",app.build.targets.join(", ")]);
+      if(app.package?.format==="umbrel"){
+        const detected=latestBuild?.outputs?.artifact?.targets||[];
+        rows.splice(4,0,["Architectures",app.build?.targetMode==="auto"?(detected.length?"Auto · "+detected.join(", "):"Auto detect"):(app.build?.targets||[]).join(", ")||"Not selected"]);
+      }
       settings.innerHTML=rows.map(x=>'<div><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
     }
     const srp=q("#settingsRunnerPill");if(srp){srp.textContent=runnerText;srp.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}

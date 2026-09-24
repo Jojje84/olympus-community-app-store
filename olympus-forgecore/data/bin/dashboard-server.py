@@ -24,6 +24,7 @@ PD = CFG / "publish-presets"
 ST = APP / "state"
 JD = ST / "jobs"
 RUNNER_REQUEST_DIR = ST / "runner-requests"
+NATIVE_CAPABILITIES = ST / "native-capabilities.json"
 GLOBAL_CONFIG = CFG / "global.json"
 GLOBAL_MIGRATION_MARKER = ST / "global-settings-v2.migrated.json"
 V1_RUNNER_APP_MIGRATION_MARKER = ST / "v1-runner-apps.migrated.json"
@@ -36,7 +37,7 @@ RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
 COMPOSE_VERSION = "5.5.1"
-WEB_BUILD = "0.1.0-beta.48"
+WEB_BUILD = "0.1.0-beta.49"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -760,10 +761,13 @@ def validate_app(data):
         raise ValueError("source.private must be true or false.")
 
     build = data.get("build")
-    require_keys(build, {"executor"}, {"executor", "targets", "steps"}, "App build")
+    require_keys(build, {"executor"}, {"executor", "targetMode", "targets", "steps"}, "App build")
     executor = str(build.get("executor") or "")
     if executor not in EXECUTORS:
         raise ValueError("App executor is invalid.")
+    target_mode = str(build.get("targetMode") or "").strip()
+    if target_mode and target_mode not in {"auto", "manual"}:
+        raise ValueError("App build.targetMode must be auto or manual.")
     targets = build.get("targets", [])
     if not isinstance(targets, list) or len(targets) > len(TARGETS):
         raise ValueError("App targets must be an array of supported architectures.")
@@ -830,8 +834,8 @@ def validate_app(data):
     if package_format not in {"artifact", "umbrel"}:
         raise ValueError("App output format must be artifact or umbrel.")
     source_path = validate_relative_path(package.get("sourcePath"), "package.sourcePath")
-    if package_format == "umbrel" and not clean_targets:
-        raise ValueError("Umbrel package output requires at least one build target architecture.")
+    if package_format == "umbrel" and target_mode == "manual" and not clean_targets:
+        raise ValueError("Manual Umbrel architecture selection requires at least one build target.")
 
     publish = data.get("publish")
     preset_id = None
@@ -858,6 +862,7 @@ def validate_app(data):
         },
         "build": {
             "executor": executor,
+            **({"targetMode": target_mode} if target_mode else {}),
             **({"targets": clean_targets} if clean_targets else {}),
             **({"steps": clean_steps} if clean_steps else {}),
         },
@@ -1021,6 +1026,7 @@ def job_output_summary(job):
             "format": artifact.get("format"),
             "fileCount": artifact.get("fileCount"),
             "totalBytes": artifact.get("totalBytes"),
+            **({"targets": artifact.get("targets")} if artifact.get("targets") else {}),
             **({"sourceRevision": artifact.get("sourceRevision")} if artifact.get("sourceRevision") else {}),
         } if artifact else None),
         "releasePlan": ({
@@ -1145,6 +1151,8 @@ def _resolved_store_directory(app, store):
 def validate_publish_job(app, preset, global_snapshot, job_type, ref):
     if job_type not in {"publish", "build-and-publish"}:
         return
+    if app.get("build", {}).get("executor") != "forgecore-native":
+        raise ValueError("Dashboard publishing currently requires the forgecore-native executor.")
 
     release = preset.get("release") or {}
     store = preset.get("store") or {}
@@ -1217,6 +1225,121 @@ def validate_publish_job(app, preset, global_snapshot, job_type, ref):
         if not isinstance(auth_ref, str) or not SECRET_ENV_REF.fullmatch(auth_ref):
             raise ValueError("Global communityStore.authRef must use secret://env/<ENV_NAME>.")
 
+
+def native_capabilities():
+    try:
+        item = read_json(NATIVE_CAPABILITIES)
+    except (ValueError, OSError):
+        return {}
+    return item if item.get("kind") == "ForgeCoreNativeCapabilities" else {}
+
+def publish_preflight(app_id, ref):
+    app = get_app(app_id)
+    if app is None:
+        raise ValueError(f"Unknown app: {app_id}.")
+    ref = str(ref or "").strip()
+    preset_id = (app.get("publish") or {}).get("preset")
+    preset = get_publish_preset(preset_id) if preset_id else None
+    global_config = read_json(GLOBAL_CONFIG) if GLOBAL_CONFIG.exists() else None
+    caps = native_capabilities()
+    checks = []
+
+    def add(key, label, ok, detail):
+        checks.append({"key": key, "label": label, "ok": bool(ok), "detail": str(detail)})
+
+    executor = app.get("build", {}).get("executor")
+    add(
+        "executor",
+        "Native publish executor",
+        executor == "forgecore-native",
+        "ForgeCore native" if executor == "forgecore-native" else "Switch this app to ForgeCore native before dashboard publishing.",
+    )
+
+    package = app.get("package") or {}
+    target_mode = (app.get("build") or {}).get("targetMode") or ("manual" if (app.get("build") or {}).get("targets") else "auto")
+    if package.get("format") == "umbrel":
+        add(
+            "architectures",
+            "Architectures",
+            target_mode == "auto" or bool((app.get("build") or {}).get("targets")),
+            "Auto detect at build time" if target_mode == "auto" else ", ".join((app.get("build") or {}).get("targets") or []),
+        )
+
+    add("preset", "Publish preset", bool(preset), preset_id or "No publish preset selected")
+    release = (preset or {}).get("release") or {}
+    store = (preset or {}).get("store") or {}
+    release_enabled = bool(release.get("enabled"))
+    store_enabled = bool(store.get("enabled"))
+    add("publish-stages", "Publish stages", release_enabled or store_enabled, "Release + Store" if store_enabled else "Release" if release_enabled else "No publishing stage enabled")
+    add(
+        "version-tag",
+        "Version tag",
+        ref.startswith("refs/tags/v") and len(ref) > len("refs/tags/v"),
+        ref or "Enter a version such as v1.2.3",
+    )
+
+    if app.get("source", {}).get("private"):
+        add(
+            "source-credential",
+            "Source credential",
+            bool(caps.get("sourceCredentialAvailable")),
+            "Available in native worker" if caps.get("sourceCredentialAvailable") else "Private source token is not available to the native worker.",
+        )
+
+    releases = (global_config or {}).get("releases") or {}
+    if release_enabled:
+        release_configured = releases.get("provider") == "olympus-releases" and bool(REPO.fullmatch(str(releases.get("repository") or ""))) and bool(SECRET_ENV_REF.fullmatch(str(releases.get("authRef") or "")))
+        add("release-config", "Olympus Releases", release_configured, str(releases.get("repository") or "Not configured"))
+        add(
+            "release-credential",
+            "Release credential",
+            bool(caps.get("releaseCredentialAvailable")),
+            "Available in native worker" if caps.get("releaseCredentialAvailable") else "Configured release secret is not available to the native worker.",
+        )
+
+    verification = (preset or {}).get("verification") or {}
+    if release_enabled and verification.get("sigstore"):
+        signing = releases.get("signing") or {}
+        signing_configured = signing.get("provider") == "sigstore-key" and all(SECRET_ENV_REF.fullmatch(str(signing.get(k) or "")) for k in ("privateKeyRef", "publicKeyRef", "passwordRef"))
+        signing_available = bool(caps.get("signingPrivateKeyAvailable") and caps.get("signingPublicKeyAvailable") and caps.get("signingPasswordAvailable"))
+        add("signing-config", "Sigstore configuration", signing_configured, "Signing references configured" if signing_configured else "Signing references are incomplete")
+        add("signing-credentials", "Sigstore credentials", signing_available, "Signing key material available in native worker" if signing_available else "One or more signing secrets are missing in the native worker.")
+
+    if store_enabled:
+        community = (global_config or {}).get("communityStore") or {}
+        store_configured = community.get("provider") == "olympus-community-app-store" and bool(REPO.fullmatch(str(community.get("repository") or ""))) and bool(SECRET_ENV_REF.fullmatch(str(community.get("authRef") or "")))
+        add("store-package", "Umbrel package", package.get("format") == "umbrel", package.get("format") or "Not configured")
+        add("store-channel", "Stable channel", release.get("channel") == "stable", str(release.get("channel") or "Not configured"))
+        add("store-id", "Olympus Store ID", bool((app.get("identity") or {}).get("storeId")), str((app.get("identity") or {}).get("storeId") or "Not configured"))
+        add("store-config", "Community Store", store_configured, str(community.get("repository") or "Not configured"))
+        add(
+            "store-credential",
+            "Store credential",
+            bool(caps.get("storeCredentialAvailable")),
+            "Available in native worker" if caps.get("storeCredentialAvailable") else "Configured Store secret is not available to the native worker.",
+        )
+        store_mode = str(store.get("mode") or "")
+        add(
+            "store-mode",
+            "Store publish mode",
+            store_mode in {"pull-request", "direct"},
+            (store_mode + (" · recommended for the first live test" if store_mode == "pull-request" else " · writes directly to the Store repository")) if store_mode else "Not configured",
+        )
+
+    try:
+        validate_publish_job(app, preset or {}, global_config, "build-and-publish", ref)
+    except ValueError as exc:
+        add("backend-validation", "Publish contract", False, str(exc))
+    else:
+        add("backend-validation", "Publish contract", True, "ForgeCore publish contract accepted")
+
+    return {
+        "ready": all(item["ok"] for item in checks),
+        "appId": app["id"],
+        "ref": ref,
+        "checks": checks,
+        "capabilitiesUpdatedAt": caps.get("updatedAt"),
+    }
 
 def create_job(data):
     require_keys(data, {"appId"}, {"appId", "jobType", "trigger", "artifactSource"}, "Job request")
@@ -1730,7 +1853,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta48_seen"] = "ForgeCore 0.1.0-beta.48 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta49_seen"] = "ForgeCore 0.1.0-beta.49 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2011,7 +2134,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta48_seen": bool(current.get("bootstrap_beta48_seen")),
+                "bootstrap_beta49_seen": bool(current.get("bootstrap_beta49_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
@@ -2040,6 +2163,10 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/apps/") and path.endswith("/runner"):
                 app_id = path[len("/api/apps/"):-len("/runner")].rstrip("/")
                 save_runner(data, app_id=app_id)
+            elif path.startswith("/api/apps/") and path.endswith("/publish-preflight"):
+                app_id = path[len("/api/apps/"):-len("/publish-preflight")].rstrip("/")
+                self.send_json(200, publish_preflight(app_id, data.get("ref")))
+                return
             elif path == "/api/jobs":
                 self.send_json(201, {"ok": True, "job": create_job(data)})
                 return
