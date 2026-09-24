@@ -37,7 +37,7 @@ RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
 COMPOSE_VERSION = "5.5.1"
-WEB_BUILD = "0.1.0-beta.52"
+WEB_BUILD = "0.1.0-beta.53"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -1732,6 +1732,7 @@ def runners():
         mode = "unregistered"
         phase = "idle"
         message = ""
+        state_epoch = 0
         try:
             runtime = read_json(runtime_path)
         except ValueError:
@@ -1740,6 +1741,10 @@ def runners():
         if isinstance(runtime, dict):
             phase = str(runtime.get("phase", phase))
             message = str(runtime.get("message", ""))
+            try:
+                state_epoch = int(runtime.get("epoch", 0) or 0)
+            except (TypeError, ValueError):
+                state_epoch = 0
             runtime_mode = str(runtime.get("mode", "")).strip()
             if runtime_mode:
                 mode = runtime_mode
@@ -1771,6 +1776,7 @@ def runners():
             "mode": mode,
             "phase": phase,
             "message": message,
+            "stateEpoch": state_epoch,
             "online": online,
             "error": er,
             "assigned": bool(linked_apps),
@@ -1853,7 +1859,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta52_seen"] = "ForgeCore 0.1.0-beta.52 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta53_seen"] = "ForgeCore 0.1.0-beta.53 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -2134,7 +2140,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta52_seen": bool(current.get("bootstrap_beta52_seen")),
+                "bootstrap_beta53_seen": bool(current.get("bootstrap_beta53_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
