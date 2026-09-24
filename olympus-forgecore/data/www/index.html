@@ -467,6 +467,32 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
 .admin-editor-card{width:min(920px,calc(100vw - 28px));max-height:92vh;overflow:hidden}.admin-editor-body{max-height:72vh;overflow:auto}.admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-form-grid .full{grid-column:1/-1}.admin-form-grid label{display:grid;gap:6px;font-size:10px;color:var(--muted)}.admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea{width:100%;box-sizing:border-box}.admin-form-grid textarea{min-height:150px;resize:vertical}.admin-section{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}.admin-section h3{margin:0 0 5px;font-size:11px}.admin-section p{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.5}.admin-inline-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.admin-runner-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--border);padding:9px 0}.admin-runner-row:first-child{border-top:0}.admin-help{font-size:9px;color:var(--muted);line-height:1.5}.admin-error{color:var(--red);font-size:9px;margin-top:8px}.admin-success{color:var(--green);font-size:9px;margin-top:8px}@media(max-width:820px){.admin-form-grid{grid-template-columns:1fr}.admin-form-grid .full{grid-column:auto}}
 
+
+/* Apps Part 3 */
+.compact-state{padding:12px;color:var(--muted);font-size:10px;line-height:1.5}
+.compact-note{margin-top:10px}
+.pipeline-flow{padding:14px;overflow-x:auto}
+.pipeline-flow .delivery-node{min-width:120px}
+.pipeline-step-actions{display:flex;gap:5px;margin-left:auto}
+.pipeline-step-actions .btn{min-height:26px;padding:3px 7px}
+.wizard-progress{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.wizard-progress span{padding:6px 9px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:9px}
+.wizard-progress span.active{color:var(--text);border-color:var(--accent)}
+.wizard-step.hidden{display:none}
+.wizard-step{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.wizard-step .full{grid-column:1/-1}
+.wizard-step h3{grid-column:1/-1;margin:0;font-size:12px}
+.wizard-step>p{grid-column:1/-1;margin:-4px 0 4px;color:var(--muted);font-size:9px;line-height:1.5}
+.wizard-actions{display:flex;justify-content:space-between;gap:8px;padding-top:4px}
+.wizard-advanced{grid-column:1/-1;border:1px solid var(--border);border-radius:10px;padding:10px}
+.wizard-advanced summary{cursor:pointer;font-size:10px;font-weight:700}
+.wizard-advanced label{margin-top:10px}
+.review-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.review-grid>div{border:1px solid var(--border);border-radius:9px;padding:10px}
+.review-grid span{display:block;color:var(--muted);font-size:9px}.review-grid b{display:block;margin-top:3px;font-size:10px}
+.advanced-build-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.advanced-build-row b,.advanced-build-row small{display:block}.advanced-build-row small{margin-top:4px;color:var(--muted);font-size:9px}
+@media(max-width:820px){.wizard-step,.review-grid{grid-template-columns:1fr}.wizard-step .full{grid-column:auto}.advanced-build-row{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
@@ -630,314 +656,133 @@ html[data-theme="light"] .live-mode-strip{background:#fff}
 
       <section id="apps" class="view">
         <div class="page-head">
-          <div><h1>Apps</h1><p>Apps own repositories, executors and any GitHub Actions runner connection, then feed jobs, packages and publishing from one place.</p></div>
-          <div class="actions"><button class="btn demo">Import from GitHub</button><button class="btn primary demo">New app</button></div>
+          <div><h1>Apps</h1><p>Configure source, build, output and optional publishing without assuming a specific store or package platform.</p></div>
+          <div class="actions"><button class="btn primary demo">New app</button></div>
         </div>
 
         <div class="grid4">
-          <div class="card pad"><div class="metric-label"><span>Managed apps</span><span class="trend">7 total</span></div><div class="metric">7</div><div class="metric-sub">All app configurations validate</div></div>
-          <div class="card pad"><div class="metric-label"><span>Native executor</span><span class="status-pill">Ready</span></div><div class="metric">5</div><div class="metric-sub">forgecore-native applications</div></div>
-          <div class="card pad"><div class="metric-label"><span>Actions adapter</span><span class="status-pill neutral">Compatible</span></div><div class="metric">2</div><div class="metric-sub">Persistent GitHub runners</div></div>
-          <div class="card pad"><div class="metric-label"><span>Publish presets</span><span class="trend">3 available</span></div><div class="metric">3</div><div class="metric-sub">Reusable release/store policy</div></div>
+          <div class="card pad"><div class="metric-label">Apps</div><div class="metric">0</div><div class="metric-sub">Managed configurations</div></div>
+          <div class="card pad"><div class="metric-label">Healthy</div><div class="metric">0</div><div class="metric-sub">No configuration attention needed</div></div>
+          <div class="card pad"><div class="metric-label">Runners online</div><div class="metric">0</div><div class="metric-sub">Only apps that use a repository runner</div></div>
+          <div class="card pad"><div class="metric-label">Publishing</div><div class="metric">0</div><div class="metric-sub">Apps with a configured publish path</div></div>
         </div>
 
         <div class="apps-workspace section">
           <aside class="card apps-sidebar">
             <div class="apps-sidebar-head">
-              <div><div class="primary-text">Applications</div><div class="secondary">Select an app to inspect</div></div>
+              <div><div class="primary-text">Applications</div><div class="secondary">Select an app</div></div>
               <button class="icon-btn demo" title="Add app">+</button>
             </div>
             <div class="apps-search-wrap"><input id="appSearch" class="search apps-search" placeholder="Search apps…"></div>
-            <div class="apps-nav-list">
-              <button class="app-nav-item active" data-app-select="Olympus Core" data-app-id="olympus-core" data-repo="—" data-executor="forgecore-native">
-                <span class="app-icon large">O</span><span class="app-nav-copy"><b>Olympus Core</b><small>olympus-core</small></span><span class="status-dot ok"></span>
-              </button>
-              <button class="app-nav-item" data-app-select="ForgeCore" data-app-id="forgecore" data-repo="Jojje84/ForgeCore" data-executor="github-actions">
-                <span class="app-icon large">F</span><span class="app-nav-copy"><b>ForgeCore</b><small>forgecore</small></span><span class="status-dot ok"></span>
-              </button>
-              <button class="app-nav-item" data-app-select="Media Hub" data-app-id="media-hub" data-repo="Jojje84/media-hub" data-executor="forgecore-native">
-                <span class="app-icon large">M</span><span class="app-nav-copy"><b>Media Hub</b><small>media-hub</small></span><span class="status-dot running"></span>
-              </button>
-              <button class="app-nav-item" data-app-select="Olympus Store" data-app-id="olympus-store" data-repo="Jojje84/olympus-community-app-store" data-executor="forgecore-native">
-                <span class="app-icon large">S</span><span class="app-nav-copy"><b>Olympus Store</b><small>olympus-store</small></span><span class="status-dot bad"></span>
-              </button>
-              <button class="app-nav-item" data-app-select="Photos" data-app-id="photos" data-repo="Jojje84/olympus-photos" data-executor="forgecore-native">
-                <span class="app-icon large">P</span><span class="app-nav-copy"><b>Photos</b><small>photos</small></span><span class="status-dot ok"></span>
-              </button>
-            </div>
-            <div class="apps-sidebar-foot"><span>Showing 5 of 7</span><button class="link demo">View all</button></div>
+            <div class="apps-nav-list"></div>
+            <div class="apps-sidebar-foot"><span>0 apps</span></div>
           </aside>
 
           <div class="apps-detail">
             <div class="card app-detail-head">
               <div class="app-detail-identity">
-                <div class="app-icon hero" id="selectedAppIcon">O</div>
+                <div class="app-icon hero" id="selectedAppIcon">A</div>
                 <div>
-                  <div class="detail-title-row"><h2 id="selectedAppName">Olympus Core</h2><span class="status-pill">Ready</span></div>
+                  <div class="detail-title-row"><h2 id="selectedAppName">Application</h2><span id="selectedAppStatus" class="status-pill neutral">Idle</span></div>
                   <div class="detail-repo mono" id="selectedAppRepo">—</div>
-                  <div class="detail-meta"><span id="selectedAppId">olympus-core</span><span>•</span><span id="selectedExecutor">forgecore-native</span><span>•</span><span>preset: olympus-default</span></div>
+                  <div class="detail-meta" id="selectedAppMeta"><span id="selectedAppId">—</span><span>•</span><span id="selectedExecutor">—</span></div>
                 </div>
               </div>
-              <div class="actions app-detail-actions"><button class="btn demo">Edit configuration</button><button id="cleanBuildApp" class="btn">Clean build</button><button class="btn demo">Queue build</button><button class="btn primary demo">Build & publish</button></div>
+              <div class="actions app-detail-actions">
+                <span id="appRunnerStatus" class="status-pill neutral">Runner · Not required</span>
+                <button id="manageAppRunner" class="btn hidden">Manage runner</button>
+                <button id="buildApp" class="btn primary">Build</button>
+                <button id="buildPublishApp" class="btn hidden">Build &amp; publish</button>
+                <button id="appMore" class="btn" title="More app actions">…</button>
+              </div>
             </div>
 
-            
-            <div class="app-lifecycle card">
-              <div class="lifecycle-head">
-                <div>
-                  <div class="primary-text">Application lifecycle</div>
-                  <div class="secondary">Fast health view across the full ForgeCore pipeline</div>
-                </div>
-                <div class="lifecycle-actions">
-                  <span class="config-change">● Config changed since last successful build</span>
-                  <button class="btn demo">Dry run</button>
-                </div>
-              </div>
-              <div class="lifecycle-strip">
-                <div class="life-step ok"><span>1</span><div><b>Source</b><small>Connected</small></div></div>
-                <i>→</i>
-                <div class="life-step ok"><span>2</span><div><b>Build</b><small>Healthy</small></div></div>
-                <i>→</i>
-                <div class="life-step ok"><span>3</span><div><b>Package</b><small>Verified</small></div></div>
-                <i>→</i>
-                <div class="life-step warn"><span>4</span><div><b>Release</b><small>Config changed</small></div></div>
-                <i>→</i>
-                <div class="life-step neutral"><span>5</span><div><b>Store</b><small>Up to date</small></div></div>
-              </div>
-            </div>
-<div class="card app-detail-body">
+            <div class="card app-detail-body">
               <div class="detail-tabs">
                 <button class="detail-tab active" data-app-tab="app-overview">Overview</button>
-                <button class="detail-tab" data-app-tab="app-build">Build & Package</button>
-                <button class="detail-tab" data-app-tab="app-publish">Publishing</button>
+                <button class="detail-tab" data-app-tab="app-pipeline">Pipeline</button>
+                <button class="detail-tab" data-app-tab="app-releases">Releases</button>
                 <button class="detail-tab" data-app-tab="app-jobs">Jobs</button>
+                <button class="detail-tab" data-app-tab="app-settings">Settings</button>
               </div>
 
               <div id="app-overview" class="app-tab-pane active">
                 <div class="grid3 app-summary-grid">
-                  <div class="summary-box"><span>Default branch</span><b class="mono">main</b><small>Source checkout ref</small></div>
-                  <div class="summary-box"><span>Targets</span><b>amd64 · arm64</b><small>2 package architectures</small></div>
-                  <div class="summary-box"><span>Latest release</span><b>—</b><small>Stable · 2 days ago</small></div>
+                  <div class="summary-box"><span>Status</span><b id="appOverviewStatus">—</b><small id="appOverviewStatusSub">Configuration state</small></div>
+                  <div class="summary-box"><span>Latest build</span><b id="appLatestBuild">—</b><small id="appLatestBuildSub">No builds yet</small></div>
+                  <div class="summary-box"><span>Latest release</span><b id="appLatestRelease">—</b><small id="appLatestReleaseSub">No releases yet</small></div>
                 </div>
-
                 <div class="grid2 section">
                   <div class="subcard">
-                    <div class="subcard-head"><div><b>Source</b><small>Where ForgeCore checks out code</small></div><span class="status-pill">Valid</span></div>
-                    <div class="kv-list">
-                      <div><span>Provider</span><b>GitHub</b></div>
-                      <div><span>Repository</span><b class="mono">—</b></div>
-                      <div><span>Branch</span><b class="mono">main</b></div>
-                      <div><span>Private repository</span><b>Yes</b></div>
-                      <div><span>Auth reference</span><b class="mono">secret://env/FORGECORE_GITHUB_TOKEN</b></div>
-                    </div>
+                    <div class="subcard-head"><div><b>Runner</b><small>Only required by the selected executor</small></div><span id="overviewRunnerPill" class="status-pill neutral">Not required</span></div>
+                    <div id="overviewRunnerBody" class="compact-state">This app uses shared ForgeCore execution.</div>
                   </div>
                   <div class="subcard">
-                    <div class="subcard-head"><div><b>Execution</b><small>How this app runs</small></div><span class="status-pill">Native</span></div>
-                    <div class="kv-list">
-                      <div><span>Executor</span><b class="mono">forgecore-native</b></div>
-                      <div><span>Build steps</span><b>4 configured</b></div>
-                      <div><span>Default timeout</span><b>30 min</b></div>
-                      <div><span>Workspace</span><b class="mono">workspaces/&lt;job-id&gt;</b></div>
-                      <div><span>Secrets in config</span><b>References only</b></div>
-                    </div>
+                    <div class="subcard-head"><div><b>Needs attention</b><small>Checks only configuration this app actually uses</small></div><span id="overviewHealthPill" class="status-pill">Healthy</span></div>
+                    <div id="appHealthChecks" class="check-list"></div>
                   </div>
                 </div>
-
                 <div class="subcard section">
-                  <div class="subcard-head"><div><b>Delivery path</b><small>The complete lifecycle for this app</small></div><button class="link demo">Preset details →</button></div>
-                  <div class="delivery-flow">
-                    <div class="delivery-node done"><span>1</span><b>GitHub</b><small>Source</small></div><i>→</i>
-                    <div class="delivery-node done"><span>2</span><b>ForgeCore</b><small>Build & test</small></div><i>→</i>
-                    <div class="delivery-node done"><span>3</span><b>Package</b><small>Manifest + SHA-256</small></div><i>→</i>
-                    <div class="delivery-node"><span>4</span><b>Olympus Releases</b><small>Stable channel</small></div><i>→</i>
-                    <div class="delivery-node"><span>5</span><b>Community Store</b><small>Pull request</small></div>
-                  </div>
+                  <div class="subcard-head"><div><b>Active job</b><small>Current execution for this app</small></div></div>
+                  <div id="appActiveJob" class="compact-state">No active job.</div>
                 </div>
+              </div>
 
-                
-                <div class="subcard section artifacts-panel">
+              <div id="app-pipeline" class="app-tab-pane">
+                <div class="subcard">
                   <div class="subcard-head">
-                    <div><b>Artifacts & releases</b><small>What ForgeCore produced and where it was published</small></div>
-                    <button class="link demo">Open release center →</button>
+                    <div><b>Pipeline</b><small>Derived from this app's source, executor, output and publishing configuration</small></div>
+                    <div class="admin-inline-actions"><button id="validateAppPipeline" class="btn">Validate pipeline</button><button id="editAppPipeline" class="btn">Configure</button></div>
                   </div>
-                  <div class="artifact-grid">
-                    <div class="artifact-card">
-                      <div class="artifact-top"><span class="artifact-icon">PKG</span><span class="status-pill">Verified</span></div>
-                      <b>olympus-core-—.tar.gz</b>
-                      <small>48.3 MB · amd64 + arm64</small>
-                      <div class="artifact-meta"><span>SHA-256</span><code>91d8…b2a4</code></div>
-                      <div class="artifact-meta"><span>Manifest</span><code>18 files</code></div>
-                    </div>
-                    <div class="artifact-card">
-                      <div class="artifact-top"><span class="artifact-icon">REL</span><span class="status-pill">Published</span></div>
-                      <b>Olympus Releases</b>
-                      <small>— · stable channel</small>
-                      <div class="artifact-meta"><span>Tag</span><code>olympus-core-—</code></div>
-                      <div class="artifact-meta"><span>Published</span><span>2 days ago</span></div>
-                    </div>
-                    <div class="artifact-card">
-                      <div class="artifact-top"><span class="artifact-icon">PR</span><span class="status-pill neutral">Merged</span></div>
-                      <b>Community App Store</b>
-                      <small>Store package synchronized</small>
-                      <div class="artifact-meta"><span>Submission</span><code>#184</code></div>
-                      <div class="artifact-meta"><span>Status</span><span>In stable store</span></div>
-                    </div>
-                  </div>
-                  <div class="release-history">
-                    <div class="release-row">
-                      <span class="release-version">—</span>
-                      <span class="release-channel stable">stable</span>
-                      <span>Build ✓</span><span>Package ✓</span><span>Release ✓</span><span>Store ✓</span>
-                      <span class="release-time">2d ago</span>
-                    </div>
-                    <div class="release-row">
-                      <span class="release-version">v0.8.5-beta.2</span>
-                      <span class="release-channel beta">beta</span>
-                      <span>Build ✓</span><span>Package ✓</span><span>Release ✓</span><span>Store —</span>
-                      <span class="release-time">9h ago</span>
-                    </div>
-                  </div>
-                </div>
-
-<div class="grid2 section">
-                  <div class="subcard">
-                    <div class="subcard-head"><div><b>Current job</b><small>job-pending · build-and-publish</small></div><span class="status-pill run">Running</span></div>
-                    <div class="stage-row compact">
-                      <div class="stage done"><div class="bar"></div><div class="stage-name">Source</div></div>
-                      <div class="stage done"><div class="bar"></div><div class="stage-name">Build</div></div>
-                      <div class="stage active"><div class="bar"></div><div class="stage-name">Test</div></div>
-                      <div class="stage"><div class="bar"></div><div class="stage-name">Verify</div></div>
-                      <div class="stage"><div class="bar"></div><div class="stage-name">Package</div></div>
-                      <div class="stage"><div class="bar"></div><div class="stage-name">Release</div></div>
-                      <div class="stage"><div class="bar"></div><div class="stage-name">Store</div></div>
-                    </div>
-                    <div class="job-progress-meta"><span>02:41 elapsed</span><span>Config <span class="mono">7fa0c9…e172</span></span></div>
-                  </div>
-                  <div class="subcard">
-                    <div class="subcard-head"><div><b>Configuration health</b><small>Validated against v2 schema</small></div><span class="status-pill">Healthy</span></div>
-                    <div class="check-list">
-                      <div><span class="check">✓</span><span>Source repository accessible</span></div>
-                      <div><span class="check">✓</span><span>Publish preset exists</span></div>
-                      <div><span class="check">✓</span><span>Package source path configured</span></div>
-                      <div><span class="check">✓</span><span>Secret references resolve</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="app-build" class="app-tab-pane">
-                <div class="grid2">
-                  <div class="subcard">
-                    <div class="subcard-head"><div><b>Build steps</b><small>Executed sequentially by forgecore-native</small></div><button class="link demo">Edit steps</button></div>
-                    <div class="step-list">
-                      <div class="build-step"><span class="step-index">1</span><div><b>Install dependencies</b><small>build · timeout 600s</small><code>npm ci</code></div></div>
-                      <div class="build-step"><span class="step-index">2</span><div><b>Build application</b><small>build · timeout 1800s</small><code>npm run build</code></div></div>
-                      <div class="build-step"><span class="step-index">3</span><div><b>Unit & integration tests</b><small>test · timeout 1800s</small><code>npm test && ./tests/integration.sh</code></div></div>
-                      <div class="build-step"><span class="step-index">4</span><div><b>Verify package</b><small>verify · timeout 600s</small><code>./scripts/verify-package.sh</code></div></div>
-                    </div>
-                  </div>
-                  <div class="stack">
-                    <div class="subcard">
-                      <div class="subcard-head"><div><b>Targets</b><small>Package architectures</small></div></div>
-                      <div class="target-list"><span class="target active">amd64</span><span class="target active">arm64</span><span class="target">armv7</span></div>
-                    </div>
-                    <div class="subcard">
-                      <div class="subcard-head"><div><b>Environment</b><small>Non-secret build variables</small></div></div>
-                      <div class="kv-list">
-                        <div><span>NODE_ENV</span><b class="mono">production</b></div>
-                        <div><span>CI</span><b class="mono">true</b></div>
-                        <div><span>NPM_TOKEN</span><b class="mono">secret://env/NPM_TOKEN</b></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="subcard section">
-                  <div class="subcard-head"><div><b>Package output</b><small>Deterministic artifact handoff consumed by publishing stages</small></div><span class="status-pill">Configured</span></div>
-                  <div class="grid3 package-grid">
-                    <div class="summary-box"><span>Format</span><b>directory</b><small>Olympus application package</small></div>
-                    <div class="summary-box"><span>Source path</span><b class="mono">dist/olympus-core</b><small>Copied after verify</small></div>
-                    <div class="summary-box"><span>Artifact path</span><b class="mono">artifacts/olympus-core/&lt;job&gt;</b><small>External storage</small></div>
-                  </div>
-                  <div class="manifest">
-                    <div class="manifest-head"><b>manifest.json</b><span>generated by ForgeCore</span></div>
-                    <code>{ "files": 18, "totalBytes": 48291302, "digest": "sha256:91d8…b2a4" }</code>
-                  </div>
-                </div>
-              </div>
-
-              <div id="app-publish" class="app-tab-pane">
-                <div id="settings-general" class="scope-banner">
-                  <div><strong>Effective publishing configuration</strong><small>ForgeCore resolves Global Settings + the selected Publish Preset + app-specific values into the immutable job snapshot.</small></div>
-                  <div class="scope-path"><span class="scope-chip">Global Settings</span><span class="scope-arrow">→</span><span class="scope-chip">olympus-default</span><span class="scope-arrow">→</span><span class="scope-chip active">Olympus Core</span></div>
-                </div>
-                <div class="source-note">
-                  <div><b>Olympus Releases repository: <span class="mono">Jojje84/Olympus-Releases</span></b><small>This value is inherited from Global Settings. Change it globally to move every app using the shared release integration.</small></div>
-                  <span class="inherited">Inherited from Global</span>
-                </div>
-                <div class="source-note">
-                  <div><b>Release policy: Stable · SHA-256 + Sigstore · Store via pull request</b><small>This policy comes from the selected publish preset. Change the preset to affect all apps using it, or select another preset for this app.</small></div>
-                  <span class="inherited">Inherited from olympus-default</span>
-                </div>
-
-                
-                <div class="subcard section">
-                  <div class="subcard-head"><div><b>App-specific values & overrides</b><small>Only override shared policy when this app truly needs to behave differently.</small></div><span class="status-pill neutral">No policy overrides</span></div>
-                  <div class="kv-list">
-                    <div><span>Release namespace</span><b><span class="mono">olympus-core-</span> <span class="override-badge">App value</span></b></div>
-                    <div><span>Store package ID</span><b><span class="mono">olympus-core</span> <span class="override-badge">App value</span></b></div>
-                    <div><span>Release channel</span><b>stable <span class="inherited">Preset</span></b></div>
-                    <div><span>Store mode</span><b>pull-request <span class="inherited">Preset</span></b></div>
-                  </div>
-                  <div style="padding:0 14px 12px">
-                    <div class="override-row"><div class="override-copy"><b>Override release channel for this app</b><small>Off — uses olympus-default → stable</small></div><button class="toggle demo" aria-label="Override release channel"></button></div>
-                    <div class="override-row"><div class="override-copy"><b>Override Community Store mode</b><small>Off — uses olympus-default → pull request</small></div><button class="toggle demo" aria-label="Override store mode"></button></div>
-                  </div>
-                </div>
-
-<div class="grid2">
-                  <div class="subcard">
-                    <div class="subcard-head"><div><b>Publish preset</b><small>Reusable distribution policy</small></div><span class="status-pill">olympus-default</span></div>
-                    <div class="kv-list">
-                      <div><span>Release enabled</span><b>Yes</b></div>
-                      <div><span>Channel</span><b>Stable</b></div>
-                      <div><span>Tag template</span><b class="mono">{app.id}-v{version}</b></div>
-                      <div><span>SHA-256</span><b>Required</b></div>
-                      <div><span>Sigstore</span><b>Required</b></div>
-                    </div>
-                  </div>
-                  <div class="subcard">
-                    <div class="subcard-head"><div><b>Olympus Releases</b><small>Release artifact destination</small></div><span class="status-pill">Ready</span></div>
-                    <div class="kv-list">
-                      <div><span>Repository</span><b class="mono">Jojje84/Olympus-Releases</b></div>
-                      <div><span>Namespace</span><b class="mono">olympus-core-</b></div>
-                      <div><span>Stable feed</span><b class="mono">channels/olympus-core/stable.json</b></div>
-                      <div><span>Credentials</span><b>Global secret reference</b></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="subcard section">
-                  <div class="subcard-head"><div><b>Community App Store</b><small>How a verified release reaches the store</small></div><span class="status-pill neutral">Pull request mode</span></div>
-                  <div class="publish-route">
-                    <div><span class="route-kicker">PACKAGE</span><b>Verified artifact</b><small>Checksums + signatures pass</small></div><i>→</i>
-                    <div><span class="route-kicker">RELEASE</span><b>Olympus Releases</b><small>Artifact and channel metadata</small></div><i>→</i>
-                    <div><span class="route-kicker">STORE</span><b>Generate store update</b><small class="mono">olympus-olympus-core/</small></div><i>→</i>
-                    <div><span class="route-kicker">PR</span><b>Community App Store</b><small>Review before merge</small></div>
-                  </div>
+                  <div id="appPipelineFlow" class="delivery-flow pipeline-flow"></div>
+                  <div id="appPipelineNote" class="source-note compact-note"></div>
                 </div>
                 <div class="grid2 section">
-                  <div class="subcard"><div class="subcard-head"><div><b>App release metadata</b><small>Owned by this app configuration</small></div></div><div class="kv-list"><div><span>Display name</span><b>Olympus Core</b></div><div><span>Package ID</span><b class="mono">olympus-core</b></div><div><span>Release notes source</span><b>CHANGELOG.md</b></div></div></div>
-                  <div class="subcard"><div class="subcard-head"><div><b>Publishing permissions</b><small>Separate from build execution</small></div></div><div class="check-list"><div><span class="check">✓</span><span>Build permission enabled</span></div><div><span class="check">✓</span><span>Release permission enabled</span></div><div><span class="check">✓</span><span>Store PR permission enabled</span></div></div></div>
+                  <div class="subcard">
+                    <div class="subcard-head"><div><b>Build steps</b><small>Reorder within the same stage when technically valid</small></div></div>
+                    <div id="pipelineBuildSteps" class="step-list"></div>
+                  </div>
+                  <div class="subcard">
+                    <div class="subcard-head"><div><b>Output</b><small>What the build hands off</small></div></div>
+                    <div id="pipelineOutput" class="kv-list"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="app-releases" class="app-tab-pane">
+                <div class="subcard">
+                  <div class="subcard-head"><div><b>Releases</b><small>Publishing results for this app</small></div></div>
+                  <div id="appReleaseList" class="release-history"></div>
                 </div>
               </div>
 
               <div id="app-jobs" class="app-tab-pane">
-                <div class="app-jobs-head"><div><b>Recent jobs for Olympus Core</b><div class="secondary">Immutable execution records and their resolved config revisions.</div></div><button class="btn primary demo">Queue new job</button></div>
-                <div class="table-scroll"><table><thead><tr><th>Job</th><th>Type</th><th>Ref</th><th>Executor</th><th>Revision</th><th>Duration</th><th>Status</th></tr></thead><tbody>
-                  <tr><td><button class="job-link mono" data-job-id="job-pending">job-pending</button></td><td>build-and-publish</td><td class="mono">dev</td><td class="mono">forgecore-native</td><td class="mono">7fa0c9…e172</td><td>02:41</td><td><span class="status-pill run">Running</span></td></tr>
-                  <tr><td><button class="job-link mono" data-job-id="job-282fc0">job-282fc0</button></td><td>build</td><td class="mono">main</td><td class="mono">forgecore-native</td><td class="mono">d1c891…0bf2</td><td>04:18</td><td><span class="status-pill">Succeeded</span></td></tr>
-                  <tr><td><button class="job-link mono" data-job-id="job-d18a42">job-d18a42</button></td><td>build-and-publish</td><td class="mono">—</td><td class="mono">forgecore-native</td><td class="mono">a8e441…73c1</td><td>06:52</td><td><span class="status-pill">Succeeded</span></td></tr>
-                  <tr><td><button class="job-link mono" data-job-id="job-0cd9e1">job-0cd9e1</button></td><td>build</td><td class="mono">feature/ui</td><td class="mono">forgecore-native</td><td class="mono">a8e441…73c1</td><td>03:59</td><td><span class="status-pill fail">Failed</span></td></tr>
-                </tbody></table></div>
+                <div class="app-jobs-head">
+                  <div><b id="appJobsTitle">Recent jobs</b><div class="secondary">Build creates a ForgeCore job and the queue is handled automatically.</div></div>
+                  <div class="actions"><button id="jobsValidatePipeline" class="btn">Validate pipeline</button><button id="jobsBuildApp" class="btn primary">Build</button></div>
+                </div>
+                <div class="table-scroll"><table><thead><tr><th>Job</th><th>Type</th><th>Ref</th><th>Executor</th><th>Revision</th><th>Finished</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+              </div>
+
+              <div id="app-settings" class="app-tab-pane">
+                <div class="grid2">
+                  <div class="subcard">
+                    <div class="subcard-head"><div><b>Configuration</b><small>Source, build, output and optional publishing</small></div><button id="editAppConfiguration" class="btn">Edit configuration</button></div>
+                    <div id="appSettingsSummary" class="kv-list"></div>
+                  </div>
+                  <div class="subcard">
+                    <div class="subcard-head"><div><b>Runner</b><small>Repository runner management is separate from status</small></div><span id="settingsRunnerPill" class="status-pill neutral">Not required</span></div>
+                    <div id="settingsRunnerBody" class="compact-state"></div>
+                    <div class="admin-inline-actions" style="padding-top:10px"><button id="settingsManageRunner" class="btn hidden">Manage runner</button></div>
+                  </div>
+                </div>
+                <div class="subcard section">
+                  <div class="subcard-head"><div><b>Advanced build options</b><small>Actions that are intentionally outside the primary build flow</small></div></div>
+                  <div class="advanced-build-row">
+                    <div><b>Build without cache</b><small id="cleanBuildHelp">ForgeCore native builds use a fresh job workspace.</small></div>
+                    <button id="cleanBuildApp" class="btn">Build without cache</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2248,33 +2093,154 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   function unassignedRunners(){return (fcState.status?.runners||[]).filter(r=>!r.assigned)}
   function currentPreset(){if(fcState.selectedPreset)return fcState.selectedPreset;const app=currentApp();return fcState.presets.find(p=>p.id===app?.publish?.preset)||fcState.presets[0]||null}
+  function presetForApp(app){
+    const id=app?.publish?.preset;
+    return id?fcState.presets.find(p=>p.id===id)||null:null;
+  }
+  function appHasPublishing(app){
+    const preset=presetForApp(app);
+    return Boolean(preset&&((preset.release||{}).enabled||(preset.store||{}).enabled));
+  }
   function openAppEditor(app,focusSteps,seedRepository){
     const editing=Boolean(app),seedBase=(seedRepository||"").split("/").pop()||"";
     const seedSlug=seedBase.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
-    const seedStoreId=seedSlug?(seedSlug.startsWith("olympus-")?seedSlug:"olympus-"+seedSlug):"";
-    const a=app||{id:seedSlug,identity:{name:seedBase,storeId:seedStoreId},source:{repository:seedRepository||"",defaultBranch:"main",private:true},build:{executor:seedRepository?"github-actions":"forgecore-native",targets:["amd64","arm64"],steps:[]},package:{sourcePath:"umbrel"},publish:{preset:fcState.presets[0]?.id||""}};
+    const a=app||{
+      id:seedSlug,
+      identity:{name:seedBase},
+      source:{provider:"github",repository:seedRepository||"",defaultBranch:"main",private:true},
+      build:{executor:seedRepository?"github-actions":"forgecore-native",steps:[]},
+      package:{format:"artifact",sourcePath:"dist"}
+    };
     const presetOptions=fcState.presets.map(p=>[p.id,(p.name||p.id)+" · "+p.id]);
+    const hasPublishing=Boolean(a.publish?.preset);
+    const progress=["Basics","Source","Build","Output","Publishing","Review"];
     const body='<form id="appAdminForm" class="admin-form-grid">'+
-      field("id","App ID",a.id,"text",(editing?'readonly ':'')+'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"')+
-      field("name","Name",a.identity?.name||"","text","required")+
-      field("storeId","Olympus Store ID",a.identity?.storeId||"","text",'required placeholder="olympus-app"')+
-      field("repository","GitHub repository",a.source?.repository||"","text",'required placeholder="owner/repository"')+
-      field("defaultBranch","Default branch",a.source?.defaultBranch||"main","text","required")+
-      field("private","Private repository",options([["true","Yes"],["false","No"]],a.source?.private?"true":"false"),"select")+
-      field("executor","Executor",options([["forgecore-native","ForgeCore native"],["github-actions","GitHub Actions adapter"]],a.build?.executor||"forgecore-native"),"select")+
-      field("targets","Build targets",(a.build?.targets||[]).join(","),"text",'required placeholder="amd64,arm64"')+
-      field("sourcePath","Umbrel package source",a.package?.sourcePath||"umbrel","text","required")+
-      field("preset","Publish preset",options(presetOptions,a.publish?.preset||""),"select","required")+
-      '<div class="full admin-help">A GitHub Actions repository runner belongs to this App. Save the App first, then use the Runner action on the App to connect or repair it. Native Apps use ForgeCore shared infrastructure and need no repository runner.</div>'+
-      field("steps","Build steps JSON",JSON.stringify(a.build?.steps||[],null,2),"textarea",'spellcheck="false"')+
-      '<div class="full admin-help">Build steps are stored with the app and snapshotted into future jobs. Supported fields include name, stage, run, workingDirectory, timeoutSeconds, env and secrets using secret://env references.</div>'+
+      '<div class="wizard-progress full">'+progress.map((x,i)=>'<span data-wizard-progress="'+i+'">'+(i+1)+'. '+x+'</span>').join("")+'</div>'+
+      '<section class="wizard-step" data-wizard-step="0"><h3>Basics</h3><p>Name the app. Platform-specific IDs are requested only if a later choice actually needs them.</p>'+
+        field("id","App ID",a.id,"text",(editing?'readonly ':'')+'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"')+
+        field("name","Name",a.identity?.name||"","text","required")+
+      '</section>'+
+      '<section class="wizard-step hidden" data-wizard-step="1"><h3>Source</h3><p>ForgeCore currently supports GitHub repositories as a source. The pipeline UI derives the provider from this configuration.</p>'+
+        field("sourceProvider","Source provider",options([["github","GitHub"]],a.source?.provider||"github"),"select","required")+
+        field("repository","Repository",a.source?.repository||"","text",'required placeholder="owner/repository"')+
+        field("defaultBranch","Default branch",a.source?.defaultBranch||"main","text","required")+
+        field("private","Private repository",options([["true","Yes"],["false","No"]],a.source?.private?"true":"false"),"select")+
+      '</section>'+
+      '<section class="wizard-step hidden" data-wizard-step="2"><h3>Build</h3><p>Select the executor. Architecture belongs to the output step and is shown only for outputs that require it.</p>'+
+        field("executor","Executor",options([["forgecore-native","ForgeCore native"],["github-actions","GitHub Actions adapter"]],a.build?.executor||"forgecore-native"),"select","required")+
+        '<div class="full admin-help">GitHub Actions apps can own a repository runner. Native apps use shared ForgeCore execution.</div>'+
+        '<details id="appBuildAdvanced" class="wizard-advanced"><summary>Advanced · raw build configuration</summary>'+
+          field("steps","Build steps JSON",JSON.stringify(a.build?.steps||[],null,2),"textarea",'spellcheck="false" data-full')+
+          '<div class="admin-help">Build steps are snapshotted into future jobs. Reordering in Pipeline is limited to steps in the same technical stage.</div>'+
+        '</details>'+
+      '</section>'+
+      '<section class="wizard-step hidden" data-wizard-step="3"><h3>Output</h3><p>Choose what ForgeCore should hand off after a successful build.</p>'+
+        field("outputFormat","Output",options([["artifact","Artifact"],["umbrel","Umbrel package"]],a.package?.format||"artifact"),"select","required")+
+        field("sourcePath","Output source path",a.package?.sourcePath||"dist","text",'required placeholder="dist"')+
+        '<div id="appTargetsWrap" class="full">'+field("targets","Architectures",(a.build?.targets||[]).join(","),"text",'placeholder="amd64,arm64" data-full')+'</div>'+
+      '</section>'+
+      '<section class="wizard-step hidden" data-wizard-step="4"><h3>Publishing</h3><p>Publishing is optional. Apps that only need build artifacts do not need Olympus or a publish preset.</p>'+
+        field("publishMode","Publishing",options([["none","No publishing"],["preset","Use publish preset"]],hasPublishing?"preset":"none"),"select","required")+
+        '<div id="appPresetWrap">'+field("preset","Publish preset",options(presetOptions,a.publish?.preset||""),"select")+'</div>'+
+        '<div id="appStoreIdWrap" class="full">'+field("storeId","Olympus Store ID",a.identity?.storeId||"","text",'placeholder="olympus-app" data-full')+'</div>'+
+        '<div id="appPublishingHelp" class="full admin-help"></div>'+
+      '</section>'+
+      '<section class="wizard-step hidden" data-wizard-step="5"><h3>Review</h3><p>Review the effective app configuration before saving.</p><div id="appWizardReview" class="review-grid"></div></section>'+
+      '<div class="wizard-actions full"><button id="appWizardPrev" class="btn" type="button">Back</button><button id="appWizardNext" class="btn primary" type="button">Continue</button></div>'+
       '<div id="appAdminMsg" class="full admin-error"></div></form>';
-    openAdmin({title:(editing?"Edit ":"New ")+(a.identity?.name||"app"),sub:"Complete ForgeCore v2 app configuration",body,saveLabel:editing?"Save app":"Create app",
-      onSave:async()=>{const f=q("#appAdminForm"),msg=q("#appAdminMsg");let steps=[];try{steps=JSON.parse(f.elements.steps.value||"[]");if(!Array.isArray(steps))throw new Error("Build steps must be a JSON array.");}catch(e){msg.textContent=e.message;return}
-        const data={schemaVersion:1,kind:"ForgeCoreApp",id:f.elements.id.value.trim(),identity:{name:f.elements.name.value.trim(),storeId:f.elements.storeId.value.trim()},source:{provider:"github",repository:f.elements.repository.value.trim(),defaultBranch:f.elements.defaultBranch.value.trim(),private:f.elements.private.value==="true"},build:{executor:f.elements.executor.value,targets:f.elements.targets.value.split(",").map(x=>x.trim()).filter(Boolean),steps:steps},package:{format:"umbrel",sourcePath:f.elements.sourcePath.value.trim()},publish:{preset:f.elements.preset.value}};
-        try{adminSave.disabled=true;await api("/api/apps",{method:"POST",body:JSON.stringify(data)});closeAdmin();await refreshLive();fcState.selectedApp=fcState.apps.find(x=>x.id===data.id)||null;if(fcState.selectedApp)selectApp(fcState.selectedApp,false);showToast("App configuration saved.");}catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}},
-      onDelete:editing?async()=>{const run=async()=>{try{await api("/api/apps/"+encodeURIComponent(a.id),{method:"DELETE"});closeAdmin();fcState.selectedApp=null;await refreshLive();showToast("App deleted.");}catch(e){showToast(e.message)}};if(typeof openConfirm==="function")openConfirm({title:"Delete "+a.id+"?",sub:"Job history is not deleted.",warning:"The app configuration will be removed.",text:"Existing immutable jobs and outputs remain available.",action:"Delete app",danger:true},run);else run()}:null});
-    if(focusSteps){const el=q('[name="steps"]',adminBody);if(el)setTimeout(()=>el.focus(),0)}
+    const deleteHandler=editing?async()=>{
+      const run=async()=>{try{await api("/api/apps/"+encodeURIComponent(a.id),{method:"DELETE"});closeAdmin();fcState.selectedApp=null;await refreshLive();showToast("App deleted.");}catch(e){showToast(e.message)}};
+      if(typeof openConfirm==="function")openConfirm({title:"Delete "+a.id+"?",sub:"Job history is not deleted.",warning:"The app configuration will be removed.",text:"Existing immutable jobs and outputs remain available.",action:"Delete app",danger:true},run);else run();
+    }:null;
+    openAdmin({
+      title:editing?"Edit application":"New application",
+      sub:"Basics → Source → Build → Output → Publishing → Review",
+      body,
+      saveLabel:editing?"Save app":"Create app",
+      onDelete:deleteHandler,
+      onSave:async()=>{
+        const form=q("#appAdminForm"),msg=q("#appAdminMsg");
+        let steps=[];
+        try{steps=JSON.parse(form.elements.steps.value||"[]");if(!Array.isArray(steps))throw new Error("Build steps must be a JSON array.");}
+        catch(e){msg.textContent=e.message;return}
+        const format=form.elements.outputFormat.value;
+        const targets=format==="umbrel"?form.elements.targets.value.split(",").map(x=>x.trim()).filter(Boolean):[];
+        const identity={name:form.elements.name.value.trim()};
+        const publishMode=form.elements.publishMode.value;
+        const selectedPreset=publishMode==="preset"?fcState.presets.find(p=>p.id===form.elements.preset.value):null;
+        if(selectedPreset?.store?.enabled){
+          const storeId=form.elements.storeId.value.trim();
+          if(storeId)identity.storeId=storeId;
+        }
+        const build={executor:form.elements.executor.value};
+        if(targets.length)build.targets=targets;
+        if(steps.length)build.steps=steps;
+        const data={
+          schemaVersion:1,kind:"ForgeCoreApp",id:form.elements.id.value.trim(),identity,
+          source:{provider:form.elements.sourceProvider.value,repository:form.elements.repository.value.trim(),defaultBranch:form.elements.defaultBranch.value.trim(),private:form.elements.private.value==="true"},
+          build,
+          package:{format,sourcePath:form.elements.sourcePath.value.trim()}
+        };
+        if(publishMode==="preset")data.publish={preset:form.elements.preset.value};
+        try{
+          adminSave.disabled=true;
+          await api("/api/apps",{method:"POST",body:JSON.stringify(data)});
+          closeAdmin();await refreshLive();fcState.selectedApp=fcState.apps.find(x=>x.id===data.id)||null;
+          if(fcState.selectedApp)selectApp(fcState.selectedApp,false);
+          showToast("App configuration saved.");
+        }catch(e){msg.textContent=e.message}finally{adminSave.disabled=false}
+      }
+    });
+    const form=q("#appAdminForm"),prev=q("#appWizardPrev"),next=q("#appWizardNext");
+    const presetSelect=form.elements.preset,publishMode=form.elements.publishMode,formatSelect=form.elements.outputFormat;
+    let step=focusSteps?2:0;
+    function selectedPreset(){return fcState.presets.find(p=>p.id===presetSelect.value)||null}
+    function syncConditional(){
+      const umbrel=formatSelect.value==="umbrel",publishing=publishMode.value==="preset",preset=selectedPreset(),store=publishing&&Boolean(preset?.store?.enabled);
+      q("#appTargetsWrap",form).classList.toggle("hidden",!umbrel);
+      form.elements.targets.required=umbrel;
+      q("#appPresetWrap",form).classList.toggle("hidden",!publishing);
+      presetSelect.required=publishing;
+      q("#appStoreIdWrap",form).classList.toggle("hidden",!store);
+      form.elements.storeId.required=store;
+      const help=q("#appPublishingHelp",form);
+      if(help)help.textContent=!publishing?"No publish stages will be added to this app's pipeline.":store?"The selected preset includes Community App Store delivery, so an Olympus Store ID is required.":"The selected preset publishes releases but does not require an Olympus Store ID.";
+      const pathLabel=form.elements.sourcePath.closest("label")?.querySelector("span");
+      if(pathLabel)pathLabel.textContent=umbrel?"Umbrel package source":"Artifact source path";
+    }
+    function updateReview(){
+      const publishing=publishMode.value==="preset",preset=selectedPreset(),store=publishing&&Boolean(preset?.store?.enabled);
+      const values=[
+        ["App",form.elements.name.value.trim()||"—"],
+        ["Source",(form.elements.sourceProvider.options[form.elements.sourceProvider.selectedIndex]?.text||"—")+" · "+(form.elements.repository.value.trim()||"—")],
+        ["Build",form.elements.executor.options[form.elements.executor.selectedIndex]?.text||"—"],
+        ["Output",formatSelect.options[formatSelect.selectedIndex]?.text+(formatSelect.value==="umbrel"&&form.elements.targets.value.trim()?" · "+form.elements.targets.value.trim():"")],
+        ["Publishing",publishing?(preset?.name||preset?.id||"Preset"):"None"],
+        ["Store ID",store?(form.elements.storeId.value.trim()||"Required"):"Not used"]
+      ];
+      q("#appWizardReview",form).innerHTML=values.map(x=>'<div><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
+    }
+    function showStep(index){
+      step=Math.max(0,Math.min(progress.length-1,index));
+      qa("[data-wizard-step]",form).forEach((el,i)=>el.classList.toggle("hidden",i!==step));
+      qa("[data-wizard-progress]",form).forEach((el,i)=>el.classList.toggle("active",i===step));
+      prev.classList.toggle("hidden",step===0);next.classList.toggle("hidden",step===progress.length-1);
+      adminSave.classList.toggle("hidden",step!==progress.length-1);
+      if(step===progress.length-1)updateReview();
+      syncConditional();
+    }
+    prev.addEventListener("click",()=>showStep(step-1));
+    next.addEventListener("click",()=>{
+      syncConditional();
+      const pane=q('[data-wizard-step="'+step+'"]',form);
+      const invalid=qa("input:invalid,select:invalid,textarea:invalid",pane).find(el=>!el.closest(".hidden"));
+      if(invalid){invalid.reportValidity();return}
+      showStep(step+1);
+    });
+    [publishMode,presetSelect,formatSelect].forEach(el=>el&&el.addEventListener("change",syncConditional));
+    qa("input,select,textarea",form).forEach(el=>el.addEventListener("input",()=>{if(step===progress.length-1)updateReview()}));
+    showStep(step);
+    if(focusSteps){const details=q("#appBuildAdvanced",form);if(details)details.open=true;const el=form.elements.steps;if(el)setTimeout(()=>el.focus(),0)}
   }
 
   function openAppRunnerEditor(app){
@@ -2587,228 +2553,200 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
     }
   }
 
+  function friendlyProvider(value){
+    const raw=String(value||"").trim();
+    if(!raw)return "—";
+    if(raw.toLowerCase()==="github")return "GitHub";
+    return raw.split(/[-_]/).filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(" ");
+  }
+  function appPipelineNodes(app){
+    const preset=presetForApp(app),nodes=[];
+    nodes.push({key:"source",label:friendlyProvider(app.source?.provider||"source"),detail:"Source"});
+    nodes.push(app.build?.executor==="github-actions"
+      ?{key:"executor",label:"GitHub Actions",detail:"Executor"}
+      :{key:"build",label:"Build",detail:"ForgeCore native"});
+    const format=app.package?.format||"artifact";
+    nodes.push({key:"output",label:format==="umbrel"?"Umbrel Package":format==="artifact"?"Artifact":friendlyProvider(format),detail:"Output"});
+    if(preset?.release?.enabled){
+      nodes.push({key:"release",label:friendlyProvider(fcState.status?.olympus_releases?.provider||"release"),detail:preset.release.channel||"Release"});
+    }
+    if(preset?.store?.enabled){
+      nodes.push({key:"store",label:friendlyProvider(fcState.status?.community_app_store?.provider||"store"),detail:preset.store.mode||"Store"});
+    }
+    return nodes;
+  }
+  function appHealth(app){
+    const preset=presetForApp(app),runner=runnerForApp(app),checks=[];
+    checks.push({ok:Boolean(app.source?.repository&&app.source?.defaultBranch),label:"Source configured"});
+    checks.push({ok:Boolean(app.package?.format&&app.package?.sourcePath),label:"Output configured"});
+    if(app.package?.format==="umbrel")checks.push({ok:Boolean((app.build?.targets||[]).length),label:"Umbrel architectures selected"});
+    if(app.build?.executor==="github-actions")checks.push({ok:Boolean(runner?.online),label:runner?.online?"Runner online":"Runner needs attention"});
+    if(app.publish?.preset){
+      checks.push({ok:Boolean(preset),label:preset?"Publish preset available":"Publish preset missing"});
+      if(preset?.release?.enabled)checks.push({ok:Boolean(fcState.status?.olympus_releases?.configurationReady),label:"Release integration ready"});
+      if(preset?.store?.enabled){
+        checks.push({ok:Boolean(app.identity?.storeId),label:"Olympus Store ID configured"});
+        checks.push({ok:Boolean(fcState.status?.community_app_store?.configurationReady),label:"Community Store integration ready"});
+      }
+    }
+    return checks;
+  }
+  async function createAppBuild(app){
+    if(!app)return;
+    const ref="refs/heads/"+(app.source?.defaultBranch||"main");
+    try{
+      const d=await api("/api/jobs",{method:"POST",body:JSON.stringify({appId:app.id,jobType:"build",trigger:{type:"manual",ref}})});
+      await refreshLive();showToast("Build queued automatically · "+d.job.id);
+    }catch(e){showToast(e.message)}
+  }
+  async function movePipelineStep(index,direction){
+    const app=currentApp();if(!app)return;
+    const steps=(app.build?.steps||[]).map(x=>({...x})),stage=steps[index]?.stage;
+    if(!stage)return;
+    let target=index+direction;
+    while(target>=0&&target<steps.length&&steps[target]?.stage!==stage)target+=direction;
+    if(target<0||target>=steps.length)return;
+    [steps[index],steps[target]]=[steps[target],steps[index]];
+    const data={...app,build:{...app.build,steps}};
+    try{
+      await api("/api/apps",{method:"POST",body:JSON.stringify(data)});
+      await refreshLive();fcState.selectedApp=fcState.apps.find(x=>x.id===app.id)||null;if(fcState.selectedApp)selectApp(fcState.selectedApp,false);
+      showToast("Pipeline step order saved.");
+    }catch(e){showToast(e.message)}
+  }
+  function validateCurrentPipeline(){
+    const app=currentApp();if(!app)return;
+    const failed=appHealth(app).filter(x=>!x.ok);
+    if(failed.length)showToast("Pipeline needs attention · "+failed.map(x=>x.label).join(", "));
+    else showToast("Pipeline valid for the configuration this app uses.");
+  }
+  function openAppTab(id){
+    qa("#apps .detail-tab").forEach(t=>t.classList.toggle("active",t.dataset.appTab===id));
+    qa("#apps .app-tab-pane").forEach(p=>p.classList.toggle("active",p.id===id));
+  }
   function selectApp(app,navigate=true){
+    if(!app)return;
     fcState.selectedApp=app;
-    qa(".app-nav-item").forEach(x=>x.classList.toggle("active",x.dataset.appId===app.id));
+    qa("#apps .app-nav-item").forEach(btn=>btn.classList.toggle("active",btn.dataset.appId===app.id));
     const name=app.identity?.name||app.id,repo=app.source?.repository||"—",exec=app.build?.executor||"—";
-    const preset=fcState.presets.find(p=>p.id===app.publish?.preset)||null;
-    const appJobs=fcState.jobs.filter(j=>j.appId===app.id);
-    const latest=appJobs[0]||null;
-    const latestRelease=appJobs.find(j=>j.outputs?.releasePlan||j.outputs?.publication||j.outputs?.storePublication)||null;
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-
+    const preset=presetForApp(app),runner=runnerForApp(app),publishing=appHasPublishing(app);
+    const appJobs=fcState.jobs.filter(j=>j.appId===app.id).sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")));
+    const active=appJobs.find(j=>["queued","preparing","running"].includes(j.status));
+    const latestBuild=appJobs.find(j=>j.status==="succeeded"&&["build","build-and-publish"].includes(j.jobType));
+    const releaseJobs=appJobs.filter(j=>j.outputs?.publication||j.outputs?.storePublication||j.outputs?.releasePlan||(["publish","build-and-publish"].includes(j.jobType)&&j.status==="succeeded"));
+    const latestRelease=releaseJobs[0]||null;
+    const health=appHealth(app),needs=health.filter(x=>!x.ok);
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
     set("selectedAppName",name);set("selectedAppId",app.id);set("selectedAppRepo",repo);set("selectedExecutor",exec);
     const icon=q("#selectedAppIcon");if(icon)icon.textContent=name.charAt(0).toUpperCase();
-    const detailMeta=q("#apps .detail-meta");
-    if(detailMeta)detailMeta.innerHTML='<span id="selectedAppId">'+esc(app.id)+'</span><span>•</span><span id="selectedExecutor">'+esc(exec)+'</span><span>•</span><span>preset: '+esc(app.publish?.preset||"—")+'</span>';
-    const runner=runnerForApp(app);
-    const readyPill=q("#apps .detail-title-row .status-pill");
-    if(readyPill){
-      if(exec==="github-actions"&&!runner){readyPill.textContent="Runner missing";readyPill.className="status-pill fail"}
-      else if(exec==="github-actions"&&!runner.online){readyPill.textContent="Runner "+(runner.phase||"offline");readyPill.className="status-pill "+statusClass(runner.phase||"pending")}
-      else{readyPill.textContent="Configured";readyPill.className="status-pill"}
-    }
-    const detailActions=q("#apps .app-detail-actions"),oldRunnerAction=q("#appRunnerAction");
-    if(oldRunnerAction)oldRunnerAction.remove();
-    if(exec==="github-actions"&&detailActions){
-      const rb=document.createElement("button");rb.id="appRunnerAction";rb.className="btn";rb.textContent=runner?.online?"Runner · Online":runner?"Runner · "+(runner.phase||"Configured"):"Connect runner";
-      rb.addEventListener("click",()=>openAppRunnerEditor(app));detailActions.insertBefore(rb,detailActions.children[1]||null);
+    const meta=q("#selectedAppMeta");if(meta)meta.innerHTML='<span id="selectedAppId">'+esc(app.id)+'</span><span>•</span><span id="selectedExecutor">'+esc(exec)+'</span>'+(publishing?'<span>•</span><span>publishing: '+esc(app.publish?.preset||"configured")+'</span>':'');
+    const status=q("#selectedAppStatus");if(status){status.textContent=active?(active.status==="queued"?"Queued":"Running"):needs.length?"Needs attention":"Ready";status.className="status-pill "+(active?statusClass(active.status):needs.length?"queue":"")}
+    const runnerText=exec==="github-actions"?(runner?.online?"Online":runner?(runner.phase||runner.mode||"Connecting"):"Not connected"):"Not required";
+    const runnerStatus=q("#appRunnerStatus");if(runnerStatus){runnerStatus.textContent="Runner · "+runnerText;runnerStatus.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
+    [q("#manageAppRunner"),q("#settingsManageRunner")].forEach(b=>{if(b)b.classList.toggle("hidden",exec!=="github-actions")});
+    const publishBtn=q("#buildPublishApp");if(publishBtn)publishBtn.classList.toggle("hidden",!publishing);
+
+    set("appOverviewStatus",needs.length?"Needs attention":"Ready");
+    set("appOverviewStatusSub",needs.length?needs.length+" configuration item"+(needs.length===1?"":"s")+" need attention":"Configuration matches the features in use");
+    set("appLatestBuild",latestBuild?"Succeeded":"—");set("appLatestBuildSub",latestBuild?(fmtWhen(latestBuild.finishedAt||latestBuild.updatedAt)+" · "+latestBuild.id):"No builds yet");
+    const releasePlan=latestRelease?.outputs?.releasePlan||{};
+    set("appLatestRelease",latestRelease?(releasePlan.version||releasePlan.releaseTag||"Published"):"—");
+    set("appLatestReleaseSub",latestRelease?(fmtWhen(latestRelease.finishedAt||latestRelease.updatedAt)+(releasePlan.channel?" · "+releasePlan.channel:"")):"No releases yet");
+    const overviewRunner=q("#overviewRunnerPill");if(overviewRunner){overviewRunner.textContent=runnerText;overviewRunner.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
+    const overviewRunnerBody=q("#overviewRunnerBody");if(overviewRunnerBody)overviewRunnerBody.textContent=exec==="github-actions"?(runner?.online?"Repository runner is online for "+repo+".":runner?"Runner is configured but not online. Use Manage runner to inspect or reconnect it.":"No repository runner is connected. Use Manage runner to connect one."):"This app uses shared ForgeCore native execution and does not need a repository runner.";
+    const hp=q("#overviewHealthPill");if(hp){hp.textContent=needs.length?needs.length+" issue"+(needs.length===1?"":"s"):"Healthy";hp.className="status-pill "+(needs.length?"queue":"")}
+    const hc=q("#appHealthChecks");if(hc)hc.innerHTML=health.map(x=>'<div><span class="'+(x.ok?"check":"lock-dot")+'">'+(x.ok?"✓":"●")+'</span><span>'+esc(x.label)+'</span></div>').join("");
+    const activeBox=q("#appActiveJob");if(activeBox)activeBox.innerHTML=active?'<b>'+esc(active.jobType)+'</b> · '+esc(active.status)+' · <span class="mono">'+esc(active.id)+'</span>':'<span class="secondary">No active job.</span>';
+
+    const nodes=appPipelineNodes(app),flow=q("#appPipelineFlow");
+    if(flow)flow.innerHTML=nodes.map((n,i)=>'<div class="delivery-node done"><span>'+(i+1)+'</span><b>'+esc(n.label)+'</b><small>'+esc(n.detail)+'</small></div>'+(i<nodes.length-1?'<i>→</i>':'')).join("");
+    const note=q("#appPipelineNote");if(note)note.innerHTML='<div><b>'+esc(nodes.map(n=>n.label).join(" → "))+'</b><small>Generated from this app configuration. Platform stages appear only when they are configured.</small></div>';
+    const steps=app.build?.steps||[],stepList=q("#pipelineBuildSteps");
+    if(stepList)stepList.innerHTML=steps.length?steps.map((st,i)=>{
+      const prev=steps.slice(0,i).some(x=>x.stage===st.stage),next=steps.slice(i+1).some(x=>x.stage===st.stage);
+      return '<div class="build-step"><span class="step-index">'+(i+1)+'</span><div><b>'+esc(st.name||("Step "+(i+1)))+'</b><small>'+esc(st.stage||"build")+'</small><code>'+esc(st.run||"—")+'</code></div><div class="pipeline-step-actions"><button class="btn pipeline-move" data-index="'+i+'" data-dir="-1" '+(prev?"":"disabled")+'>↑</button><button class="btn pipeline-move" data-index="'+i+'" data-dir="1" '+(next?"":"disabled")+'>↓</button></div></div>';
+    }).join(""):'<div class="compact-state">No explicit build steps configured.</div>';
+    qa("#pipelineBuildSteps .pipeline-move").forEach(b=>b.addEventListener("click",()=>movePipelineStep(Number(b.dataset.index),Number(b.dataset.dir))));
+    const output=q("#pipelineOutput");if(output){
+      const rows=[["Format",app.package?.format==="umbrel"?"Umbrel package":"Artifact"],["Source path",app.package?.sourcePath||"—"]];
+      if((app.build?.targets||[]).length)rows.push(["Architectures",(app.build.targets||[]).join(", ")]);
+      output.innerHTML=rows.map(x=>'<div><span>'+esc(x[0])+'</span><b class="'+(x[0]==="Source path"?"mono":"")+'">'+esc(x[1])+'</b></div>').join("");
     }
 
-    const change=q("#apps .config-change");
-    if(change)change.textContent=latest?("● Latest job: "+latest.status+(latest.currentStage?" · "+latest.currentStage:"")):"● No jobs yet";
-    const lifeNames=["source","build","package","release","store"];
-    qa("#apps .life-step").forEach((step,i)=>{
-      step.className="life-step neutral";
-      const stage=latest?.stages?.find(x=>x.name===lifeNames[i]);
-      const small=q("small",step);
-      if(stage){
-        if(stage.status==="succeeded")step.className="life-step ok";
-        else if(["running","failed"].includes(stage.status))step.className="life-step warn";
-        if(small)small.textContent=stage.status;
-      }else if(small)small.textContent=latest?"not in job":"no job";
-    });
+    const releaseList=q("#appReleaseList");
+    if(releaseList)releaseList.innerHTML=releaseJobs.length?releaseJobs.slice(0,12).map(j=>{
+      const plan=j.outputs?.releasePlan||{},pub=j.outputs?.publication||{},store=j.outputs?.storePublication||{};
+      return '<div class="release-row"><span class="release-version">'+esc(plan.version||plan.releaseTag||j.id)+'</span><span class="release-channel '+esc(plan.channel||"")+'">'+esc(plan.channel||"release")+'</span><span>'+esc(pub.repository?"Release ✓":"Release —")+'</span><span>'+esc(store.status?"Store "+store.status:"Store —")+'</span><span class="release-time">'+esc(fmtWhen(j.finishedAt||j.updatedAt))+'</span></div>';
+    }).join(""):'<div class="compact-state">No releases yet.</div>';
 
-    const summary=qa("#app-overview .app-summary-grid .summary-box");
-    if(summary[0]){q("b",summary[0]).textContent=app.source?.defaultBranch||"—";q("small",summary[0]).textContent="Source checkout branch"}
-    if(summary[1]){q("b",summary[1]).textContent=(app.build?.targets||[]).join(" · ")||"—";q("small",summary[1]).textContent=(app.build?.targets||[]).length+" package target(s)"}
-    if(summary[2]){
-      const version=latestRelease?.outputs?.releasePlan?.version||latestRelease?.outputs?.storePublication?.version||"No release";
-      q("b",summary[2]).textContent=version;
-      q("small",summary[2]).textContent=latestRelease?((latestRelease.outputs?.releasePlan?.channel||"—")+" · "+fmtWhen(latestRelease.createdAt)):"No persisted release output";
-    }
-
-    const overviewCards=qa("#app-overview > .grid2.section .subcard");
-    if(overviewCards[0]){
-      const pill=q(".subcard-head .status-pill",overviewCards[0]);if(pill)pill.textContent="Validated";
-      const rows=qa(".kv-list > div",overviewCards[0]);
-      const vals=[
-        ["Provider",app.source?.provider||"—"],
-        ["Repository",app.source?.repository||"—"],
-        ["Branch",app.source?.defaultBranch||"—"],
-        ["Private repository",app.source?.private?"Yes":"No"],
-        ["Credentials","Global secret reference"]
-      ];
-      rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]});
-    }
-    if(overviewCards[1]){
-      const pill=q(".subcard-head .status-pill",overviewCards[1]);if(pill)pill.textContent=exec==="forgecore-native"?"Native":"Actions";
-      const rows=qa(".kv-list > div",overviewCards[1]);
-      const vals=exec==="github-actions"?[
-        ["Executor",exec],
-        ["Runner",runner?(runner.online?"Online":(runner.phase||runner.mode||"Configured")):"Not connected"],
-        ["Runner label",runner?.label||repo.split("/").pop()||"—"],
-        ["Targets",(app.build?.targets||[]).join(" · ")||"—"],
-        ["Workspace","Repository runner _work"]
-      ]:[
-        ["Executor",exec],
-        ["Build steps",String((app.build?.steps||[]).length)+" configured"],
-        ["Targets",(app.build?.targets||[]).join(" · ")||"—"],
-        ["Workspace","workspaces/<job-id>"],
-        ["Secrets in config","References only"]
-      ];
-      rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]});
-    }
-
-    const artifactGrid=q("#app-overview .artifact-grid");
-    const releaseHistory=q("#app-overview .release-history");
-    const outputJobs=appJobs.filter(j=>j.outputs&&(j.outputs.artifact||j.outputs.releasePlan||j.outputs.publication||j.outputs.storePublication));
-    if(artifactGrid){
-      const out=outputJobs[0]?.outputs||{};
-      const cards=[];
-      if(out.artifact)cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">PKG</span><span class="status-pill">Ready</span></div><b>Package artifact</b><small>'+esc(fmtBytes(out.artifact.totalBytes))+' · '+esc(out.artifact.fileCount||0)+' files</small><div class="artifact-meta"><span>Source</span><code>'+esc(String(out.artifact.sourceRevision||"—").slice(0,16))+'</code></div></div>');
-      if(out.publication||out.releasePlan){const p=out.publication||out.releasePlan;cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">REL</span><span class="status-pill '+statusClass(out.publication?"published":"pending")+'">'+(out.publication?"Published":"Planned")+'</span></div><b>Olympus Releases</b><small>'+esc(p.releaseTag||p.version||"—")+'</small><div class="artifact-meta"><span>Channel</span><code>'+esc(p.channel||out.releasePlan?.channel||"—")+'</code></div></div>')}
-      if(out.storePublication){const sp=out.storePublication;cards.push('<div class="artifact-card"><div class="artifact-top"><span class="artifact-icon">PR</span><span class="status-pill '+statusClass(sp.status)+'">'+esc(sp.status||"Recorded")+'</span></div><b>Community App Store</b><small>'+esc(sp.repository||"—")+'</small><div class="artifact-meta"><span>Submission</span><code>'+esc(sp.pullRequestNumber?("#"+sp.pullRequestNumber):(sp.commitSha||"—"))+'</code></div></div>')}
-      artifactGrid.innerHTML=cards.join("")||'<div class="live-empty">No persisted artifacts or release outputs yet.</div>';
-    }
-    if(releaseHistory){
-      releaseHistory.innerHTML=outputJobs.slice(0,5).map(j=>{
-        const o=j.outputs||{},version=o.releasePlan?.version||o.storePublication?.version||o.publication?.releaseTag||j.id;
-        const channel=o.releasePlan?.channel||o.publication?.channel||"—";
-        return '<div class="release-row"><span class="release-version">'+esc(version)+'</span><span class="release-channel '+(channel==="stable"?"stable":"beta")+'">'+esc(channel)+'</span><span>Build '+(o.artifact?"✓":"—")+'</span><span>Release '+(o.publication?"✓":"—")+'</span><span>Store '+(o.storePublication?"✓":"—")+'</span><span class="release-time">'+esc(fmtWhen(j.createdAt))+'</span></div>';
-      }).join("")||'<div class="live-empty">No release history yet.</div>';
-    }
-
-    const overviewGrids=qa("#app-overview > .grid2.section");
-    const currentCard=overviewGrids[1]?.querySelector(".subcard:first-child");
-    if(currentCard){
-      const small=q(".subcard-head small",currentCard),pill=q(".subcard-head .status-pill",currentCard);
-      if(small)small.textContent=latest?(latest.id+" · "+latest.jobType):"No job";
-      if(pill){pill.textContent=latest?.status||"Idle";pill.className="status-pill "+statusClass(latest?.status||"")}
-      const stages=qa(".stage",currentCard);stages.forEach(x=>x.className="stage");
-      (latest?.stages||[]).forEach((st,i)=>{if(!stages[i])return;const n=q(".stage-name",stages[i]);if(n)n.textContent=st.name;if(st.status==="succeeded")stages[i].classList.add("done");else if(st.status==="running")stages[i].classList.add("active");else if(st.status==="skipped")stages[i].classList.add("skip");else if(st.status==="failed")stages[i].classList.add("active")});
-      const meta=q(".job-progress-meta",currentCard);if(meta)meta.innerHTML=latest?'<span>'+esc(fmtWhen(latest.createdAt))+'</span><span>Config <span class="mono">'+esc(String(latest.configRevision||"—").slice(0,18))+'</span></span>':'<span>No execution history</span>';
-    }
-    const healthCard=overviewGrids[1]?.querySelector(".subcard:nth-child(2)");
-    if(healthCard){
-      const checks=q(".check-list",healthCard);if(checks)checks.innerHTML='<div><span class="check">✓</span><span>App schema validated</span></div><div><span class="check">✓</span><span>Publish preset exists</span></div><div><span class="check">✓</span><span>Package configuration validated</span></div>'+(exec==="github-actions"?'<div><span class="'+(runner?.online?"check":"lock-dot")+'">'+(runner?.online?"✓":"●")+'</span><span>'+(runner?.online?"App runner online":runner?"App runner needs attention":"App runner not connected")+'</span></div>':'<div><span class="check">✓</span><span>Shared native infrastructure</span></div>');
-    }
-
-    const steps=q("#app-build .step-list");
-    if(steps){
-      const configured=app.build?.steps||[];
-      steps.innerHTML=configured.length?configured.map((st,i)=>'<div class="build-step"><span class="step-index">'+(i+1)+'</span><div><b>'+esc(st.name||st.stage||("Step "+(i+1)))+'</b><small>'+esc(st.stage||"build")+(st.timeoutSeconds?(" · timeout "+st.timeoutSeconds+"s"):"")+'</small><code>'+esc(st.run||"—")+'</code></div></div>').join(""):'<div class="live-empty">No explicit build steps configured.</div>';
-    }
-    const targetList=q("#app-build .target-list");
-    if(targetList)targetList.innerHTML=(app.build?.targets||[]).map(t=>'<span class="target active">'+esc(t)+'</span>').join("")||'<span class="secondary">No targets</span>';
-    const envList=q("#app-build .stack .subcard:nth-child(2) .kv-list");
-    if(envList){
-      const pairs=[];
-      (app.build?.steps||[]).forEach(st=>{Object.entries(st.env||{}).forEach(([k,v])=>pairs.push([k,v]));Object.entries(st.secrets||{}).forEach(([k,v])=>pairs.push([k,v]))});
-      const unique=[];const seen=new Set();for(const p of pairs){if(!seen.has(p[0])){seen.add(p[0]);unique.push(p)}}
-      envList.innerHTML=unique.length?unique.slice(0,12).map(([k,v])=>'<div><span>'+esc(k)+'</span><b class="mono">'+esc(String(v).startsWith("secret://")?"secret reference":v)+'</b></div>').join(""):'<div><span>Environment</span><b>None configured</b></div>';
-    }
-    const pkgBoxes=qa("#app-build .package-grid .summary-box");
-    if(pkgBoxes[0]){q("b",pkgBoxes[0]).textContent=app.package?.format||"—";q("small",pkgBoxes[0]).textContent="Configured package format"}
-    if(pkgBoxes[1]){q("b",pkgBoxes[1]).textContent=app.package?.sourcePath||"—";q("small",pkgBoxes[1]).textContent="Package source path"}
-    if(pkgBoxes[2]){q("b",pkgBoxes[2]).textContent="artifacts/"+app.id+"/<job>";q("small",pkgBoxes[2]).textContent="External storage"}
-    const manifest=q("#app-build .manifest code");if(manifest){const a=outputJobs[0]?.outputs?.artifact;manifest.textContent=a?JSON.stringify({fileCount:a.fileCount,totalBytes:a.totalBytes,sourceRevision:a.sourceRevision||null}):"No artifact manifest yet."}
-
-    const scope=q("#app-publish .scope-path");
-    if(scope)scope.innerHTML='<span class="scope-chip">Global Settings</span><span class="scope-arrow">→</span><span class="scope-chip">'+esc(preset?.id||"No preset")+'</span><span class="scope-arrow">→</span><span class="scope-chip active">'+esc(name)+'</span>';
-    const notes=qa("#app-publish > .source-note");
-    if(notes[0]){const b=q("b",notes[0]),small=q("small",notes[0]);if(b)b.innerHTML='Olympus Releases repository: <span class="mono">'+esc(fcState.status?.olympus_releases?.repository||"Not configured")+'</span>';if(small)small.textContent="Inherited from Global Settings."}
-    if(notes[1]){const b=q("b",notes[1]),small=q("small",notes[1]);if(b)b.textContent=preset?("Release policy: "+(preset.release?.channel||"—")+" · SHA-256 "+(preset.verification?.sha256?"required":"optional")+" · Store "+(preset.store?.enabled?"enabled":"disabled")):"No publish preset";if(small)small.textContent=preset?("Inherited from "+preset.id+"."):"Select a valid publish preset."}
-    const publishCards=qa("#app-publish > .grid2 .subcard");
-    if(publishCards[0]){
-      const pill=q(".subcard-head .status-pill",publishCards[0]);if(pill)pill.textContent=preset?.id||"None";
-      const rows=qa(".kv-list > div",publishCards[0]);const vals=[["Release enabled",preset?.release?.enabled?"Yes":"No"],["Channel",preset?.release?.channel||"—"],["Tag template",preset?.release?.tagPrefixTemplate||"—"],["SHA-256",preset?.verification?.sha256?"Required":"No"],["Sigstore",preset?.verification?.sigstore?"Required":"No"]];rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]})
-    }
-    if(publishCards[1]){
-      const pill=q(".subcard-head .status-pill",publishCards[1]);if(pill){pill.textContent=fcState.status?.olympus_releases?.configurationReady?"Ready":"Needs config";pill.className="status-pill "+(fcState.status?.olympus_releases?.configurationReady?"":"queue")}
-      const rows=qa(".kv-list > div",publishCards[1]);const vals=[["Repository",fcState.status?.olympus_releases?.repository||"Not configured"],["Namespace",preset?.release?.tagPrefixTemplate||"—"],["Channel",preset?.release?.channel||"—"],["Credentials","Global secret reference"]];rows.forEach((r,i)=>{if(!vals[i])return;const a=q("span",r),b=q("b",r);if(a)a.textContent=vals[i][0];if(b)b.textContent=vals[i][1]})
-    }
-    const storeCard=q("#app-publish > .subcard.section");
-    if(storeCard){const pill=q(".subcard-head .status-pill",storeCard);if(pill){pill.textContent=preset?.store?.enabled?(preset.store.mode||"Enabled"):"Disabled";pill.className="status-pill "+(preset?.store?.enabled?"":"neutral")}}
-
-    const jobsHead=q("#app-jobs .app-jobs-head b");if(jobsHead)jobsHead.textContent="Recent jobs for "+name;
-    const jobsBody=q("#app-jobs tbody");
-    if(jobsBody)jobsBody.innerHTML=appJobs.slice(0,20).map(j=>'<tr data-app-job="'+esc(j.id)+'"><td><button class="job-link mono" data-job-id="'+esc(j.id)+'">'+esc(j.id)+'</button></td><td>'+esc(j.jobType)+'</td><td class="mono">'+esc(j.trigger?.ref||"—")+'</td><td class="mono">'+esc(j.executor||"—")+'</td><td class="mono">'+esc(String(j.configRevision||"—").slice(0,18))+'</td><td>'+esc(j.finishedAt?fmtWhen(j.finishedAt):"—")+'</td><td><span class="status-pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>').join("")||'<tr><td colspan="7"><div class="live-empty">No jobs for this app yet.</div></td></tr>';
+    set("appJobsTitle","Recent jobs for "+name);
+    const jobsBody=q("#app-jobs tbody");if(jobsBody)jobsBody.innerHTML=appJobs.length?appJobs.slice(0,20).map(j=>'<tr data-app-job="'+esc(j.id)+'"><td><button class="job-link mono" data-job-id="'+esc(j.id)+'">'+esc(j.id)+'</button></td><td>'+esc(j.jobType)+'</td><td class="mono">'+esc(j.trigger?.ref||"—")+'</td><td class="mono">'+esc(j.executor||"—")+'</td><td class="mono">'+esc(String(j.configRevision||"—").slice(0,18))+'</td><td>'+esc(j.finishedAt?fmtWhen(j.finishedAt):"—")+'</td><td><span class="status-pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>').join(""):'<tr><td colspan="7"><div class="compact-state">No builds or jobs yet.</div></td></tr>';
     qa("#app-jobs [data-app-job]").forEach(row=>row.addEventListener("click",()=>openJob(row.dataset.appJob)));
 
-    q("#apps")?.classList.add("live-ready");
-    if(navigate){
-      currentDetailKind="apps";
-      if(typeof showBreadcrumb==="function")showBreadcrumb("Apps / "+name);
+    const settings=q("#appSettingsSummary");if(settings){
+      const rows=[["Source",friendlyProvider(app.source?.provider)+" · "+repo],["Branch",app.source?.defaultBranch||"—"],["Executor",exec],["Output",app.package?.format==="umbrel"?"Umbrel package":"Artifact"],["Publishing",publishing?(app.publish?.preset||"Configured"):"None"]];
+      if((app.build?.targets||[]).length)rows.splice(4,0,["Architectures",app.build.targets.join(", ")]);
+      settings.innerHTML=rows.map(x=>'<div><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b></div>').join("");
     }
+    const srp=q("#settingsRunnerPill");if(srp){srp.textContent=runnerText;srp.className="status-pill "+(exec!=="github-actions"?"neutral":runner?.online?"":"queue")}
+    const srb=q("#settingsRunnerBody");if(srb)srb.textContent=exec==="github-actions"?(runner?.online?"Runner online for "+repo+".":"Runner is not online. Use Manage runner to connect or repair it."):"No repository runner is required for ForgeCore native execution.";
+    const clean=q("#cleanBuildApp"),cleanHelp=q("#cleanBuildHelp");
+    if(clean){clean.disabled=exec==="github-actions";clean.title=exec==="github-actions"?"Build-without-cache is not exposed for the GitHub Actions adapter.":"Native jobs start from a fresh source workspace."}
+    if(cleanHelp)cleanHelp.textContent=exec==="github-actions"?"Not available for the GitHub Actions adapter.":"Native builds already start from a fresh source workspace; this action starts that clean build path.";
+
+    q("#apps")?.classList.add("live-ready");
+    if(navigate){currentDetailKind="apps";if(typeof showBreadcrumb==="function")showBreadcrumb("Apps / "+name)}
   }
+
   function bindAppButtons(){
     qa(".app-nav-item").forEach(btn=>btn.addEventListener("click",()=>{
       const app=fcState.apps.find(a=>a.id===btn.dataset.appId);if(app)selectApp(app,true);
     }));
   }
   function renderApps(){
-    const apps=fcState.apps,presets=fcState.presets,runners=fcState.status?.runners||[],unassigned=unassignedRunners();
+    const apps=fcState.apps,unassigned=unassignedRunners();
     const actionApps=apps.filter(a=>a.build?.executor==="github-actions");
     const assignedOnline=actionApps.filter(a=>runnerForApp(a)?.online).length;
+    const healthy=apps.filter(a=>appHealth(a).every(x=>x.ok)).length;
+    const publishing=apps.filter(appHasPublishing).length;
     const cards=qa("#apps > .grid4 > .card");
-    metric(cards[0],"Managed apps",String(apps.length),"Validated app configurations","Live");
-    metric(cards[1],"Native executor",String(apps.filter(a=>a.build?.executor==="forgecore-native").length),"Apps using shared ForgeCore runtime","Ready");
-    metric(cards[2],"GitHub Actions apps",String(actionApps.length),assignedOnline+" runner"+(assignedOnline===1?"":"s")+" online · "+unassigned.length+" unassigned","App-owned");
-    metric(cards[3],"Publish presets",String(presets.length),"Reusable release/store policies","Live");
+    metric(cards[0],"Apps",String(apps.length),"Managed configurations","Live");
+    metric(cards[1],"Healthy",String(healthy),healthy===apps.length?"No configuration attention needed":(apps.length-healthy)+" need attention",healthy===apps.length?"Ready":"Attention");
+    metric(cards[2],"Runners online",String(assignedOnline),actionApps.length+" app"+(actionApps.length===1?"":"s")+" use repository runners","Live");
+    metric(cards[3],"Publishing",String(publishing),publishing?"Apps with configured publishing":"Publishing is optional","Configured");
 
     const workspace=q("#apps .apps-workspace"),appsView=q("#apps");
     let notice=q("#unassignedRunnerNotice");
     if(unassigned.length){
-      if(!notice){
-        notice=document.createElement("div");notice.id="unassignedRunnerNotice";notice.className="source-note section";
-        appsView.insertBefore(notice,workspace);
-      }
-      notice.innerHTML='<div><b>'+unassigned.length+' existing runner'+(unassigned.length===1?" is":"s are")+' not assigned to an App</b><small>This is a migration state, not the normal v2 model. Create an App using the same repository and GitHub Actions executor to adopt it.</small></div><div class="actions">'+unassigned.map(r=>'<button class="btn adopt-runner" data-runner-repo="'+esc(r.repository)+'">Create App · '+esc(r.label||r.repository)+'</button>').join("")+'</div>';
+      if(!notice){notice=document.createElement("div");notice.id="unassignedRunnerNotice";notice.className="source-note section";appsView.insertBefore(notice,workspace)}
+      notice.innerHTML='<div><b>'+unassigned.length+' existing runner'+(unassigned.length===1?" is":"s are")+' not assigned to an App</b><small>Create an App with the same repository and GitHub Actions executor to adopt it.</small></div><div class="actions">'+unassigned.map(r=>'<button class="btn adopt-runner" data-runner-repo="'+esc(r.repository)+'">Create App · '+esc(r.label||r.repository)+'</button>').join("")+'</div>';
       qa(".adopt-runner",notice).forEach(b=>b.addEventListener("click",()=>openAppEditor(null,false,b.dataset.runnerRepo)));
     }else if(notice){notice.remove()}
 
     const list=q("#apps .apps-nav-list"),detail=q("#apps .apps-detail");
     if(list){
-      list.innerHTML=apps.length?apps.map((a,i)=>{
-        const name=a.identity?.name||a.id,ex=a.build?.executor||"",runner=runnerForApp(a);
-        const cls=ex!=="github-actions"?"ok":runner?.online?"ok":runner?"running":"bad";
-        const title=ex!=="github-actions"?"Shared native infrastructure":runner?.online?"App runner online":runner?("Runner "+(runner.phase||"configured")):"Runner not connected";
-        return '<button class="app-nav-item '+(i===0?"active":"")+'" data-app-id="'+esc(a.id)+'">'+
+      list.innerHTML=apps.length?apps.map(a=>{
+        const name=a.identity?.name||a.id,problems=appHealth(a).filter(x=>!x.ok),active=fcState.jobs.find(j=>j.appId===a.id&&["queued","preparing","running"].includes(j.status));
+        const cls=active?"running":problems.length?"bad":"ok";
+        const title=active?("Job "+active.status):problems.length?(problems.length+" item"+(problems.length===1?"":"s")+" need attention"):"Ready";
+        const selected=fcState.selectedApp?.id===a.id;
+        return '<button class="app-nav-item '+(selected?"active":"")+'" data-app-id="'+esc(a.id)+'">'+
           '<span class="app-icon large">'+esc(name.charAt(0).toUpperCase())+'</span>'+
-          '<span class="app-nav-copy"><b>'+esc(name)+'</b><small>'+esc(a.id)+'</small></span>'+
+          '<span class="app-nav-copy"><b>'+esc(name)+'</b><small>'+esc(a.package?.format||"artifact")+(appHasPublishing(a)?" · publishing":"")+'</small></span>'+
           '<span class="status-dot '+cls+'" title="'+esc(title)+'"></span></button>';
-      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>'+(unassigned.length?"Create an App for the existing unassigned runner, or add a new App.":"Create the first app directly in this dashboard.")+'</p></div>';
+      }).join(""):'<div class="state-preview"><div class="state-icon">∅</div><b>No apps configured</b><p>Create an app with only the source, build and output features it needs.</p></div>';
       bindAppButtons();
     }
     let emptyDetail=q("#appsEmptyDetail");
     if(!apps.length){
-      fcState.selectedApp=null;
-      if(detail)detail.classList.add("hidden");
-      if(workspace&&!emptyDetail){
-        emptyDetail=document.createElement("div");
-        emptyDetail.id="appsEmptyDetail";
-        emptyDetail.className="card app-empty-detail";
-        emptyDetail.innerHTML='<div><div class="state-glyph">∅</div><b>No app selected</b><p>Apps are the v2 ownership boundary for repositories, executors, GitHub runners, jobs and publishing.</p></div>';
-        workspace.appendChild(emptyDetail);
-      }
+      fcState.selectedApp=null;if(detail)detail.classList.add("hidden");
+      if(workspace&&!emptyDetail){emptyDetail=document.createElement("div");emptyDetail.id="appsEmptyDetail";emptyDetail.className="card app-empty-detail";emptyDetail.innerHTML='<div><div class="state-glyph">∅</div><b>No app selected</b><p>Create the first app to define a source → build → output pipeline.</p></div>';workspace.appendChild(emptyDetail)}
     }else{
-      if(detail)detail.classList.remove("hidden");
-      if(emptyDetail)emptyDetail.remove();
-      const selected=fcState.selectedApp&&apps.find(a=>a.id===fcState.selectedApp.id)?fcState.selectedApp:apps[0];
+      if(detail)detail.classList.remove("hidden");if(emptyDetail)emptyDetail.remove();
+      const selected=fcState.selectedApp&&apps.find(a=>a.id===fcState.selectedApp.id)?apps.find(a=>a.id===fcState.selectedApp.id):apps[0];
       if(selected)selectApp(selected,false);
     }
-    const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" apps</span><span>"+actionApps.length+" GitHub Actions · "+apps.filter(a=>a.build?.executor==="forgecore-native").length+" native</span>";
+    const foot=q("#apps .apps-sidebar-foot");if(foot)foot.innerHTML="<span>"+apps.length+" app"+(apps.length===1?"":"s")+"</span><span>"+publishing+" publishing · "+actionApps.length+" runner-based</span>";
     q("#apps")?.classList.add("live-ready");
   }
 
@@ -3220,7 +3158,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
       if(label==="change avatar"){b.disabled=true;b.title="Dashboard-local profile management is not implemented";return}
       b.disabled=true;b.title="Not implemented in the live Control API yet";
     });
-    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","cleanBuildApp","retryCleanJob","auditExport"].forEach(id=>{const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet"});
+    ["runUpdate","maintenanceToggle","createBackup","restoreBackup","simulateGlobalChange","retryCleanJob","auditExport"].forEach(id=>{const old=document.getElementById(id);if(!old)return;const b=cloneNoHandlers(old);b.disabled=true;b.title="Not exposed by the current ForgeCore Control API yet"});
     qa('[data-go="account"]').forEach(el=>el.classList.add("hidden"));
     const sign=document.getElementById("signOut");if(sign){const b=cloneNoHandlers(sign);b.disabled=true;b.title="Local dashboard authentication is not enabled yet"}
     const retry=document.getElementById("apiRetry");if(retry){const b=cloneNoHandlers(retry);b.addEventListener("click",refreshLive)}
@@ -3231,6 +3169,21 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   function showToast(message){
     const t=document.getElementById("toast");if(!t)return;t.textContent=message;t.classList.add("show");clearTimeout(window.__fcToast);window.__fcToast=setTimeout(()=>t.classList.remove("show"),2600);
   }
+  function bindAppsPart3Controls(){
+    const on=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener("click",fn)};
+    on("buildApp",()=>createAppBuild(currentApp()));
+    on("jobsBuildApp",()=>createAppBuild(currentApp()));
+    on("buildPublishApp",()=>{const app=currentApp();if(app&&appHasPublishing(app))openJobEditor("build-and-publish",app)});
+    on("manageAppRunner",()=>openAppRunnerEditor(currentApp()));
+    on("settingsManageRunner",()=>openAppRunnerEditor(currentApp()));
+    on("validateAppPipeline",validateCurrentPipeline);
+    on("jobsValidatePipeline",validateCurrentPipeline);
+    on("editAppPipeline",()=>openAppEditor(currentApp(),true));
+    on("editAppConfiguration",()=>openAppEditor(currentApp(),false));
+    on("appMore",()=>openAppTab("app-settings"));
+    on("cleanBuildApp",()=>{const app=currentApp();if(app?.build?.executor==="forgecore-native")createAppBuild(app)});
+  }
+
   async function refreshLive(){
     try{
       const [status,apps,jobs,presets]=await Promise.all([api("/api/status"),api("/api/apps"),api("/api/jobs"),api("/api/publish-presets")]);
@@ -3242,6 +3195,7 @@ document.querySelectorAll(".demo").forEach(function(b){b.addEventListener("click
   }
   // Replace simulation-only controls before first user interaction.
   bindTransitionalActions();
+  bindAppsPart3Controls();
   // Current API provides standard cleanup; bind that one real write action.
   bindCleanup();
   // Live logs use the current persistent log API.
