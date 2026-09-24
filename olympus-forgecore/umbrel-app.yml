@@ -2,44 +2,41 @@ manifestVersion: 1
 id: olympus-forgecore
 category: developer
 name: ForgeCore
-version: "0.1.0-beta.45"
-tagline: Self-hosted CI runner for your projects
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.45
+version: "0.1.0-beta.46"
+tagline: CI/CD and release control plane for Olympus apps
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore/icon.svg?v=0.1.0-beta.46
 description: >-
-  ForgeCore is a lightweight self-hosted GitHub Actions platform for Umbrel.
-  It runs persistent repository-level runners for multiple trusted repositories,
-  including authenticated checkout of private repositories.
+  ForgeCore is a self-hosted CI/CD, packaging and release control plane for Umbrel.
 
 
-  CI jobs use ForgeCore's isolated Docker engine instead of Umbrel's host Docker
-  socket. Docker Compose is installed for workflows, while persistent Go build,
-  Go module, npm, Playwright, Docker CLI and runner tool caches reduce repeated
-  downloads between builds.
+  Apps own their source repository, executor, build/package configuration and
+  publishing policy. Jobs can run through ForgeCore's native isolated build runtime
+  or through an App-owned persistent GitHub Actions runner.
 
 
-  Heavy CI data such as Docker images, runner workspaces, caches, artifacts and
-  logs is kept on the configured external ForgeCore storage root. A storage marker
-  guard prevents ForgeCore from silently redirecting heavy CI data to the system disk.
+  ForgeCore keeps GitHub Actions Docker and native build Docker isolated from each
+  other and from Umbrel's host Docker socket. Heavy workspaces, Docker data, caches,
+  artifacts, runner identities and logs stay on the configured external ForgeCore
+  storage root.
 
 
-  The dashboard is the normal administration surface: it shows runner, Docker,
-  Compose and disk health; manages repository runner setup and repair; edits cleanup
-  and storage-retention settings; restarts the runner manager; triggers manual cleanup
-  with queued, running and completed feedback; shows the next cleanup schedule; and
-  exposes persistent ForgeCore logs and recent runtime activity without requiring SSH.
+  The dashboard is the normal administration surface for Apps, Jobs, Releases,
+  Infrastructure, Settings, Logs and Audit. GitHub runner registration uses
+  short-lived tokens; verified persistent runner identity is reused across normal
+  restarts.
 
 
-  ForgeCore uses short-lived GitHub runner registration tokens and clears the token
-  from its local repository config after registration. Persistent runner credentials
-  remain on the external disk, so normal restarts do not require a new token.
+  ForgeCore can create deterministic Umbrel packages, checksums and signed release
+  outputs, publish through Olympus Releases and submit verified stable packages to
+  the Olympus Community App Store.
 
 
-  The source tree also includes an optional QEMU/binfmt helper for ARM64/ARMv7
-  emulation. It is not enabled automatically by the Umbrel package.
+  Older ForgeCore installations are supported through one-time upgrade importers.
+  The active runtime and configuration model are v2 only.
 releaseNotes: >-
-  Beta 45 completes the active v1-to-v2 runtime retirement. ForgeCore now uses
-  v2 global settings, App-owned runners and transient runner requests, while
-  preserving one-time upgrade import and persistent runner identity migration.
+  Beta 46 is the clean v2 repository release. Historical phase trees, placeholder
+  runtime/toolchain folders and stale dashboard files are removed, active
+  documentation is consolidated, and the validated v2 runtime remains unchanged.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore

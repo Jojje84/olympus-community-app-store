@@ -2,7 +2,7 @@
 """ForgeCore v2 isolated build runtime.
 
 Runs native build/test/verify steps as ephemeral containers on a dedicated Docker
-Engine. The engine is separate from the ForgeCore v1 GitHub Actions Docker daemon.
+Engine. The engine is separate from the GitHub Actions runner Docker daemon.
 Only the current job workspace is bind-mounted into a build container.
 """
 
