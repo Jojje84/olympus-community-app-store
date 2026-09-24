@@ -1,0 +1,44 @@
+manifestVersion: 1
+id: forgecore-beta
+category: developer
+name: ForgeCore Beta
+version: "0.1.0-beta.55"
+tagline: Self-hosted build and release control plane
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/forgecore-beta/icon.svg?v=0.1.0-beta.55
+description: >-
+  ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
+
+
+  This beta intentionally starts with no imported apps, no preconfigured release or store
+  destinations, no connected runner identities and no default ForgeCore account. The first
+  launch asks the operator to create an account before ForgeCore data and actions are available.
+
+
+  Apps use a Source → Build → Delivery workflow. External release repositories, store
+  repositories and GitHub runners are connected only when the operator configures them.
+  App-specific jobs and releases retain the owning App name and App ID.
+
+
+  This package is isolated from the existing ForgeCore Community app with a different Umbrel
+  app ID, port, app-data directory and external-storage root so both versions can be installed
+  and evaluated side by side.
+releaseNotes: >-
+  Beta 55 is the clean-user beta. It removes legacy first-run imports and preconfigured
+  Olympus destinations, adds mandatory ForgeCore account setup/login, makes destination
+  connections removable, and isolates the beta from the existing ForgeCore installation.
+
+developer: Jojje84
+website: https://github.com/Jojje84/ForgeCore
+dependencies: []
+repo: https://github.com/Jojje84/ForgeCore
+support: https://github.com/Jojje84/ForgeCore/issues
+
+port: 8800
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/olympus-community-app-store
