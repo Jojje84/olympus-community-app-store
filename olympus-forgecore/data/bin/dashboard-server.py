@@ -36,7 +36,7 @@ RUNTIME_VERSION = os.environ.get("FORGECORE_RUNTIME_VERSION", "dev")
 RUNNER_ENGINE = STORAGE / "runners"
 MANAGER_ARTIFACT = Path("/forgecore/inspect/runner-manager.b64")
 COMPOSE_VERSION = "5.5.1"
-WEB_BUILD = "0.1.0-beta.47"
+WEB_BUILD = "0.1.0-beta.48"
 
 def current_dashboard_payload():
     encoded = DASHBOARD_ARTIFACT.read_bytes().strip()
@@ -729,7 +729,7 @@ def delete_publish_preset(preset_id):
 def validate_app(data):
     require_keys(
         data,
-        {"schemaVersion", "kind", "id", "identity", "source", "build", "package", "publish"},
+        {"schemaVersion", "kind", "id", "identity", "source", "build", "package"},
         {"schemaVersion", "kind", "id", "identity", "source", "build", "package", "publish"},
         "App",
     )
@@ -738,13 +738,13 @@ def validate_app(data):
     app_id = validate_slug(data.get("id"), "App id")
 
     identity = data.get("identity")
-    require_keys(identity, {"name", "storeId"}, {"name", "storeId"}, "App identity")
+    require_keys(identity, {"name"}, {"name", "storeId"}, "App identity")
     name = str(identity.get("name") or "").strip()
     store_id = str(identity.get("storeId") or "").strip()
     if not name or len(name) > 100:
         raise ValueError("App name must be 1-100 characters.")
-    if not STORE_ID.fullmatch(store_id):
-        raise ValueError("storeId must use the olympus-<slug> format.")
+    if store_id and not STORE_ID.fullmatch(store_id):
+        raise ValueError("storeId must use the olympus-<slug> format when configured.")
 
     source = data.get("source")
     require_keys(source, {"provider", "repository", "defaultBranch", "private"}, {"provider", "repository", "defaultBranch", "private"}, "App source")
@@ -760,13 +760,13 @@ def validate_app(data):
         raise ValueError("source.private must be true or false.")
 
     build = data.get("build")
-    require_keys(build, {"executor", "targets"}, {"executor", "targets", "steps"}, "App build")
+    require_keys(build, {"executor"}, {"executor", "targets", "steps"}, "App build")
     executor = str(build.get("executor") or "")
     if executor not in EXECUTORS:
         raise ValueError("App executor is invalid.")
-    targets = build.get("targets")
-    if not isinstance(targets, list) or not targets or len(targets) > len(TARGETS):
-        raise ValueError("App targets must contain at least one supported architecture.")
+    targets = build.get("targets", [])
+    if not isinstance(targets, list) or len(targets) > len(TARGETS):
+        raise ValueError("App targets must be an array of supported architectures.")
     clean_targets = []
     for target in targets:
         if target not in TARGETS:
@@ -825,31 +825,44 @@ def validate_app(data):
         clean_steps.append(clean_step)
 
     package = data.get("package")
-    require_keys(package, {"format", "sourcePath"}, {"format", "sourcePath"}, "App package")
-    if package.get("format") != "umbrel":
-        raise ValueError("Only Umbrel packaging is supported in Phase 0.")
+    require_keys(package, {"format", "sourcePath"}, {"format", "sourcePath"}, "App output")
+    package_format = str(package.get("format") or "")
+    if package_format not in {"artifact", "umbrel"}:
+        raise ValueError("App output format must be artifact or umbrel.")
     source_path = validate_relative_path(package.get("sourcePath"), "package.sourcePath")
+    if package_format == "umbrel" and not clean_targets:
+        raise ValueError("Umbrel package output requires at least one build target architecture.")
 
     publish = data.get("publish")
-    require_keys(publish, {"preset"}, {"preset"}, "App publish")
-    preset_id = validate_slug(publish.get("preset"), "Publish preset id")
-    if get_publish_preset(preset_id) is None:
-        raise ValueError(f"Unknown publish preset: {preset_id}.")
+    preset_id = None
+    preset = None
+    if publish is not None:
+        require_keys(publish, {"preset"}, {"preset"}, "App publish")
+        preset_id = validate_slug(publish.get("preset"), "Publish preset id")
+        preset = get_publish_preset(preset_id)
+        if preset is None:
+            raise ValueError(f"Unknown publish preset: {preset_id}.")
+        if (preset.get("store") or {}).get("enabled") and not store_id:
+            raise ValueError("Olympus Store ID is required when the selected publish preset enables the Community App Store.")
 
     return {
         "schemaVersion": 1,
         "kind": "ForgeCoreApp",
         "id": app_id,
-        "identity": {"name": name, "storeId": store_id},
+        "identity": {"name": name, **({"storeId": store_id} if store_id else {})},
         "source": {
             "provider": "github",
             "repository": repository,
             "defaultBranch": default_branch,
             "private": source["private"],
         },
-        "build": {"executor": executor, "targets": clean_targets, **({"steps": clean_steps} if clean_steps else {})},
-        "package": {"format": "umbrel", "sourcePath": source_path},
-        "publish": {"preset": preset_id},
+        "build": {
+            "executor": executor,
+            **({"targets": clean_targets} if clean_targets else {}),
+            **({"steps": clean_steps} if clean_steps else {}),
+        },
+        "package": {"format": package_format, "sourcePath": source_path},
+        **({"publish": {"preset": preset_id}} if preset_id else {}),
     }
 
 def apps():
@@ -1225,9 +1238,10 @@ def create_job(data):
     ref = str(trigger.get("ref") or "").strip()
     if not ref or len(ref) > 256 or ".." in ref or any(ch in ref for ch in "\r\n\0"):
         raise ValueError("Job trigger ref is invalid.")
-    preset = get_publish_preset(app["publish"]["preset"])
-    if preset is None:
-        raise ValueError(f"Unknown publish preset: {app['publish']['preset']}.")
+    preset_id = (app.get("publish") or {}).get("preset")
+    preset = get_publish_preset(preset_id) if preset_id else None
+    if job_type in {"publish", "build-and-publish"} and preset is None:
+        raise ValueError("This app has no publishing configuration.")
     global_snapshot = read_json(GLOBAL_CONFIG) if GLOBAL_CONFIG.exists() else None
     artifact_source = None
     if job_type == "publish" and app.get("build", {}).get("executor") == "forgecore-native":
@@ -1238,7 +1252,7 @@ def create_job(data):
         artifact_source = resolve_publish_artifact_source(app_id, data["artifactSource"])
     elif "artifactSource" in data:
         raise ValueError("artifactSource is only supported for native publish-only jobs.")
-    validate_publish_job(app, preset, global_snapshot, job_type, ref)
+    validate_publish_job(app, preset or {}, global_snapshot, job_type, ref)
     snapshot = {
         "global": global_snapshot,
         "publishPreset": preset,
@@ -1266,7 +1280,7 @@ def create_job(data):
             "cancelRequested": False,
             **({"artifactSource": artifact_source} if artifact_source else {}),
             "snapshot": snapshot,
-            "stages": job_stages(job_type, preset),
+            "stages": job_stages(job_type, preset or {}),
         }
         write_json_atomic(JD / f"{job_id}.json", job)
     append_activity("job", f"Job {job_id} queued for {app_id}")
@@ -1716,7 +1730,7 @@ def status():
     x.update(inspect_manager_artifact())
     bootstrap_text = tail_text(ST / "runner-bootstrap.log", max_bytes=16384)
     x["bootstrap_present"] = bool(bootstrap_text.strip())
-    x["bootstrap_beta47_seen"] = "ForgeCore 0.1.0-beta.47 runner bootstrap started" in bootstrap_text
+    x["bootstrap_beta48_seen"] = "ForgeCore 0.1.0-beta.48 runner bootstrap started" in bootstrap_text
     x["storage_display"] = STORAGE_DISPLAY
     x["storage_host_path"] = STORAGE_HOST_PATH
     x["storage_resolution"] = STORAGE_RESOLUTION
@@ -1997,7 +2011,7 @@ class Handler(BaseHTTPRequestHandler):
                 "manager_build": current.get("manager_build", "unknown"),
                 "manager_artifact_ok": bool(current.get("manager_artifact_ok")),
                 "manager_artifact_build": current.get("manager_artifact_build", "unknown"),
-                "bootstrap_beta47_seen": bool(current.get("bootstrap_beta47_seen")),
+                "bootstrap_beta48_seen": bool(current.get("bootstrap_beta48_seen")),
             })
         else:
             self.send_json(404, {"error": "Not found"})
