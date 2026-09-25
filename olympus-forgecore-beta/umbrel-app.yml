@@ -2,19 +2,21 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.4"
+version: "0.1.0-beta.5"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-4
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-5
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
-  ForgeCore Runner. No legacy ForgeCore runner runtime or migration code is included.
+  ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 4 fixes Runner Details on mobile. Details actions now use one delegated tap handler
-  instead of per-render button bindings, so refreshed runner cards remain interactive on iPhone
-  and other mobile browsers. The details overlay now has a guarded open path with visible error
-  feedback instead of silently doing nothing, and repository Details navigation no longer depends
-  on CSS.escape or a button that is absent from the Runners view.
+  Clean Beta 5 makes ForgeCore feel immediate on launch. The dashboard now restores the latest
+  cached repository and runner state first, opens without waiting for every GitHub request, and
+  refreshes repositories and runner inventories progressively in the background. Each repository
+  shows its own syncing state while fresh data arrives. The local runtime is now Runner-first
+  throughout: Runner service, Runner API, Runner manager, Runner storage, Runner state and Runner
+  logs replace the old Agent naming. A one-time Beta 4 layout migration keeps existing managed
+  runners from disappearing during this cleanup.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
