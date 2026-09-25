@@ -2,20 +2,20 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.66"
+version: "0.1.0-beta.67"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.66
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.67
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
 
   This beta intentionally starts with no imported apps, no preconfigured release or store
-  destinations, no connected runner identities and no default ForgeCore account. The first
+  destinations, no connected GitHub account or local Agent identities and no default ForgeCore account. The first
   launch asks the operator to create an account before ForgeCore data and actions are available.
 
 
   Apps use a Source → Build → Delivery workflow. External release repositories, store
-  repositories and GitHub runners are connected only when the operator configures them.
+  repositories and GitHub repositories and self-hosted runners are imported from the connected GitHub account.
   App-specific jobs and releases retain the owning App name and App ID.
 
 
@@ -23,11 +23,12 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 66 is an emergency Runner hotfix. Runner controls remain clickable across live SSE refreshes,
-  and Manage now opens live diagnostics with process status, phase, PID, runner log and registration
-  log so a runner stuck in Connecting/Reconnecting exposes the actual GitHub-side error. Online is
-  shown only when ForgeCore confirms the listener is ready for GitHub Actions jobs. Beta 64 runner
-  independence and App-or-Runner onboarding remain unchanged.
+  Beta 67 rebuilds the GitHub connection and compute model from a clean boundary. GitHub is the
+  source of truth for repositories and self-hosted runner inventory. The old runner manager,
+  runner request/removal state, App-owned runner endpoints and v1 runner migration paths are not
+  included. ForgeCore local compute is now an independent Agent resource under storage/agents,
+  while external runner maintenance links directly back to GitHub.
+
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
