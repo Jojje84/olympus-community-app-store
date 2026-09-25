@@ -7,6 +7,7 @@ import json
 import os
 import re
 import secrets
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -33,6 +34,7 @@ GITHUB_ACCOUNT_FILE = CONFIG_DIR / "github-account.json"
 GITHUB_TOKEN_FILE = STATE_DIR / ".github-user-token.json"
 INSTANCE_FILE = STATE_DIR / "instance-id"
 RUNNER_OBSERVATIONS_FILE = STATE_DIR / "runner-observations.json"
+RUNNER_OBSERVATIONS_LOCK = threading.Lock()
 
 SESSION_COOKIE = "forgecore_session"
 SESSION_TTL = 7 * 24 * 3600
@@ -290,43 +292,44 @@ def github_repositories():
 
 
 def update_runner_observations(repository, runners):
-    observations = read_json(RUNNER_OBSERVATIONS_FILE, {})
-    if not isinstance(observations, dict):
-        observations = {}
-    observed_at = utc_now()
-    for runner in runners:
-        runner_id = runner.get("id")
-        if runner_id is None:
-            continue
-        key = repository + ":" + str(runner_id)
-        previous = observations.get(key)
-        if not isinstance(previous, dict):
-            previous = {}
-        first_seen = str(previous.get("firstSeenAt") or observed_at)
-        last_online = str(previous.get("lastOnlineAt") or "")
-        if runner.get("online"):
-            last_online = observed_at
-        record = {
-            "repository": repository,
-            "runnerId": runner_id,
-            "name": str(runner.get("name") or ""),
-            "firstSeenAt": first_seen,
-            "lastSeenAt": observed_at,
-            "lastOnlineAt": last_online,
-            "status": str(runner.get("status") or "offline"),
-        }
-        observations[key] = record
-        runner["firstSeenAt"] = first_seen
-        runner["lastSeenAt"] = observed_at
-        runner["lastOnlineAt"] = last_online
-    if len(observations) > 1500:
-        ordered = sorted(
-            observations.items(),
-            key=lambda item: str((item[1] or {}).get("lastSeenAt") or ""),
-            reverse=True,
-        )
-        observations = dict(ordered[:1000])
-    write_json_private(RUNNER_OBSERVATIONS_FILE, observations)
+    with RUNNER_OBSERVATIONS_LOCK:
+        observations = read_json(RUNNER_OBSERVATIONS_FILE, {})
+        if not isinstance(observations, dict):
+            observations = {}
+        observed_at = utc_now()
+        for runner in runners:
+            runner_id = runner.get("id")
+            if runner_id is None:
+                continue
+            key = repository + ":" + str(runner_id)
+            previous = observations.get(key)
+            if not isinstance(previous, dict):
+                previous = {}
+            first_seen = str(previous.get("firstSeenAt") or observed_at)
+            last_online = str(previous.get("lastOnlineAt") or "")
+            if runner.get("online"):
+                last_online = observed_at
+            record = {
+                "repository": repository,
+                "runnerId": runner_id,
+                "name": str(runner.get("name") or ""),
+                "firstSeenAt": first_seen,
+                "lastSeenAt": observed_at,
+                "lastOnlineAt": last_online,
+                "status": str(runner.get("status") or "offline"),
+            }
+            observations[key] = record
+            runner["firstSeenAt"] = first_seen
+            runner["lastSeenAt"] = observed_at
+            runner["lastOnlineAt"] = last_online
+        if len(observations) > 1500:
+            ordered = sorted(
+                observations.items(),
+                key=lambda item: str((item[1] or {}).get("lastSeenAt") or ""),
+                reverse=True,
+            )
+            observations = dict(ordered[:1000])
+        write_json_private(RUNNER_OBSERVATIONS_FILE, observations)
 
 
 def github_runners(repository):
