@@ -2,18 +2,18 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 9
+## Beta 10
 
-- Adds a dedicated **CI / Workflows** view.
-- Lists workflow files from each connected repository without adding startup delay.
-- Shows detected `runs-on` routing and whether an online runner matches those labels.
-- Shows the latest GitHub Actions run when the current GitHub App has Actions read permission.
-- Workflow **Details** can rename the top-level workflow `name:` by committing the YAML change to the repository default branch.
-- New ForgeCore GitHub Apps request **Contents: read/write** and **Actions: read**.
-- Existing ForgeCore GitHub Apps created before Beta 9 can still list workflows through repository contents; rename may require granting Contents read/write once in GitHub App permissions.
-- Beta 8 fast-login cache and Runner onboarding remain unchanged.
+- Keeps the Beta 9 CI / Workflows view and workflow routing visibility.
+- Adds Start, Stop, Restart, Remove and Diagnostics for ForgeCore-managed runners.
+- Restarts managed runners without deleting their GitHub registration or asking for a new token.
+- Automatically recovers managed runners after unexpected exits, with restart-loop protection.
+- Shows uptime, restart count, last restart, runner ownership and current busy state.
+- Adds Needs attention signals for duplicate registrations, inventory errors and managed runner failures.
+- Allows stale external GitHub runner registrations to be removed directly after confirmation.
+- Keeps external runners visible but does not pretend ForgeCore can start or restart a process on another machine.
+- Allows a local ForgeCore Runner to be added even when external runners already exist for the repository.
 
-Version: 0.1.0-beta.9
+Version: 0.1.0-beta.10
 
-Source branch: `clean-beta/workflows-ui-v9`
-Source commit: `b6ce0e9bf7c63a36d7051698037f01efd29da105`
+Source branch: `clean-beta/runner-workflows-v10`
