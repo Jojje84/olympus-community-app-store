@@ -2,20 +2,20 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.11"
+version: "0.1.0-beta.12"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-11
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-12
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 11 adds Runner Routing to Workflow Details. Every detected GitHub Actions
-  job can stay unchanged, move to GitHub-hosted ubuntu-latest, use any ForgeCore runner,
-  or target one specific ForgeCore-managed runner through an internal routing label.
-  A single control can apply the same routing to all editable jobs. Workflow Details
-  also gains Delete workflow, which removes the workflow YAML from the default branch
-  with a Git commit. Beta 10 runner lifecycle, self-healing and diagnostics remain.
+  Clean Beta 12 fixes GitHub workflow editing permissions. ForgeCore GitHub Apps now
+  request both Contents: Read & write and Workflows: Read & write, which GitHub needs
+  when changing files under .github/workflows. Existing installations now show when
+  workflow-edit permission still needs approval. Rename, Runner Routing and Delete
+  workflow give a clear permission error, and rename is verified against GitHub before
+  ForgeCore reports success.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
