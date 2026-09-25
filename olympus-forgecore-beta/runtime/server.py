@@ -15,7 +15,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "0.1.0-beta.5"
+VERSION = "0.1.0-beta.6"
 APP_ROOT = Path(os.environ.get("FORGECORE_APP_ROOT", "/data"))
 STORAGE_ROOT = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/storage"))
 CONFIG_DIR = APP_ROOT / "config"
