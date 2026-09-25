@@ -26,7 +26,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
 
 <div id="authScreen" class="screen center">
   <div class="card auth-card">
-    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.1</small></div></div>
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.2</small></div></div>
     <div id="setupMode">
       <h1>Create your ForgeCore account</h1>
       <p>This account protects this Umbrel installation. GitHub connection comes next and is kept separate from the local login.</p>
@@ -71,7 +71,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
 
 <div id="appRoot" class="app hidden">
   <aside class="sidebar">
-    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · beta.1</small></div></div>
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · beta.2</small></div></div>
     <nav class="nav">
       <button class="active" data-view="overview">Overview</button>
       <button data-view="repositories">Repositories</button>
@@ -94,7 +94,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
         <div class="card metric"><span>Online</span><b id="metricOnline">0</b><small>Reported by GitHub</small></div>
       </div>
       <div class="card section">
-        <div class="section-head"><div><h2>Runner health</h2><p>ForgeCore shows what GitHub reports and keeps local Agents separate.</p></div><span id="overviewSync" class="pill">Loading</span></div>
+        <div class="section-head"><div><h2>Runner health</h2><p>ForgeCore shows exactly what GitHub reports. Runners created by ForgeCore are marked as managed by ForgeCore.</p></div><span id="overviewSync" class="pill">Loading</span></div>
         <div id="overviewRunnerList" class="repo-list"></div>
       </div>
     </section>
@@ -193,12 +193,15 @@ function statusPill(status){const cls=status==="online"?"good":status==="offline
 function runnerRows(repository){
   const inv=state.inventories[repository],runners=inv?.runners||[];
   if(inv?.error)return '<div class="empty">'+esc(inv.error)+'</div>';
-  if(!runners.length)return '<div class="empty">GitHub reports no self-hosted runners for this repository.</div>';
-  return '<div class="runner-stack">'+runners.map(r=>'<div class="runner"><div><b>'+esc(r.name)+'</b><small>'+esc(r.os||"unknown OS")+' · '+esc((r.labels||[]).join(", ")||"no labels")+'</small></div><div class="runner-meta">'+statusPill(r.status)+'<span class="pill '+(r.busy?"warn":"")+'">'+(r.busy?"Busy":"Idle")+'</span>'+(r.forgecoreAgent?'<span class="pill">ForgeCore</span>':'')+'</div></div>').join("")+'</div>';
+  if(!runners.length)return '<div class="empty">No self-hosted runner is connected to this repository.</div>';
+  return '<div class="runner-stack">'+runners.map(r=>'<div class="runner"><div><b>'+esc(r.name)+'</b><small>'+esc(r.os||"unknown OS")+' · '+esc((r.labels||[]).join(", ")||"no labels")+'</small></div><div class="runner-meta">'+statusPill(r.status)+'<span class="pill '+(r.busy?"warn":"")+'">'+(r.busy?"Busy":"Idle")+'</span>'+(r.forgecoreAgent?'<span class="pill good">Managed by ForgeCore</span>':'')+'</div></div>').join("")+'</div>';
 }
 function repositoryRow(repo,includeRunners){
   const inv=state.inventories[repo.fullName],runners=inv?.runners||[],online=runners.filter(r=>r.online).length,agent=agentFor(repo.fullName);
-  return '<div class="repo-row"><div><b>'+esc(repo.fullName)+'</b><small>'+(repo.private?"Private":"Public")+' · '+esc(repo.defaultBranch||"main")+' · '+runners.length+' runner'+(runners.length===1?"":"s")+' · '+online+' online</small>'+(includeRunners?runnerRows(repo.fullName):"")+(agent?'<div class="agent"><b>'+esc(agent.name)+'</b><small>Local Agent · '+esc(agent.online?"Online":agent.phase||"Offline")+'</small><div class="agent-actions"><button class="btn" data-agent-diagnostics="'+esc(agent.id)+'">Diagnostics</button><button class="btn danger" data-agent-reset="'+esc(agent.id)+'">Reset Agent</button></div></div>':'')+'</div><div class="actions"><button class="btn" data-repo-open="'+esc(repo.fullName)+'">Details</button><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>'+(agent?'':'<button class="btn primary" data-agent-create="'+esc(repo.fullName)+'">Add Agent</button>')+'</div></div>';
+  const repoActions='<button class="btn" data-repo-open="'+esc(repo.fullName)+'">Runners</button><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>';
+  const runnerAction=(!agent && runners.length===0)?'<button class="btn primary" data-agent-create="'+esc(repo.fullName)+'">Add ForgeCore Runner</button>':'';
+  const managedControls=agent?'<div class="agent"><b>ForgeCore Runner</b><small>Managed on this Umbrel · '+esc(agent.online?"Online":agent.phase||"Offline")+'</small><div class="agent-actions"><button class="btn" data-agent-diagnostics="'+esc(agent.id)+'">Diagnostics</button><button class="btn danger" data-agent-reset="'+esc(agent.id)+'">Reset runner</button></div></div>':'';
+  return '<div class="repo-row"><div><b>'+esc(repo.fullName)+'</b><small>'+(repo.private?"Private":"Public")+' · '+esc(repo.defaultBranch||"main")+' · '+runners.length+' runner'+(runners.length===1?"":"s")+' · '+online+' online</small>'+(includeRunners?runnerRows(repo.fullName):"")+(includeRunners?managedControls:"")+'</div><div class="actions">'+(includeRunners?(repoActions+runnerAction):repoActions)+'</div></div>';
 }
 function render(){
   const runners=allRunners(),online=runners.filter(r=>r.online).length;
@@ -223,17 +226,17 @@ function render(){
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   q("#forgecoreAccountKv").innerHTML=[
     ["Local user",state.session.username||"—"],
-    ["Version",state.session.version||"0.1.0-beta.1"],
-    ["Local Agents",String(state.agents.length)]
+    ["Version",state.session.version||"0.1.0-beta.2"],
+    ["ForgeCore Runners",String(state.agents.length)]
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   const appLink=q("#githubAppLink");appLink.href=state.github.app?.htmlUrl||"https://github.com/settings/apps";appLink.classList.toggle("hidden",!state.github.app?.htmlUrl);
   bindDynamic();
 }
 function bindDynamic(){
   qa("[data-repo-open]").forEach(btn=>btn.onclick=()=>{showView("runners");const repo=btn.dataset.repoOpen;setTimeout(()=>q('[data-repo-open="'+CSS.escape(repo)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"}),100)});
-  qa("[data-agent-create]").forEach(btn=>btn.onclick=async()=>{const repo=btn.dataset.agentCreate;try{btn.disabled=true;await api("/api/agents",{method:"POST",body:JSON.stringify({repository:repo})});toast("ForgeCore Agent registration queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
-  qa("[data-agent-reset]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Reset this local ForgeCore Agent? GitHub runner records are maintained through GitHub."))return;try{btn.disabled=true;await api("/api/agents/"+encodeURIComponent(btn.dataset.agentReset),{method:"DELETE"});toast("Agent reset queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
-  qa("[data-agent-diagnostics]").forEach(btn=>btn.onclick=async()=>{try{const d=await api("/api/agents/"+encodeURIComponent(btn.dataset.agentDiagnostics)+"/diagnostics");alert((d.agent?.name||"Agent")+"\n\n"+(d.agentLog||d.registrationLog||"No log output yet."))}catch(err){toast(err.message)}});
+  qa("[data-agent-create]").forEach(btn=>btn.onclick=async()=>{const repo=btn.dataset.agentCreate;try{btn.disabled=true;await api("/api/agents",{method:"POST",body:JSON.stringify({repository:repo})});toast("ForgeCore Runner setup queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
+  qa("[data-agent-reset]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Reset this ForgeCore-managed runner? Existing GitHub-managed runners will not be changed."))return;try{btn.disabled=true;await api("/api/agents/"+encodeURIComponent(btn.dataset.agentReset),{method:"DELETE"});toast("Runner reset queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
+  qa("[data-agent-diagnostics]").forEach(btn=>btn.onclick=async()=>{try{const d=await api("/api/agents/"+encodeURIComponent(btn.dataset.agentDiagnostics)+"/diagnostics");alert((d.agent?.name||"ForgeCore Runner")+"\n\n"+(d.agentLog||d.registrationLog||"No log output yet."))}catch(err){toast(err.message)}});
 }
 q("#setupForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#setupError");try{err.textContent="";await api("/api/account/setup",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
 q("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#loginError");try{err.textContent="";await api("/api/login",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
