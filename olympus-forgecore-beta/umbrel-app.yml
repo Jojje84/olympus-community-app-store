@@ -2,21 +2,20 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.5"
+version: "0.1.0-beta.6"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-5
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-6
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 5 makes ForgeCore feel immediate on launch. The dashboard now restores the latest
-  cached repository and runner state first, opens without waiting for every GitHub request, and
-  refreshes repositories and runner inventories progressively in the background. Each repository
-  shows its own syncing state while fresh data arrives. The local runtime is now Runner-first
-  throughout: Runner service, Runner API, Runner manager, Runner storage, Runner state and Runner
-  logs replace the old Agent naming. A one-time Beta 4 layout migration keeps existing managed
-  runners from disappearing during this cleanup.
+  Clean Beta 6 fixes the delivery and Details flow. Repository Details now opens a repository
+  details panel instead of jumping to the Runners page, while Runner Details keeps its own runner
+  panel and mobile delegated tap handling. The fast launch path from Beta 5 remains: cached data is
+  shown immediately and fresh GitHub repository and runner state is filled in progressively in the
+  background. Store provenance and validation metadata are also corrected so this beta can actually
+  pass the Olympus store pipeline and become available to Umbrel.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
