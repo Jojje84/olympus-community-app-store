@@ -1,14 +1,17 @@
 # ForgeCore Clean Beta
 
-ForgeCore Clean Beta is a new GitHub-first foundation with no legacy ForgeCore runtime, runner manager, migration layer, release worker, or compatibility API.
+ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 1 scope
+## Beta 6
 
-1. Create a local ForgeCore administrator account.
-2. Connect GitHub through the GitHub App Manifest flow.
-3. Import repositories granted to the GitHub App.
-4. Import repository self-hosted runners directly from GitHub.
-5. Optionally create a local ForgeCore Agent for a repository.
-6. Send external runner maintenance back to GitHub.
+- Opens the dashboard immediately and refreshes GitHub data progressively in the background.
+- Shows cached repository and runner state while fresh data is loading.
+- Uses Runner terminology throughout the active runtime.
+- Opens repository Details in a repository details panel instead of redirecting to Runners.
+- Opens runner Details in a dedicated runner details panel with runner state and management actions.
+- Keeps a one-time migration path only to preserve managed runners created by earlier clean betas.
 
-Version: 0.1.0-beta.1
+Version: 0.1.0-beta.6
+
+Source branch: `clean-beta/details-fast-publish-v6`
+Source commit: `ad23ebb8cdeee4337fb2415a0be5268c1ca320bd`
