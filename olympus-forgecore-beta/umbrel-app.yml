@@ -2,21 +2,21 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.8"
+version: "0.1.0-beta.9"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-8
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-9
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 8 improves the complete runner onboarding and login experience. Add Runner now asks
-  for a runner name and optional custom GitHub Actions labels before registration, automatically
-  includes the ForgeCore label, waits for listener readiness and marks managed runners Ready for
-  Actions when GitHub reports them online. Existing managed runner labels are preserved when a
-  runner is renamed. Login is also faster: ForgeCore restores the last local dashboard cache
-  immediately after local authentication, before waiting for GitHub status, then refreshes fresh
-  repository and runner data progressively in the background.
+  Clean Beta 9 turns runner inventory into a full operations surface. ForgeCore-managed
+  runners now support Start, Stop, Restart, Remove and Diagnostics without unnecessary
+  re-registration. Unexpected exits are restarted automatically with a restart-loop guard,
+  while Runner Details shows uptime, restart history and the current GitHub Actions job when
+  available. Possible duplicate registrations and runner failures are collected under Needs
+  attention, external runner removal has busy/ownership safety checks, and a ForgeCore Runner
+  can now be added even when external runners already exist for the repository.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
