@@ -2,21 +2,19 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.3"
+version: "0.1.0-beta.4"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-3
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-4
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. No legacy ForgeCore runner runtime or migration code is included.
 releaseNotes: >-
-  Clean Beta 3 adds full runner management. Every GitHub runner now has a Details view
-  with GitHub ID, labels, ownership, local diagnostics and observation history. ForgeCore
-  warns about possible duplicate ForgeCore-labelled runners, distinguishes offline state
-  from the last Busy/Idle value, and shows online/offline counts per repository. Managed
-  runners can be renamed through an automatic unregister/re-register flow or removed from
-  ForgeCore; external stale runners can be removed directly from GitHub. Runner terminology
-  is now used consistently throughout the UI.
+  Clean Beta 4 fixes Runner Details on mobile. Details actions now use one delegated tap handler
+  instead of per-render button bindings, so refreshed runner cards remain interactive on iPhone
+  and other mobile browsers. The details overlay now has a guarded open path with visible error
+  feedback instead of silently doing nothing, and repository Details navigation no longer depends
+  on CSS.escape or a button that is absent from the Runners view.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
