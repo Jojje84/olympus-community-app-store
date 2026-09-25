@@ -14,7 +14,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "0.1.0-beta.1"
+VERSION = "0.1.0-beta.2"
 APP_ROOT = Path(os.environ.get("FORGECORE_APP_ROOT", "/data"))
 STORAGE_ROOT = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/storage"))
 CONFIG_DIR = APP_ROOT / "config"
@@ -667,7 +667,7 @@ class Handler(BaseHTTPRequestHandler):
                     "expires": now_epoch() + 3600,
                 })
                 manifest = {
-                    "name": "ForgeCore Umbrel " + instance_id,
+                    "name": "ForgeCore " + instance_id[:6].upper(),
                     "url": GITHUB_HOMEPAGE,
                     "description": "Private GitHub integration for one ForgeCore Umbrel installation.",
                     "hook_attributes": {"url": origin + "/api/github/webhook", "active": False},
