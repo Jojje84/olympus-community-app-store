@@ -2,16 +2,22 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 6
+## Beta 7
 
-- Opens the dashboard immediately and refreshes GitHub data progressively in the background.
-- Shows cached repository and runner state while fresh data is loading.
-- Uses Runner terminology throughout the active runtime.
-- Opens repository Details in a repository details panel instead of redirecting to Runners.
-- Opens runner Details in a dedicated runner details panel with runner state and management actions.
-- Keeps a one-time migration path only to preserve managed runners created by earlier clean betas.
+Beta 7 changes how the runtime is delivered to Umbrel. The server, dashboard and runner manager are
+shipped as top-level `.b64.template` artifacts. Umbrel renders those artifacts during install/update,
+and the containers decode and verify the Beta 7 build before starting. This avoids reusing stale nested
+runtime files from an older beta.
 
-Version: 0.1.0-beta.6
+User-facing changes:
 
-Source branch: `clean-beta/details-fast-publish-v6`
-Source commit: `ad23ebb8cdeee4337fb2415a0be5268c1ca320bd`
+- Repository **Details** opens repository information instead of navigating to Runners.
+- Runner **Details** opens the runner detail panel and management actions.
+- Mobile tap handling uses one delegated handler that survives dashboard refreshes.
+- The dashboard shows cached data first and progressively refreshes GitHub state in the background.
+- Active runtime terminology is Runner-only.
+
+Version: 0.1.0-beta.7
+
+Source branch: `clean-beta/rendered-runtime-v7`
+Source commit: `e69314bba4c469cc572b7b036c16a777c12fcd3f`
