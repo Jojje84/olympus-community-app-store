@@ -14,7 +14,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "0.1.0-beta.2"
+VERSION = "0.1.0-beta.3"
 APP_ROOT = Path(os.environ.get("FORGECORE_APP_ROOT", "/data"))
 STORAGE_ROOT = Path(os.environ.get("FORGECORE_STORAGE_ROOT", "/storage"))
 CONFIG_DIR = APP_ROOT / "config"
@@ -32,11 +32,13 @@ GITHUB_APP_FILE = CONFIG_DIR / "github-app.json"
 GITHUB_ACCOUNT_FILE = CONFIG_DIR / "github-account.json"
 GITHUB_TOKEN_FILE = STATE_DIR / ".github-user-token.json"
 INSTANCE_FILE = STATE_DIR / "instance-id"
+RUNNER_OBSERVATIONS_FILE = STATE_DIR / "runner-observations.json"
 
 SESSION_COOKIE = "forgecore_session"
 SESSION_TTL = 7 * 24 * 3600
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+RUNNER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,63}$")
 
 GITHUB_API = "https://api.github.com"
 GITHUB_API_VERSION = "2026-03-10"
@@ -287,6 +289,46 @@ def github_repositories():
     return repositories
 
 
+def update_runner_observations(repository, runners):
+    observations = read_json(RUNNER_OBSERVATIONS_FILE, {})
+    if not isinstance(observations, dict):
+        observations = {}
+    observed_at = utc_now()
+    for runner in runners:
+        runner_id = runner.get("id")
+        if runner_id is None:
+            continue
+        key = repository + ":" + str(runner_id)
+        previous = observations.get(key)
+        if not isinstance(previous, dict):
+            previous = {}
+        first_seen = str(previous.get("firstSeenAt") or observed_at)
+        last_online = str(previous.get("lastOnlineAt") or "")
+        if runner.get("online"):
+            last_online = observed_at
+        record = {
+            "repository": repository,
+            "runnerId": runner_id,
+            "name": str(runner.get("name") or ""),
+            "firstSeenAt": first_seen,
+            "lastSeenAt": observed_at,
+            "lastOnlineAt": last_online,
+            "status": str(runner.get("status") or "offline"),
+        }
+        observations[key] = record
+        runner["firstSeenAt"] = first_seen
+        runner["lastSeenAt"] = observed_at
+        runner["lastOnlineAt"] = last_online
+    if len(observations) > 1500:
+        ordered = sorted(
+            observations.items(),
+            key=lambda item: str((item[1] or {}).get("lastSeenAt") or ""),
+            reverse=True,
+        )
+        observations = dict(ordered[:1000])
+    write_json_private(RUNNER_OBSERVATIONS_FILE, observations)
+
+
 def github_runners(repository):
     if not REPO_RE.fullmatch(repository):
         raise ValueError("Invalid repository.")
@@ -313,11 +355,32 @@ def github_runners(repository):
             "labels": labels,
             "forgecoreAgent": any(label.lower() == "forgecore" for label in labels),
         })
+
+    local_by_name = {
+        item["name"]: item["id"]
+        for item in list_agents()
+        if item.get("repository") == repository and item.get("name")
+    }
+    forgecore_candidates = [
+        runner for runner in runners
+        if runner.get("forgecoreAgent") or str(runner.get("name") or "").lower().startswith("forgecore")
+    ]
+    duplicate_count = len(forgecore_candidates)
+    for runner in runners:
+        local_id = local_by_name.get(runner.get("name"))
+        runner["managedByForgeCore"] = bool(local_id)
+        runner["localRunnerId"] = local_id or ""
+        runner["possibleDuplicate"] = bool(duplicate_count > 1 and runner in forgecore_candidates)
+        runner["duplicateCount"] = duplicate_count if runner["possibleDuplicate"] else 0
+
+    update_runner_observations(repository, runners)
     return {
         "repository": repository,
         "runners": runners,
         "settingsUrl": "https://github.com/" + repository + "/settings/actions/runners",
         "newRunnerUrl": "https://github.com/" + repository + "/settings/actions/runners/new",
+        "possibleForgeCoreDuplicates": duplicate_count > 1,
+        "forgeCoreCandidateCount": duplicate_count,
     }
 
 
@@ -326,6 +389,13 @@ def github_runner_token(repository, kind):
         raise ValueError("Invalid repository.")
     endpoint = "registration-token" if kind == "register" else "remove-token"
     return github_json("POST", f"{GITHUB_API}/repos/{repository}/actions/runners/{endpoint}", {}, token=github_user_token())
+
+
+def validate_runner_name(value):
+    name = str(value or "").strip()
+    if not RUNNER_NAME_RE.fullmatch(name):
+        raise ValueError("Runner name must be 1-64 characters and use letters, numbers, spaces, dots, underscores or hyphens.")
+    return name
 
 
 def list_agents():
@@ -475,24 +545,28 @@ class Handler(BaseHTTPRequestHandler):
                 repository = str(params.get("repository", [""])[0])
                 self.json_response(200, github_runners(repository))
                 return
-            if path == "/api/agents":
+            if path in ("/api/agents", "/api/runners"):
                 if not self.require_user():
                     return
-                self.json_response(200, {"agents": list_agents()})
+                runners = list_agents()
+                self.json_response(200, {"agents": runners, "runners": runners})
                 return
-            if path.startswith("/api/agents/") and path.endswith("/diagnostics"):
+            if (path.startswith("/api/agents/") or path.startswith("/api/runners/")) and path.endswith("/diagnostics"):
                 if not self.require_user():
                     return
-                agent_id = path[len("/api/agents/"):-len("/diagnostics")].strip("/")
+                prefix = "/api/runners/" if path.startswith("/api/runners/") else "/api/agents/"
+                agent_id = path[len(prefix):-len("/diagnostics")].strip("/")
                 if not SLUG_RE.fullmatch(agent_id):
-                    self.json_response(400, {"error": "Invalid Agent id"})
+                    self.json_response(400, {"error": "Invalid Runner id"})
                     return
                 agent = next((item for item in list_agents() if item["id"] == agent_id), None)
                 if not agent:
-                    self.json_response(404, {"error": "Agent not found"})
+                    self.json_response(404, {"error": "Runner not found"})
                     return
                 self.json_response(200, {
+                    "runner": agent,
                     "agent": agent,
+                    "runnerLog": (LOG_DIR / f"agent-{agent_id}.log").read_text(encoding="utf-8", errors="replace")[-16000:] if (LOG_DIR / f"agent-{agent_id}.log").exists() else "",
                     "agentLog": (LOG_DIR / f"agent-{agent_id}.log").read_text(encoding="utf-8", errors="replace")[-16000:] if (LOG_DIR / f"agent-{agent_id}.log").exists() else "",
                     "registrationLog": (LOG_DIR / f"agent-registration-{agent_id}.log").read_text(encoding="utf-8", errors="replace")[-16000:] if (LOG_DIR / f"agent-registration-{agent_id}.log").exists() else "",
                 })
@@ -695,7 +769,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.json_response(200, {"ok": True})
                 return
 
-            if path == "/api/agents":
+            if path in ("/api/agents", "/api/runners"):
                 repository = str(data.get("repository") or "").strip()
                 replace_existing = data.get("replaceExisting") is True
                 if not REPO_RE.fullmatch(repository):
@@ -703,17 +777,52 @@ class Handler(BaseHTTPRequestHandler):
                 agent_id = slug(repository)
                 exists = any(item["id"] == agent_id for item in list_agents())
                 if exists and not replace_existing:
-                    self.json_response(409, {"error": "A local ForgeCore Agent already exists for this repository."})
+                    self.json_response(409, {"error": "A local ForgeCore Runner already exists for this repository."})
                     return
+                requested_name = str(data.get("name") or ("ForgeCore-" + agent_id)).strip()
+                requested_name = validate_runner_name(requested_name)
                 reg = github_runner_token(repository, "register")
                 write_json_private(AGENT_REQUEST_DIR / (agent_id + ".json"), {
-                    "kind": "ForgeCoreAgentRequest",
+                    "kind": "ForgeCoreRunnerRequest",
                     "repository": repository,
                     "registrationToken": reg.get("token"),
+                    "runnerName": requested_name,
                     "replaceExisting": replace_existing,
                     "requestedAt": utc_now(),
                 })
-                self.json_response(202, {"ok": True, "id": agent_id})
+                self.json_response(202, {"ok": True, "id": agent_id, "name": requested_name})
+                return
+
+            if path.startswith("/api/runners/") and path.endswith("/rename"):
+                agent_id = path[len("/api/runners/"):-len("/rename")].strip("/")
+                if not SLUG_RE.fullmatch(agent_id):
+                    raise ValueError("Invalid Runner id.")
+                agent = next((item for item in list_agents() if item["id"] == agent_id), None)
+                if not agent:
+                    self.json_response(404, {"error": "Runner not found"})
+                    return
+                requested_name = validate_runner_name(data.get("name"))
+                if requested_name == agent.get("name"):
+                    self.json_response(200, {"ok": True, "id": agent_id, "name": requested_name})
+                    return
+                remove = github_runner_token(agent["repository"], "remove")
+                reg = github_runner_token(agent["repository"], "register")
+                write_json_private(AGENT_RESET_DIR / (agent_id + ".json"), {
+                    "kind": "ForgeCoreRunnerReset",
+                    "repository": agent["repository"],
+                    "removeToken": remove.get("token"),
+                    "requestedAt": utc_now(),
+                    "reason": "rename",
+                })
+                write_json_private(AGENT_REQUEST_DIR / (agent_id + ".json"), {
+                    "kind": "ForgeCoreRunnerRequest",
+                    "repository": agent["repository"],
+                    "registrationToken": reg.get("token"),
+                    "runnerName": requested_name,
+                    "replaceExisting": True,
+                    "requestedAt": utc_now(),
+                })
+                self.json_response(202, {"ok": True, "id": agent_id, "name": requested_name})
                 return
 
             self.json_response(404, {"error": "Not found"})
@@ -729,20 +838,34 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if not self.require_user():
                 return
-            if path.startswith("/api/agents/"):
-                agent_id = path[len("/api/agents/"):].strip("/")
+            if path.startswith("/api/github/runners/"):
+                runner_id = path[len("/api/github/runners/"):].strip("/")
+                repository = str(urllib.parse.parse_qs(parsed.query).get("repository", [""])[0]).strip()
+                if not runner_id.isdigit() or not REPO_RE.fullmatch(repository):
+                    raise ValueError("Invalid GitHub runner or repository.")
+                github_json(
+                    "DELETE",
+                    f"{GITHUB_API}/repos/{repository}/actions/runners/{runner_id}",
+                    token=github_user_token(),
+                )
+                self.json_response(200, {"ok": True, "runnerId": int(runner_id)})
+                return
+            if path.startswith("/api/agents/") or path.startswith("/api/runners/"):
+                prefix = "/api/runners/" if path.startswith("/api/runners/") else "/api/agents/"
+                agent_id = path[len(prefix):].strip("/")
                 if not SLUG_RE.fullmatch(agent_id):
-                    raise ValueError("Invalid Agent id.")
+                    raise ValueError("Invalid Runner id.")
                 agent = next((item for item in list_agents() if item["id"] == agent_id), None)
                 if not agent:
-                    self.json_response(404, {"error": "Agent not found"})
+                    self.json_response(404, {"error": "Runner not found"})
                     return
                 remove = github_runner_token(agent["repository"], "remove")
                 write_json_private(AGENT_RESET_DIR / (agent_id + ".json"), {
-                    "kind": "ForgeCoreAgentReset",
+                    "kind": "ForgeCoreRunnerReset",
                     "repository": agent["repository"],
                     "removeToken": remove.get("token"),
                     "requestedAt": utc_now(),
+                    "reason": "remove",
                 })
                 self.json_response(202, {"ok": True})
                 return
