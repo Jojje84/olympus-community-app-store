@@ -675,7 +675,7 @@ class Handler(BaseHTTPRequestHandler):
                     "callback_urls": [origin + "/github/oauth/callback"],
                     "setup_url": origin + "/github/install/callback",
                     "setup_on_update": True,
-                    "public": True,
+                    "public": False,
                     "default_permissions": {
                         "metadata": "read",
                         "contents": "read",
