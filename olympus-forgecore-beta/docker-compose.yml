@@ -22,7 +22,7 @@ services:
       retries: 12
       start_period: 10s
 
-  agent:
+  runner:
     image: ghcr.io/actions/actions-runner:2.337.0
     restart: unless-stopped
     init: true
@@ -35,17 +35,17 @@ services:
     volumes:
       - ${APP_DATA_DIR}/data:/data
       - ${APP_DATA_DIR}/storage:/storage
-      - ${APP_DATA_DIR}/runtime/agent-manager.sh:/runtime/agent-manager.sh:ro
+      - ${APP_DATA_DIR}/runtime/runner-manager.sh:/runtime/runner-manager.sh:ro
     entrypoint:
       - /bin/bash
       - -lc
       - >-
         set -euo pipefail;
-        sudo mkdir -p /data/state/agent-requests /data/state/agent-resets /storage/agents /storage/logs;
-        sudo chown -R runner:docker /data /storage/agents /storage/logs;
-        command -v jq >/dev/null || { echo "ForgeCore Agent image is missing jq"; exit 1; };
-        /bin/bash -n /runtime/agent-manager.sh;
-        exec /bin/bash /runtime/agent-manager.sh
+        sudo mkdir -p /data/state/runner-requests /data/state/runner-resets /storage/runners /storage/logs;
+        sudo chown -R runner:docker /data /storage/runners /storage/logs;
+        command -v jq >/dev/null || { echo "ForgeCore Runner image is missing jq"; exit 1; };
+        /bin/bash -n /runtime/runner-manager.sh;
+        exec /bin/bash /runtime/runner-manager.sh
 
   web:
     image: python:3.13-alpine
