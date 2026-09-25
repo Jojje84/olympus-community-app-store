@@ -2,22 +2,23 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.15"
+version: "0.1.0-beta.16"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-15
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-16
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 15 fixes the underlying GitHub integration problem found in Beta 14.
-  ForgeCore now audits the complete permission set it actually needs: Contents write,
-  Workflows write, Actions read and Administration write. Older ForgeCore GitHub Apps
-  can be replaced through a guided Repair GitHub integration flow without dropping the
-  current connection until the replacement is installed and authorized. Workflow and
-  repository views no longer hide Actions 403 errors as "no recent run", and workflow
-  rename/routing/delete failures stay visible with the real GitHub error and a repair
-  action. Successful workflow changes refresh immediately from GitHub.
+  Clean Beta 16 fixes workflow changes on protected branches and adds real workflow
+  auto-refresh. Rename, runner routing and delete first try the target branch directly.
+  If GitHub reports that repository rules require a pull request, ForgeCore creates a
+  temporary ForgeCore branch, commits and verifies the requested workflow change there,
+  and opens a pull request back to the protected branch. The UI now says explicitly
+  when a change is applied versus waiting for merge, links the pull request, and keeps
+  refreshing workflows every 10 seconds while the Workflows view is open. The GitHub
+  App permission set now also includes Pull requests: Read & write so protected-branch
+  changes can be completed without disabling branch protection.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
