@@ -2,15 +2,15 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.1"
+version: "0.1.0-beta.2"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-1
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-2
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach local
   ForgeCore Agent compute. No legacy ForgeCore runner runtime or migration code is included.
 releaseNotes: >-
-  Clean Beta 1 starts a new ForgeCore beta generation. GitHub connection uses the
+  Clean Beta 2 improves runner UX after first real GitHub testing. Repositories no longer expose compute actions, existing GitHub runners are shown as the source of truth, and local compute is presented as a ForgeCore Runner instead of an Agent. Clean Beta 1 started a new ForgeCore beta generation. GitHub connection uses the
   GitHub App Manifest flow, so ForgeCore no longer requires a pre-packaged OAuth
   Client ID. Repositories and self-hosted runners are imported from GitHub.
 developer: Jojje84
