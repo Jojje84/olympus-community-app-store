@@ -2,18 +2,17 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 10
+## Beta 11
 
-- Keeps the Beta 9 CI / Workflows view and workflow routing visibility.
-- Adds Start, Stop, Restart, Remove and Diagnostics for ForgeCore-managed runners.
-- Restarts managed runners without deleting their GitHub registration or asking for a new token.
-- Automatically recovers managed runners after unexpected exits, with restart-loop protection.
-- Shows uptime, restart count, last restart, runner ownership and current busy state.
-- Adds Needs attention signals for duplicate registrations, inventory errors and managed runner failures.
-- Allows stale external GitHub runner registrations to be removed directly after confirmation.
-- Keeps external runners visible but does not pretend ForgeCore can start or restart a process on another machine.
-- Allows a local ForgeCore Runner to be added even when external runners already exist for the repository.
+- Keeps the Beta 10 runner operations and CI / Workflows view.
+- Adds **Runner Routing** per GitHub Actions job.
+- Lets you send **all jobs** in a workflow to GitHub-hosted, any ForgeCore runner, or one specific ForgeCore-managed runner.
+- Lets you route only selected jobs to ForgeCore while leaving other jobs unchanged.
+- Uses a private ForgeCore routing label when a job must run on one specific managed runner.
+- Shows per-job routing health so it is clear whether GitHub has an online matching runner.
+- Adds **Delete workflow** in Workflow Details. ForgeCore removes the workflow YAML file from the repository default branch with a Git commit.
+- Keeps workflow rename, runner lifecycle controls, self-healing, diagnostics, duplicate cleanup and external runner visibility.
 
-Version: 0.1.0-beta.10
+Version: 0.1.0-beta.11
 
-Source branch: `clean-beta/runner-workflows-v10`
+Source branch: `clean-beta/runner-routing-v11`
