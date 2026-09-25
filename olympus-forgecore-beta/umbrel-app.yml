@@ -2,23 +2,22 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.16"
+version: "0.1.0-beta.17"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-16
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-17
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 16 fixes workflow changes on protected branches and adds real workflow
-  auto-refresh. Rename, runner routing and delete first try the target branch directly.
-  If GitHub reports that repository rules require a pull request, ForgeCore creates a
-  temporary ForgeCore branch, commits and verifies the requested workflow change there,
-  and opens a pull request back to the protected branch. The UI now says explicitly
-  when a change is applied versus waiting for merge, links the pull request, and keeps
-  refreshing workflows every 10 seconds while the Workflows view is open. The GitHub
-  App permission set now also includes Pull requests: Read & write so protected-branch
-  changes can be completed without disabling branch protection.
+  Clean Beta 17 hardens workflow operations and the runner-backed release gate. Rename
+  and delete now show inline progress and results instead of looking stuck, GitHub
+  workflow mutations use a bounded 90-second timeout, and successful writes no longer
+  wait on a full repository/status refresh before the result is shown. The Clean Beta
+  validation now includes a real GitHub workflow create/rename/delete exercise through
+  the installed ForgeCore authentication on a self-hosted ForgeCore runner, in addition
+  to shell, JavaScript, Python, Compose and runner-boundary validation. Beta 16 protected
+  branch handling, pull-request fallback and workflow auto-refresh remain included.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
