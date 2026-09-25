@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d12">
+<title>ForgeCore Beta</title>
+<style>
+:root{--bg:#090c11;--panel:#10151d;--panel2:#151b25;--line:#252e3c;--text:#eef3fb;--muted:#8d9aab;--muted2:#667386;--accent:#f4a000;--accent2:#ffb72e;--good:#36c98f;--warn:#f6b73c;--bad:#ff657a;--shadow:0 24px 70px rgba(0,0,0,.34)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button,a{touch-action:manipulation}
+body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160,0,.10),transparent 30%),linear-gradient(180deg,#0a0e14,#080b10 42%,#090c11)}
+.hidden{display:none!important}.screen{min-height:100vh;padding:24px}.center{display:grid;place-items:center}.shell{width:min(1180px,100%);margin:0 auto}
+.card{background:rgba(16,21,29,.94);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}.btn{border:1px solid var(--line);background:#161d28;color:var(--text);border-radius:12px;padding:11px 15px;font-weight:750;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn:hover{border-color:#394456}.btn.primary{background:linear-gradient(180deg,var(--accent2),var(--accent));border-color:#c47d00;color:#101010}.btn.danger{color:#ffc2ca;border-color:#5b2b35;background:#24151a}.btn:disabled{opacity:.45;cursor:not-allowed}
+.kicker{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted2);font-weight:850}.logo{width:48px;height:48px;border-radius:15px;background:linear-gradient(145deg,#1b2431,#0d1118);border:1px solid #303949;display:grid;place-items:center;font-weight:900;letter-spacing:-.04em}.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:18px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.auth-card{width:min(470px,100%);padding:26px}.auth-card h1{font-size:30px;line-height:1.05;margin:28px 0 8px;letter-spacing:-.04em}.auth-card p{color:var(--muted);line-height:1.6;margin:0 0 22px}.form{display:grid;gap:12px}.field{display:grid;gap:6px}.field span{font-size:11px;color:var(--muted);font-weight:700}.field input{width:100%;background:#0c1118;border:1px solid var(--line);color:var(--text);border-radius:11px;padding:12px 13px;outline:none}.field input:focus{border-color:#536071}.error{min-height:18px;color:#ff9aaa;font-size:11px}.note{font-size:11px;color:var(--muted2);line-height:1.5}
+.github-card{width:min(620px,100%);padding:30px}.github-card h1{font-size:34px;line-height:1.05;margin:28px 0 10px;letter-spacing:-.045em}.github-card>p{font-size:15px;color:var(--muted);line-height:1.65;margin:0 0 22px;max-width:520px}.flow{display:grid;gap:9px;margin:20px 0 24px}.flow-row{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;padding:11px 0;border-top:1px solid rgba(255,255,255,.05)}.flow-row:first-child{border-top:0}.flow-num{width:28px;height:28px;border-radius:9px;background:#151c26;border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:850;color:#cdd6e4}.flow-row b{font-size:13px}.flow-row small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:3px}.github-actions{display:flex;gap:10px;flex-wrap:wrap}.github-error{margin-top:14px;border:1px solid #5c3540;background:#24171b;border-radius:12px;padding:12px;color:#ffc0c8;font-size:11px;line-height:1.5}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:20px;background:rgba(9,12,17,.78);position:sticky;top:0;height:100vh}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:var(--muted);text-align:left;border-radius:10px;padding:10px 11px;font-weight:700;cursor:pointer}.nav button.active{background:#171e28;color:var(--text)}.side-account{margin-top:auto;border-top:1px solid var(--line);padding-top:14px;display:flex;gap:10px;align-items:center}.side-account img{width:32px;height:32px;border-radius:50%;background:#222}.side-account b,.side-account small{display:block}.side-account small{color:var(--muted);font-size:10px;margin-top:2px}.main{padding:28px 30px 60px;min-width:0}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}.top h1{font-size:30px;letter-spacing:-.04em;margin:0}.top p{margin:5px 0 0;color:var(--muted);font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{padding:17px}.metric span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}.metric b{display:block;font-size:25px;margin-top:8px}.metric small{display:block;color:var(--muted2);font-size:10px;margin-top:4px}.section{margin-top:18px;padding:18px}.section-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:13px}.section-head h2{font-size:16px;margin:0}.section-head p{font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.5}.pill{display:inline-flex;align-items:center;border:1px solid var(--line);background:#151c26;color:#bdc7d5;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:800;white-space:nowrap}.pill.good{color:#9aebca;border-color:#285b49;background:#10261f}.pill.warn{color:#ffd993;border-color:#574421;background:#251e10}.pill.bad{color:#ffb2bf;border-color:#5f303a;background:#28171b}
+.repo-list{display:grid;gap:9px}.repo-row{border:1px solid var(--line);background:#0e131a;border-radius:14px;padding:13px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center}.repo-row b{font-size:13px}.repo-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.runner-stack{display:grid;gap:7px;margin-top:10px}.runner{border:1px solid #212a36;background:#121923;border-radius:11px;padding:10px 11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}.runner b,.runner small{display:block}.runner small{color:var(--muted);font-size:9px;margin-top:3px}.runner-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.empty{border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted);font-size:12px}.agent{margin-top:10px;padding:10px;border:1px dashed #344052;border-radius:11px;background:#0d1219}.agent b,.agent small{display:block}.agent small{font-size:9px;color:var(--muted);margin-top:3px}.agent-actions{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}.view{display:none}.view.active{display:block}.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.kv{display:grid;gap:1px}.kv div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}.kv div:last-child{border-bottom:0}.kv span{color:var(--muted);font-size:11px}.kv b{font-size:11px;text-align:right}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;background:#171f2a;border:1px solid #344052;color:#eef3fb;padding:10px 14px;border-radius:12px;font-size:11px;transition:.18s;pointer-events:none;z-index:2000}.toast.show{opacity:1;transform:translate(-50%,0)}
+.mobile-nav{display:none}
+@media(max-width:900px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:20px 16px 82px}.mobile-nav{position:fixed;z-index:1000;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:rgba(16,21,29,.95);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:var(--shadow)}.mobile-nav button{border:0;background:transparent;color:var(--muted);padding:9px 5px;border-radius:10px;font-size:9px;font-weight:800}.mobile-nav button.active{background:#1b2430;color:var(--text)}}
+@media(max-width:560px){.screen{padding:14px}.auth-card,.github-card{padding:21px;border-radius:19px}.github-card h1{font-size:30px}.main{padding-top:18px}.top{align-items:flex-start}.top h1{font-size:26px}.grid4{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:13px}.metric b{font-size:21px}.repo-row,.runner{grid-template-columns:1fr}.repo-row>.actions,.runner-meta{justify-content:flex-start}.account-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="authScreen" class="screen center">
+  <div class="card auth-card">
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.1</small></div></div>
+    <div id="setupMode">
+      <h1>Create your ForgeCore account</h1>
+      <p>This account protects this Umbrel installation. GitHub connection comes next and is kept separate from the local login.</p>
+      <form id="setupForm" class="form">
+        <label class="field"><span>Username</span><input name="username" autocomplete="username" required minlength="2"></label>
+        <label class="field"><span>Password</span><input name="password" type="password" autocomplete="new-password" required minlength="10"></label>
+        <button class="btn primary" type="submit">Create account</button>
+        <div id="setupError" class="error"></div>
+      </form>
+    </div>
+    <div id="loginMode" class="hidden">
+      <h1>Sign in to ForgeCore</h1>
+      <p>Use the local account for this installation.</p>
+      <form id="loginForm" class="form">
+        <label class="field"><span>Username</span><input name="username" autocomplete="username" required></label>
+        <label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="btn primary" type="submit">Sign in</button>
+        <div id="loginError" class="error"></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="githubScreen" class="screen center hidden">
+  <div class="card github-card">
+    <div class="brand"><div class="logo">GH</div><div><b>GitHub connection</b><small>One-time setup for this ForgeCore</small></div></div>
+    <h1>Connect GitHub</h1>
+    <p>ForgeCore reads your repositories and self-hosted runner state from GitHub, so you do not have to recreate that information here.</p>
+    <div class="flow">
+      <div class="flow-row"><div class="flow-num">1</div><div><b>ForgeCore creates its private GitHub App</b><small>GitHub shows the configuration before anything is created.</small></div></div>
+      <div class="flow-row"><div class="flow-num">2</div><div><b>Choose repository access</b><small>Install the app only where you want ForgeCore to work.</small></div></div>
+      <div class="flow-row"><div class="flow-num">3</div><div><b>Return automatically</b><small>Repositories and runners are imported after GitHub confirms access.</small></div></div>
+    </div>
+    <div class="github-actions">
+      <button id="connectGithub" class="btn primary">Connect GitHub</button>
+      <button id="githubLogout" class="btn">Sign out</button>
+    </div>
+    <div id="githubError" class="github-error hidden"></div>
+    <div class="note" style="margin-top:14px">No OAuth Client ID is required in the package. ForgeCore uses GitHub's App Manifest setup for this installation.</div>
+  </div>
+</div>
+
+<div id="appRoot" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · beta.1</small></div></div>
+    <nav class="nav">
+      <button class="active" data-view="overview">Overview</button>
+      <button data-view="repositories">Repositories</button>
+      <button data-view="runners">Runners</button>
+      <button data-view="account">Account</button>
+    </nav>
+    <div class="side-account">
+      <img id="sideAvatar" alt="">
+      <div><b id="sideLogin">GitHub</b><small id="sideRepoCount">0 repositories</small></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section id="overview" class="view active">
+      <div class="top"><div><h1>Overview</h1><p>GitHub is the source of repository and runner state.</p></div><div class="actions"><button class="btn" id="refreshAll">Refresh</button></div></div>
+      <div class="grid4">
+        <div class="card metric"><span>GitHub</span><b id="metricGithub">—</b><small>Connected account</small></div>
+        <div class="card metric"><span>Repositories</span><b id="metricRepos">0</b><small>Granted to ForgeCore</small></div>
+        <div class="card metric"><span>Runners</span><b id="metricRunners">0</b><small>Imported from GitHub</small></div>
+        <div class="card metric"><span>Online</span><b id="metricOnline">0</b><small>Reported by GitHub</small></div>
+      </div>
+      <div class="card section">
+        <div class="section-head"><div><h2>Runner health</h2><p>ForgeCore shows what GitHub reports and keeps local Agents separate.</p></div><span id="overviewSync" class="pill">Loading</span></div>
+        <div id="overviewRunnerList" class="repo-list"></div>
+      </div>
+    </section>
+
+    <section id="repositories" class="view">
+      <div class="top"><div><h1>Repositories</h1><p>Only repositories granted to this ForgeCore GitHub App appear here.</p></div><div class="actions"><button class="btn" id="refreshRepos">Refresh</button></div></div>
+      <div id="repositoryList" class="repo-list"></div>
+    </section>
+
+    <section id="runners" class="view">
+      <div class="top"><div><h1>Runners</h1><p>Self-hosted runner inventory comes directly from GitHub.</p></div><div class="actions"><button class="btn primary" id="syncRunners">Sync GitHub runners</button></div></div>
+      <div id="runnerList" class="repo-list"></div>
+    </section>
+
+    <section id="account" class="view">
+      <div class="top"><div><h1>Account</h1><p>Local ForgeCore security and GitHub access are separate.</p></div></div>
+      <div class="account-grid">
+        <div class="card section" style="margin-top:0"><div class="section-head"><div><h2>GitHub</h2><p>Connected identity and installation.</p></div></div><div id="githubAccountKv" class="kv"></div><div class="actions" style="margin-top:12px"><a id="githubAppLink" class="btn" target="_blank" rel="noopener">Open GitHub App ↗</a></div></div>
+        <div class="card section" style="margin-top:0"><div class="section-head"><div><h2>ForgeCore</h2><p>This Umbrel installation.</p></div></div><div id="forgecoreAccountKv" class="kv"></div><div class="actions" style="margin-top:12px"><button id="logout" class="btn">Sign out</button></div></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="mobile-nav">
+    <button class="active" data-view="overview">Overview</button>
+    <button data-view="repositories">Repos</button>
+    <button data-view="runners">Runners</button>
+    <button data-view="account">Account</button>
+  </nav>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const state={session:null,github:null,repositories:[],inventories:{},agents:[],loading:false};
+const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+async function api(path,options={}){
+  const res=await fetch(path,{cache:"no-store",headers:{"Content-Type":"application/json"},...options});
+  let body={};try{body=await res.json()}catch(_){}
+  if(!res.ok)throw new Error(body.error||("HTTP "+res.status));
+  return body;
+}
+function toast(message){const el=q("#toast");el.textContent=message;el.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove("show"),2200)}
+function showOnly(id){["authScreen","githubScreen","appRoot"].forEach(key=>q("#"+key).classList.toggle("hidden",key!==id))}
+function showView(id){qa(".view").forEach(el=>el.classList.toggle("active",el.id===id));qa("[data-view]").forEach(el=>el.classList.toggle("active",el.dataset.view===id));window.scrollTo({top:0,behavior:"smooth"})}
+qa("[data-view]").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.view)));
+
+async function loadSession(){
+  state.session=await api("/api/session");
+  if(state.session.setupRequired){q("#setupMode").classList.remove("hidden");q("#loginMode").classList.add("hidden");showOnly("authScreen");return false}
+  if(!state.session.authenticated){q("#setupMode").classList.add("hidden");q("#loginMode").classList.remove("hidden");showOnly("authScreen");return false}
+  return true;
+}
+async function loadGithubStatus(){
+  state.github=await api("/api/github/status");
+  if(!state.github.connected){showOnly("githubScreen");showGithubQueryError();return false}
+  return true;
+}
+function showGithubQueryError(){
+  const params=new URLSearchParams(location.search),error=params.get("github_error"),box=q("#githubError");
+  if(error){box.textContent="GitHub connection did not complete: "+error;box.classList.remove("hidden")}else box.classList.add("hidden");
+}
+async function loadRepositories(){
+  const result=await api("/api/github/repositories");
+  state.repositories=(result.repositories||[]).filter(repo=>!repo.archived);
+}
+async function loadAgents(){
+  const result=await api("/api/agents");
+  state.agents=result.agents||[];
+}
+async function loadRunnerInventory(force=false){
+  const next={};
+  const queue=state.repositories.slice();
+  const workers=Math.min(4,queue.length||1);
+  await Promise.all(Array.from({length:workers},async()=>{
+    while(queue.length){
+      const repo=queue.shift();
+      try{next[repo.fullName]=await api("/api/github/runners?repository="+encodeURIComponent(repo.fullName))}catch(err){next[repo.fullName]={repository:repo.fullName,runners:[],error:err.message,settingsUrl:repo.runnerSettingsUrl}}
+    }
+  }));
+  state.inventories=next;
+}
+async function refreshEverything(){
+  if(state.loading)return;
+  state.loading=true;
+  try{
+    await Promise.all([loadRepositories(),loadAgents()]);
+    await loadRunnerInventory();
+    render();
+  }catch(err){toast(err.message)}finally{state.loading=false}
+}
+function allRunners(){return Object.values(state.inventories).flatMap(item=>item?.runners||[])}
+function agentFor(repo){return state.agents.find(agent=>agent.repository===repo)||null}
+function statusPill(status){const cls=status==="online"?"good":status==="offline"?"bad":"warn";return '<span class="pill '+cls+'">'+esc(status||"unknown")+'</span>'}
+function runnerRows(repository){
+  const inv=state.inventories[repository],runners=inv?.runners||[];
+  if(inv?.error)return '<div class="empty">'+esc(inv.error)+'</div>';
+  if(!runners.length)return '<div class="empty">GitHub reports no self-hosted runners for this repository.</div>';
+  return '<div class="runner-stack">'+runners.map(r=>'<div class="runner"><div><b>'+esc(r.name)+'</b><small>'+esc(r.os||"unknown OS")+' · '+esc((r.labels||[]).join(", ")||"no labels")+'</small></div><div class="runner-meta">'+statusPill(r.status)+'<span class="pill '+(r.busy?"warn":"")+'">'+(r.busy?"Busy":"Idle")+'</span>'+(r.forgecoreAgent?'<span class="pill">ForgeCore</span>':'')+'</div></div>').join("")+'</div>';
+}
+function repositoryRow(repo,includeRunners){
+  const inv=state.inventories[repo.fullName],runners=inv?.runners||[],online=runners.filter(r=>r.online).length,agent=agentFor(repo.fullName);
+  return '<div class="repo-row"><div><b>'+esc(repo.fullName)+'</b><small>'+(repo.private?"Private":"Public")+' · '+esc(repo.defaultBranch||"main")+' · '+runners.length+' runner'+(runners.length===1?"":"s")+' · '+online+' online</small>'+(includeRunners?runnerRows(repo.fullName):"")+(agent?'<div class="agent"><b>'+esc(agent.name)+'</b><small>Local Agent · '+esc(agent.online?"Online":agent.phase||"Offline")+'</small><div class="agent-actions"><button class="btn" data-agent-diagnostics="'+esc(agent.id)+'">Diagnostics</button><button class="btn danger" data-agent-reset="'+esc(agent.id)+'">Reset Agent</button></div></div>':'')+'</div><div class="actions"><button class="btn" data-repo-open="'+esc(repo.fullName)+'">Details</button><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>'+(agent?'':'<button class="btn primary" data-agent-create="'+esc(repo.fullName)+'">Add Agent</button>')+'</div></div>';
+}
+function render(){
+  const runners=allRunners(),online=runners.filter(r=>r.online).length;
+  q("#metricGithub").textContent=state.github.account?.login||"Connected";
+  q("#metricRepos").textContent=state.repositories.length;
+  q("#metricRunners").textContent=runners.length;
+  q("#metricOnline").textContent=online;
+  q("#overviewSync").textContent="Synced";
+  q("#overviewSync").className="pill good";
+  q("#sideLogin").textContent=state.github.account?.login||"GitHub";
+  q("#sideRepoCount").textContent=state.repositories.length+" repositories";
+  q("#sideAvatar").src=state.github.account?.avatarUrl||"";
+  const overviewRepos=state.repositories.filter(repo=>(state.inventories[repo.fullName]?.runners||[]).length||agentFor(repo.fullName)).slice(0,5);
+  q("#overviewRunnerList").innerHTML=overviewRepos.length?overviewRepos.map(repo=>repositoryRow(repo,false)).join(""):'<div class="empty">No runner inventory yet. Open Runners to inspect your repositories.</div>';
+  q("#repositoryList").innerHTML=state.repositories.length?state.repositories.map(repo=>repositoryRow(repo,false)).join(""):'<div class="empty">No repositories were granted to this ForgeCore GitHub App.</div>';
+  q("#runnerList").innerHTML=state.repositories.length?state.repositories.map(repo=>repositoryRow(repo,true)).join(""):'<div class="empty">No repositories available.</div>';
+
+  q("#githubAccountKv").innerHTML=[
+    ["Account",state.github.account?.login||"—"],
+    ["Repositories",String(state.repositories.length)],
+    ["GitHub App",state.github.app?.slug||"—"]
+  ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
+  q("#forgecoreAccountKv").innerHTML=[
+    ["Local user",state.session.username||"—"],
+    ["Version",state.session.version||"0.1.0-beta.1"],
+    ["Local Agents",String(state.agents.length)]
+  ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
+  const appLink=q("#githubAppLink");appLink.href=state.github.app?.htmlUrl||"https://github.com/settings/apps";appLink.classList.toggle("hidden",!state.github.app?.htmlUrl);
+  bindDynamic();
+}
+function bindDynamic(){
+  qa("[data-repo-open]").forEach(btn=>btn.onclick=()=>{showView("runners");const repo=btn.dataset.repoOpen;setTimeout(()=>q('[data-repo-open="'+CSS.escape(repo)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"}),100)});
+  qa("[data-agent-create]").forEach(btn=>btn.onclick=async()=>{const repo=btn.dataset.agentCreate;try{btn.disabled=true;await api("/api/agents",{method:"POST",body:JSON.stringify({repository:repo})});toast("ForgeCore Agent registration queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
+  qa("[data-agent-reset]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Reset this local ForgeCore Agent? GitHub runner records are maintained through GitHub."))return;try{btn.disabled=true;await api("/api/agents/"+encodeURIComponent(btn.dataset.agentReset),{method:"DELETE"});toast("Agent reset queued");setTimeout(refreshEverything,1200)}catch(err){toast(err.message)}finally{btn.disabled=false}});
+  qa("[data-agent-diagnostics]").forEach(btn=>btn.onclick=async()=>{try{const d=await api("/api/agents/"+encodeURIComponent(btn.dataset.agentDiagnostics)+"/diagnostics");alert((d.agent?.name||"Agent")+"\n\n"+(d.agentLog||d.registrationLog||"No log output yet."))}catch(err){toast(err.message)}});
+}
+q("#setupForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#setupError");try{err.textContent="";await api("/api/account/setup",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
+q("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#loginError");try{err.textContent="";await api("/api/login",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
+q("#connectGithub").addEventListener("click",async()=>{const btn=q("#connectGithub"),err=q("#githubError");try{btn.disabled=true;err.classList.add("hidden");const result=await api("/api/github/manifest/start",{method:"POST",body:JSON.stringify({origin:location.origin})});if(result.mode==="redirect"){location.href=result.url;return}const form=document.createElement("form");form.method="POST";form.action=result.action;const input=document.createElement("input");input.type="hidden";input.name="manifest";input.value=JSON.stringify(result.manifest);form.appendChild(input);document.body.appendChild(form);form.submit()}catch(ex){err.textContent=ex.message;err.classList.remove("hidden");btn.disabled=false}});
+async function logout(){try{await api("/api/logout",{method:"POST",body:"{}"})}catch(_){}location.href="/"}
+q("#githubLogout").addEventListener("click",logout);q("#logout").addEventListener("click",logout);
+q("#refreshAll").addEventListener("click",refreshEverything);q("#refreshRepos").addEventListener("click",refreshEverything);q("#syncRunners").addEventListener("click",refreshEverything);
+async function boot(){
+  try{
+    if(!await loadSession())return;
+    if(!await loadGithubStatus())return;
+    showOnly("appRoot");
+    await refreshEverything();
+    if(new URLSearchParams(location.search).has("github"))history.replaceState(null,"",location.pathname);
+  }catch(err){toast(err.message)}
+}
+boot();
+</script>
+</body>
+</html>
