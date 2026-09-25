@@ -2,19 +2,19 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 17
+## Beta 18
 
-Beta 17 is the runner-backed workflow hardening release. It keeps Beta 16 protected-branch handling, pull-request fallback and workflow auto-refresh, while making workflow mutations observable and adding a live release gate.
+Beta 18 fixes stale GitHub App permission handling for workflow edits.
 
-- Workflow rename and delete show inline progress and final status instead of looking stuck.
-- GitHub workflow mutations use a bounded 90-second timeout.
-- Successful workflow writes no longer wait for a full repository/status refresh before the result is shown.
-- The release gate now performs a real GitHub workflow create, rename and delete through the installed ForgeCore authentication on a self-hosted ForgeCore runner.
-- Shell, JavaScript, Python, Compose and clean runner-boundary validation are all part of the same gate.
-- The final publication candidate was revalidated after correcting the Beta 17 release metadata.
+- ForgeCore now treats Contents write, Workflows write and Pull requests write as the complete permission set required by the default-branch workflow editor.
+- Rename, runner routing and delete are disabled before any GitHub write when the installed app is missing one of those permissions.
+- The workflow dialog shows a direct **Repair GitHub integration** action and **Recheck permissions** instead of letting the operation fall through to a raw GitHub 403.
+- The server enforces the same permission gate on the workflow editing API.
+- Low-level workflow mutation functions still work on ordinary non-default branches, so the live GitHub create/rename/delete release test remains meaningful.
+- The full release gate passed on the ForgeCore self-hosted runner: shell, JavaScript, Python, Compose, runner-boundary and live GitHub workflow mutations.
 
-Version: 0.1.0-beta.17
+Version: 0.1.0-beta.18
 
-Source branch: `clean-beta/workflow-ops-v17-preflight`
+Source branch: `clean-beta/permission-gate-v18`
 
-Source commit: `cb3020767c01e606131b5dde9b4d46b768a0ffcb`
+Source commit: `b4e8918787fc174cf51756a28a0421a534b6bf15`
