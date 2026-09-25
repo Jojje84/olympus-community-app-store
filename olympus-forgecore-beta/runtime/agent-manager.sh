@@ -13,7 +13,7 @@ DIST_ROOT="${FORGECORE_RUNNER_DIST_ROOT:-/home/runner}"
 mkdir -p "${REQUEST_DIR}" "${RESET_DIR}" "${AGENT_ROOT}" "${LOG_DIR}"
 
 log(){
-  printf '%s [agent-manager] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "${LOG_DIR}/agent-manager.log"
+  printf '%s [runner-manager] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "${LOG_DIR}/agent-manager.log"
 }
 
 slugify(){
@@ -85,7 +85,7 @@ start_agent(){
 
   for _ in $(seq 1 50); do
     if ! kill -0 "${pid}" 2>/dev/null; then
-      write_state "${id}" "${repo}" "error" "Agent exited before becoming ready" false null
+      write_state "${id}" "${repo}" "error" "Runner exited before becoming ready" false null
       return 0
     fi
     if tail -c "+$((start_size + 1))" "${log_file}" 2>/dev/null | grep -Fq "Listening for Jobs"; then
@@ -99,15 +99,19 @@ start_agent(){
 }
 
 configure_request(){
-  local request="$1" repo token replace id dir name reg_log rc
+  local request="$1" repo token replace requested_name id dir name reg_log rc
   repo="$(jq -r '.repository // empty' "${request}")"
   token="$(jq -r '.registrationToken // empty' "${request}")"
   replace="$(jq -r '.replaceExisting // false' "${request}")"
+  requested_name="$(jq -r '.runnerName // empty' "${request}")"
   [[ "${repo}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ && -n "${token}" ]] || { rm -f "${request}"; return 0; }
 
   id="$(slugify "${repo}")"
   dir="${AGENT_ROOT}/${id}"
   name="ForgeCore-${id}"
+  if [[ -n "${requested_name}" && "${requested_name}" =~ ^[A-Za-z0-9][A-Za-z0-9._\ -]{0,63}$ ]]; then
+    name="${requested_name}"
+  fi
   reg_log="${LOG_DIR}/agent-registration-${id}.log"
   stop_agent "${id}"
 
@@ -122,7 +126,7 @@ configure_request(){
   rm -rf "${dir}"
   mkdir -p "${dir}"
   copy_distribution "${dir}"
-  write_state "${id}" "${repo}" "registering" "Registering local ForgeCore Agent with GitHub" false null
+  write_state "${id}" "${repo}" "registering" "Registering local ForgeCore Runner with GitHub" false null
 
   set +e
   (
@@ -133,7 +137,7 @@ configure_request(){
   set -e
 
   if [[ "${rc}" -ne 0 || ! -f "${dir}/.runner" ]]; then
-    write_state "${id}" "${repo}" "error" "GitHub registration failed. Open Agent diagnostics." false null
+    write_state "${id}" "${repo}" "error" "GitHub registration failed. Open Runner details for diagnostics." false null
     log "registration failed for ${repo}"
     return 0
   fi
@@ -141,7 +145,7 @@ configure_request(){
   jq -n     --arg kind "ForgeCoreAgent"     --arg repository "${repo}"     --arg name "${name}"     --argjson createdEpoch "$(date +%s)"     '{kind:$kind,repository:$repository,name:$name,createdEpoch:$createdEpoch}'     > "${dir}/.forgecore-agent.json"
   chmod 600 "${dir}/.forgecore-agent.json" "${dir}/.runner" "${dir}/.credentials" 2>/dev/null || true
   rm -f "${request}"
-  log "registered local Agent for ${repo}"
+  log "registered local Runner ${name} for ${repo}"
   start_agent "${repo}"
 }
 
@@ -159,7 +163,7 @@ reset_request(){
   fi
   rm -rf "${dir}"
   rm -f "$(state_file "${id}")" "${request}"
-  log "reset local Agent for ${repo:-${id}}"
+  log "removed local Runner for ${repo:-${id}}"
 }
 
 process_requests(){
@@ -191,7 +195,7 @@ cleanup(){
 }
 trap cleanup EXIT INT TERM
 
-log "ForgeCore Clean Agent Manager started"
+log "ForgeCore Clean Runner Manager started"
 while true; do
   process_requests
   start_saved
