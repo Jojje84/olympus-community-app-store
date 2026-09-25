@@ -46,7 +46,7 @@ services:
         command -v jq >/dev/null || { echo "ForgeCore Runner image is missing jq"; exit 1; };
         test -r /runtime/forgecore-runner.b64 || { echo "ForgeCore Runner artifact is missing"; exit 1; };
         base64 -d /runtime/forgecore-runner.b64 > /tmp/forgecore-runner-manager.sh;
-        grep -Fq 'FORGECORE_RUNNER_BUILD="0.1.0-beta.7"' /tmp/forgecore-runner-manager.sh
+        grep -Fq 'FORGECORE_RUNNER_BUILD="0.1.0-beta.8"' /tmp/forgecore-runner-manager.sh
         || { echo "ForgeCore Runner artifact build mismatch"; exit 1; };
         /bin/bash -n /tmp/forgecore-runner-manager.sh;
         chmod 700 /tmp/forgecore-runner-manager.sh;
@@ -74,16 +74,16 @@ services:
         test -r /runtime/forgecore-dashboard.b64 || { echo "ForgeCore dashboard artifact is missing"; exit 1; };
         base64 -d /runtime/forgecore-server.b64 > /tmp/forgecore-server.py;
         base64 -d /runtime/forgecore-dashboard.b64 > /tmp/forgecore-index.html;
-        grep -Fq 'VERSION = "0.1.0-beta.7"' /tmp/forgecore-server.py
+        grep -Fq 'VERSION = "0.1.0-beta.8"' /tmp/forgecore-server.py
         || { echo "ForgeCore server artifact build mismatch"; exit 1; };
-        grep -Fq 'Clean Beta · beta.7' /tmp/forgecore-index.html
+        grep -Fq 'Clean Beta · beta.8' /tmp/forgecore-index.html
         || { echo "ForgeCore dashboard artifact build mismatch"; exit 1; };
         python3 -m py_compile /tmp/forgecore-server.py;
         exec python3 /tmp/forgecore-server.py
     ports:
       - "8800:8080"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import json, urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)); assert data.get('version') == '0.1.0-beta.7'"]
+      test: ["CMD", "python3", "-c", "import json, urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)); assert data.get('version') == '0.1.0-beta.8'"]
       interval: 10s
       timeout: 5s
       retries: 8
