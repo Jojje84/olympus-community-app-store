@@ -23,12 +23,12 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 63 adds a first-login setup guide for clean installations with no Apps. Storage is chosen
-  first, then the guide hands the user into the existing Source → Build → Delivery App wizard.
-  App deletion is now visible from the App header and still requires an explicit danger confirmation.
-  Advanced App cards have stronger responsive rules, long runner errors no longer occupy status
-  pills, and Execution, Delivery, Advanced build options and Danger zone layouts no longer collapse
-  at common laptop widths.
+  Beta 63 adds a storage-first welcome guide that lets the operator choose whether to create an App
+  or connect a Runner first. Apps, Runners, Jobs and Releases now share one Apps workspace while
+  remaining separate views. GitHub runners are independent repository-scoped resources: they can
+  be connected before an App exists, remain Unassigned when their last App is deleted, and can be
+  removed explicitly when no App still uses them. App deletion has a visible confirmed action, and
+  Advanced App layouts no longer collapse around long runner errors or narrow laptop widths.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
