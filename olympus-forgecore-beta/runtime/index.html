@@ -27,7 +27,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
 
 <div id="authScreen" class="screen center">
   <div class="card auth-card">
-    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.3</small></div></div>
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.4</small></div></div>
     <div id="setupMode">
       <h1>Create your ForgeCore account</h1>
       <p>This account protects this Umbrel installation. GitHub connection comes next and is kept separate from the local login.</p>
@@ -283,7 +283,7 @@ function render(){
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   q("#forgecoreAccountKv").innerHTML=[
     ["Local user",state.session.username||"—"],
-    ["Version",state.session.version||"0.1.0-beta.3"],
+    ["Version",state.session.version||"0.1.0-beta.4"],
     ["ForgeCore Runners",String(state.agents.length)]
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   const appLink=q("#githubAppLink");appLink.href=state.github.app?.htmlUrl||"https://github.com/settings/apps";appLink.classList.toggle("hidden",!state.github.app?.htmlUrl);
@@ -297,9 +297,18 @@ function runnerDetailsGrid(rows){
   return '<div class="runner-detail-grid">'+rows.map(([label,value])=>'<div><span>'+esc(label)+'</span><b>'+esc(value==null||value===""?"—":value)+'</b></div>').join("")+'</div>';
 }
 function showRunnerModal(title,body){
-  q("#runnerModalTitle").textContent=title||"Runner";
-  q("#runnerModalBody").innerHTML=body;
-  q("#runnerModal").classList.remove("hidden");
+  const modal=q("#runnerModal"),titleEl=q("#runnerModalTitle"),bodyEl=q("#runnerModalBody");
+  if(!modal||!titleEl||!bodyEl){
+    toast("Runner details could not be opened. Reload ForgeCore and try again.");
+    return false;
+  }
+  titleEl.textContent=title||"Runner";
+  bodyEl.innerHTML=body;
+  modal.classList.remove("hidden");
+  modal.scrollTop=0;
+  const card=modal.querySelector(".runner-modal-card");
+  if(card)card.scrollTop=0;
+  return true;
 }
 function managedRunnerControls(local,repository,currentName){
   if(!local)return "";
@@ -385,7 +394,6 @@ async function openLocalRunnerDetails(repository){
   bindManagedRunnerModalActions(local,repository);
 }
 function bindDynamic(){
-  qa("[data-repo-open]").forEach(btn=>btn.onclick=()=>{showView("runners");const repo=btn.dataset.repoOpen;setTimeout(()=>q('[data-repo-open="'+CSS.escape(repo)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"}),100)});
   qa("[data-runner-create]").forEach(btn=>btn.onclick=async()=>{
     const repo=btn.dataset.runnerCreate;
     try{
@@ -394,9 +402,44 @@ function bindDynamic(){
       toast("ForgeCore Runner setup queued");setTimeout(refreshEverything,1200);
     }catch(err){toast(err.message)}finally{btn.disabled=false}
   });
-  qa("[data-runner-details]").forEach(btn=>btn.onclick=()=>openRunnerDetails(btn.dataset.runnerRepository,btn.dataset.runnerDetails));
-  qa("[data-local-runner-details]").forEach(btn=>btn.onclick=()=>openLocalRunnerDetails(btn.dataset.localRunnerDetails));
 }
+document.addEventListener("click",event=>{
+  const details=event.target.closest?.("[data-runner-details]");
+  if(details){
+    event.preventDefault();
+    event.stopPropagation();
+    try{
+      openRunnerDetails(details.dataset.runnerRepository,details.dataset.runnerDetails);
+    }catch(err){
+      console.error("runner details",err);
+      toast("Could not open runner details: "+(err?.message||"unknown error"));
+    }
+    return;
+  }
+  const localDetails=event.target.closest?.("[data-local-runner-details]");
+  if(localDetails){
+    event.preventDefault();
+    event.stopPropagation();
+    try{
+      openLocalRunnerDetails(localDetails.dataset.localRunnerDetails);
+    }catch(err){
+      console.error("local runner details",err);
+      toast("Could not open runner details: "+(err?.message||"unknown error"));
+    }
+    return;
+  }
+  const repoDetails=event.target.closest?.("[data-repo-open]");
+  if(repoDetails){
+    event.preventDefault();
+    showView("runners");
+    const repo=repoDetails.dataset.repoOpen;
+    setTimeout(()=>{
+      const cards=qa("#runnerList .repo-row");
+      const match=cards.find(card=>card.querySelector("b")?.textContent===repo);
+      match?.scrollIntoView({behavior:"smooth",block:"center"});
+    },80);
+  }
+});
 q("#setupForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#setupError");try{err.textContent="";await api("/api/account/setup",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
 q("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#loginError");try{err.textContent="";await api("/api/login",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
 q("#connectGithub").addEventListener("click",async()=>{const btn=q("#connectGithub"),err=q("#githubError");try{btn.disabled=true;err.classList.add("hidden");const result=await api("/api/github/manifest/start",{method:"POST",body:JSON.stringify({origin:location.origin})});if(result.mode==="redirect"){location.href=result.url;return}const form=document.createElement("form");form.method="POST";form.action=result.action;const input=document.createElement("input");input.type="hidden";input.name="manifest";input.value=JSON.stringify(result.manifest);form.appendChild(input);document.body.appendChild(form);form.submit()}catch(ex){err.textContent=ex.message;err.classList.remove("hidden");btn.disabled=false}});
