@@ -2,21 +2,21 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.7"
+version: "0.1.0-beta.8"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-7
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-8
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 7 fixes the stale-runtime delivery problem behind the repeated Details issue.
-  ForgeCore no longer mounts nested runtime source files directly from app-data. The server,
-  dashboard and runner manager are now shipped as Umbrel-rendered top-level artifacts, decoded
-  and build-verified when each container starts. This makes an app update actually switch the
-  running code to the new beta instead of leaving an older dashboard active. Repository Details
-  opens repository information, Runner Details opens runner information, mobile tap delegation is
-  hardened, and the progressive cached startup path remains enabled.
+  Clean Beta 8 improves the complete runner onboarding and login experience. Add Runner now asks
+  for a runner name and optional custom GitHub Actions labels before registration, automatically
+  includes the ForgeCore label, waits for listener readiness and marks managed runners Ready for
+  Actions when GitHub reports them online. Existing managed runner labels are preserved when a
+  runner is renamed. Login is also faster: ForgeCore restores the last local dashboard cache
+  immediately after local authentication, before waiting for GitHub status, then refreshes fresh
+  repository and runner data progressively in the background.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
