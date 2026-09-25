@@ -2,22 +2,17 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 7
+## Beta 8
 
-Beta 7 changes how the runtime is delivered to Umbrel. The server, dashboard and runner manager are
-shipped as top-level `.b64.template` artifacts. Umbrel renders those artifacts during install/update,
-and the containers decode and verify the Beta 7 build before starting. This avoids reusing stale nested
-runtime files from an older beta.
+- **Add Runner** now asks for a runner name before registration.
+- Optional custom labels can be added for GitHub Actions routing; ForgeCore is always included.
+- ForgeCore waits for the local listener and GitHub runner inventory to become ready, then shows **Ready for Actions**.
+- Managed runner labels are preserved when the runner is renamed.
+- After local login, the last dashboard cache is shown immediately before GitHub status is fetched.
+- Fresh repositories and runner state still refresh progressively in the background.
+- Runtime delivery remains the rendered-artifact model introduced in Beta 7.
 
-User-facing changes:
+Version: 0.1.0-beta.8
 
-- Repository **Details** opens repository information instead of navigating to Runners.
-- Runner **Details** opens the runner detail panel and management actions.
-- Mobile tap handling uses one delegated handler that survives dashboard refreshes.
-- The dashboard shows cached data first and progressively refreshes GitHub state in the background.
-- Active runtime terminology is Runner-only.
-
-Version: 0.1.0-beta.7
-
-Source branch: `clean-beta/rendered-runtime-v7`
-Source commit: `e69314bba4c469cc572b7b036c16a777c12fcd3f`
+Source branch: `clean-beta/runner-onboarding-fast-login-v8`
+Source commit: `ec5b6b0f9f67ade4781b4dc2275e2bd33bd13258`
