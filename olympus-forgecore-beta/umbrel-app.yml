@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.62"
+version: "0.1.0-beta.63"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.62
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.63
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
@@ -23,11 +23,12 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 62 completes ForgeCore profile management with display-name, password and local avatar
-  controls, and restores an explicit System storage selector for isolated internal storage or
-  discovered external drives. Multiple external drives are never guessed between; the selected
-  host path is persisted across Umbrel updates and applied on restart. Beta 61 SSE, GitHub Device
-  Flow/repository discovery, App-owned Delivery and clean first-run isolation remain unchanged.
+  Beta 63 adds a first-login setup guide for clean installations with no Apps. Storage is chosen
+  first, then the guide hands the user into the existing Source → Build → Delivery App wizard.
+  App deletion is now visible from the App header and still requires an explicit danger confirmation.
+  Advanced App cards have stronger responsive rules, long runner errors no longer occupy status
+  pills, and Execution, Delivery, Advanced build options and Danger zone layouts no longer collapse
+  at common laptop widths.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
