@@ -2,17 +2,18 @@
 
 ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
 
-## Beta 13
+## Beta 14
 
-- Supports multiple ForgeCore-managed self-hosted runners for the same GitHub repository.
-- Keeps workflows structured: one workflow can contain Build, Test, Deploy and other jobs, with a runner choice per job.
-- Job routing choices are **GitHub-hosted Ubuntu/Windows/macOS**, **Any ForgeCore runner**, or **Only <specific runner>**.
-- Multiple differently named ForgeCore runners are a valid pool and are no longer flagged as duplicates; duplicate detection is reserved for repeated registrations with the same runner name.
-- Workflow Details can rename the workflow, change job routing, and delete the workflow file in GitHub.
-- When GitHub workflow-write permissions are missing, ForgeCore now links directly to the GitHub App permissions and installation approval pages and can recheck permission state.
-- Clean Beta validation itself targets the ForgeCore self-hosted runner pool instead of `ubuntu-latest`, avoiding GitHub-hosted runner minutes for beta validation.
-- Keeps Beta 12 workflow write-permission verification and Beta 10–11 runner lifecycle, self-healing and routing behavior.
+- Workflow permission status now has three honest states: **Ready**, **Approval required**, and **Could not verify**.
+- Unknown permission status no longer blocks workflow changes. Rename, routing and delete are attempted against GitHub and ForgeCore reports the real GitHub response.
+- Successful workflow writes are recorded with time, repository, operation and commit so Account can show the last verified write.
+- Workflow Details now show a **routing summary** for every job.
+- Private-repository jobs routed to GitHub-hosted runners are marked as using GitHub-hosted Actions minutes; ForgeCore/self-hosted jobs are marked as not using hosted-runner minutes.
+- Workflow Details and Repository Details include **queue / runner capacity** diagnostics, including busy, offline and label-mismatch reasons for queued self-hosted jobs.
+- Workflow rename is explicitly a **display name** change; the YAML filename is shown separately.
+- Workflow delete now shows repository, branch and file and requires typing `DELETE`.
+- Keeps Beta 13 multiple runners per repository and per-job routing to GitHub Ubuntu/Windows/macOS, any ForgeCore runner, or one specific runner.
 
-Version: 0.1.0-beta.13
+Version: 0.1.0-beta.14
 
-Source branch: `clean-beta/multi-runner-v13`
+Source branch: `clean-beta/permissions-diagnostics-v14`
