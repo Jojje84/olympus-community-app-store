@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.61"
+version: "0.1.0-beta.62"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.61
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.62
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
@@ -23,11 +23,11 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 61 replaces dashboard polling with a server-sent event stream, so Apps, jobs, runners,
-  releases, logs and attention state refresh when ForgeCore state changes. It also fixes nested
-  mobile card spacing and normalizes more light/dark surfaces. Source setup now supports a real
-  GitHub account/device-flow integration and repository picker, while manual owner/repository
-  entry remains an Advanced fallback until the ForgeCore GitHub App client ID is configured.
+  Beta 62 completes ForgeCore profile management with display-name, password and local avatar
+  controls, and restores an explicit System storage selector for isolated internal storage or
+  discovered external drives. Multiple external drives are never guessed between; the selected
+  host path is persisted across Umbrel updates and applied on restart. Beta 61 SSE, GitHub Device
+  Flow/repository discovery, App-owned Delivery and clean first-run isolation remain unchanged.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
