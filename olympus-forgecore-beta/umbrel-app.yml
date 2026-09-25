@@ -2,22 +2,21 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.17"
+version: "0.1.0-beta.18"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-17
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-18
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 17 hardens workflow operations and the runner-backed release gate. Rename
-  and delete now show inline progress and results instead of looking stuck, GitHub
-  workflow mutations use a bounded 90-second timeout, and successful writes no longer
-  wait on a full repository/status refresh before the result is shown. The Clean Beta
-  validation now includes a real GitHub workflow create/rename/delete exercise through
-  the installed ForgeCore authentication on a self-hosted ForgeCore runner, in addition
-  to shell, JavaScript, Python, Compose and runner-boundary validation. Beta 16 protected
-  branch handling, pull-request fallback and workflow auto-refresh remain included.
+  Clean Beta 18 fixes stale GitHub App permission handling for workflow edits. ForgeCore
+  now treats Contents write, Workflows write and Pull requests write as the complete
+  workflow mutation permission set. Rename, runner routing and delete are disabled before
+  any GitHub write when the installed app is missing one of those permissions, with a
+  direct Repair GitHub integration action and Recheck flow instead of a late GitHub 403.
+  The server independently enforces the same permission gate, while Beta 17 live workflow
+  mutation tests and runner-backed validation remain part of the release gate.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
