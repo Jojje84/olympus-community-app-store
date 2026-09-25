@@ -2,22 +2,22 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.14"
+version: "0.1.0-beta.15"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-14
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-15
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 14 focuses on workflow control and diagnostics. Permission checks now
-  distinguish Ready, Approval required and Could not verify, and an uncertain status
-  no longer blocks rename, routing or delete: ForgeCore tries the real GitHub write
-  and reports GitHub's response. Workflow Details now show a routing summary,
-  GitHub-hosted minute indicators per job, queued-job/runner-capacity diagnostics,
-  clearer display-name semantics and a typed DELETE confirmation. Repository Details
-  also show queue and runner capacity. Successful workflow writes are remembered so
-  ForgeCore can show when GitHub last accepted a workflow change.
+  Clean Beta 15 fixes the underlying GitHub integration problem found in Beta 14.
+  ForgeCore now audits the complete permission set it actually needs: Contents write,
+  Workflows write, Actions read and Administration write. Older ForgeCore GitHub Apps
+  can be replaced through a guided Repair GitHub integration flow without dropping the
+  current connection until the replacement is installed and authorized. Workflow and
+  repository views no longer hide Actions 403 errors as "no recent run", and workflow
+  rename/routing/delete failures stay visible with the real GitHub error and a repair
+  action. Successful workflow changes refresh immediately from GitHub.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
