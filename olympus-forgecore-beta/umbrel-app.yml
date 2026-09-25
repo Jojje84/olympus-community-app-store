@@ -2,21 +2,22 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.18"
+version: "0.1.0-beta.19"
 tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-18
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-19
 description: >-
   A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
   import repositories and self-hosted runner state, and optionally attach a local
   ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
 releaseNotes: >-
-  Clean Beta 18 fixes stale GitHub App permission handling for workflow edits. ForgeCore
-  now treats Contents write, Workflows write and Pull requests write as the complete
-  workflow mutation permission set. Rename, runner routing and delete are disabled before
-  any GitHub write when the installed app is missing one of those permissions, with a
-  direct Repair GitHub integration action and Recheck flow instead of a late GitHub 403.
-  The server independently enforces the same permission gate, while Beta 17 live workflow
-  mutation tests and runner-backed validation remain part of the release gate.
+  Clean Beta 19 introduces Runner-only mode for normal CI routing. GitHub-hosted Ubuntu,
+  Windows and macOS choices are removed from the workflow editor, and the routing API
+  rejects hosted execution requests. Existing hosted jobs are detected and surfaced with
+  a one-click Move all jobs to ForgeCore action. Repositories without a managed runner
+  are prompted to create one first. GitHub Actions may remain as the scheduler, while
+  build and test compute stays on ForgeCore self-hosted runners and does not consume
+  GitHub-hosted Actions minutes. Beta 18 permission repair and protected-branch handling
+  remain included.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
