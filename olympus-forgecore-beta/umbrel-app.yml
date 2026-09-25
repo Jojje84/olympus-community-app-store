@@ -2,9 +2,9 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.64"
+version: "0.1.0-beta.65"
 tagline: Self-hosted build and release control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.64
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=0.1.0-beta.65
 description: >-
   ForgeCore Beta is a clean first-run build, packaging and release control plane for Umbrel.
 
@@ -23,12 +23,11 @@ description: >-
   app ID, port, app-data directory and external-storage root so both versions can be installed
   and evaluated side by side.
 releaseNotes: >-
-  Beta 64 extends the beta 63 welcome flow so storage is chosen first and the operator can then
-  create an App or connect a Runner. Apps, Runners, Jobs and Releases share one Apps workspace
-  while remaining separate views. GitHub runners are independent repository-scoped resources:
-  they can be connected before an App exists, remain Unassigned when their last App is deleted,
-  and can be removed explicitly when no App still uses them. App deletion remains confirmed and
-  the beta 63 dashboard layout fixes are preserved.
+  Beta 65 fixes dead Runner controls after live dashboard renders. Manage, Create App and Remove
+  now use stable delegated click handling so they keep working while SSE refreshes the runner list.
+  Runner status is also explicit: Online means ForgeCore is listening for GitHub Actions jobs,
+  while Reconnecting, Needs repair and Offline clearly indicate that the runner is not ready.
+  The beta 64 App-or-Runner onboarding and independent runner lifecycle remain unchanged.
 
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
