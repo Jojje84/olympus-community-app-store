@@ -41,7 +41,7 @@ The readable source copies remain under `data/bin/` and `data/www/`; package val
 
 ## Administration
 
-The dashboard uses six primary areas: Overview, Apps, Runners, System, Logs & Activity, and About. Apps groups application management with cross-App Jobs and Releases; normal Delivery lives inside each selected App. Reusable delivery rules remain an advanced implementation detail. Runners owns ForgeCore Native and repository-scoped GitHub runner operations. System groups runtime/storage health and Settings. Logs & Activity groups persistent logs and Audit history. About remains directly accessible from the primary navigation.
+The dashboard uses five primary areas: Overview, Apps, System, Logs & Activity, and About. Apps is the working surface and groups the **Apps, Runners, Jobs and Releases** tabs. Apps own source/build/delivery configuration; Runners are independent compute resources that Apps may use. Normal Delivery lives inside each selected App, while reusable delivery rules remain an advanced implementation detail. System groups runtime/storage health and Settings. Logs & Activity groups persistent logs and Audit history. About remains directly accessible from the primary navigation.
 
 Dashboard live state is delivered with Server-Sent Events from the Control API, with automatic browser reconnection instead of a fixed refresh timer. App Source setup can connect a GitHub account using Device Flow and discover accessible repositories when the ForgeCore GitHub App client ID is configured.
 
