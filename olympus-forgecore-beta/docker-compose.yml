@@ -50,7 +50,7 @@ services:
       retries: 12
       start_period: 10s
 
-  runner:
+  github-agent:
     image: ghcr.io/actions/actions-runner:2.337.0
     restart: unless-stopped
     init: true
@@ -61,7 +61,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.66"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.67"
       GOCACHE: /forgecore/storage/cache/go-build
       GOMODCACHE: /forgecore/storage/cache/go-mod
       NPM_CONFIG_CACHE: /forgecore/storage/cache/npm
@@ -70,58 +70,30 @@ services:
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore-beta}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
-      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/runtime/runner-manager.b64:ro
+      - ${APP_DATA_DIR}/github-agent-manager.b64:/forgecore/runtime/github-agent-manager.b64:ro
     entrypoint:
       - /bin/bash
       - -lc
       - >-
-        set -u;
-        echo "[bootstrap] ForgeCore beta66 pre-manager bootstrap entered";
-        sudo mkdir -p /forgecore/app/state/runner-requests /forgecore/app/config/apps /forgecore/app/config/publish-presets;
-        sudo chown -R runner:docker /forgecore/app;
-        sudo mkdir -p /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
-        sudo chown -R runner:docker /forgecore/storage/logs /forgecore/storage/runners /forgecore/storage/workspaces /forgecore/storage/cache /forgecore/storage/artifacts /forgecore/storage/runner-backups;
-        exec >> /forgecore/app/state/runner-bootstrap.log 2>&1;
-        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] ForgeCore 0.1.0-beta.66 runner bootstrap started";
-        id;
-        if ! test -f /forgecore/storage/.forgecore-external; then
-          printf '%s\n' "ForgeCore external storage is not mounted at the resolved host path. Update/storage binding must be repaired before the runner can start." > /forgecore/app/state/runner-service.error;
-          echo "[bootstrap] external storage marker missing";
-          exit 1;
-        fi;
-        if ! test -r /forgecore/runtime/runner-manager.b64 || test -d /forgecore/runtime/runner-manager.b64; then
-          printf '%s\n' "Runner runtime artifact is missing or unreadable." > /forgecore/app/state/runner-service.error;
-          echo "[bootstrap] runner-manager.b64 missing or unreadable";
-          ls -ld /forgecore/runtime /forgecore/runtime/runner-manager.b64 2>/dev/null || true;
-          exit 1;
-        fi;
-        if ! base64 -d /forgecore/runtime/runner-manager.b64 > /tmp/runner-manager.sh; then
-          printf '%s\n' "Runner runtime artifact could not be decoded." > /forgecore/app/state/runner-service.error;
-          echo "[bootstrap] base64 decode failed";
-          exit 1;
-        fi;
-        if ! grep -Fq 'FORGECORE_MANAGER_BUILD="0.1.0-beta.66"' /tmp/runner-manager.sh; then
-          printf '%s\n' "Runner runtime build does not match ForgeCore beta66." > /forgecore/app/state/runner-service.error;
-          echo "[bootstrap] decoded manager build mismatch";
-          grep -m1 'FORGECORE_MANAGER_BUILD=' /tmp/runner-manager.sh || true;
-          exit 1;
-        fi;
-        if ! /bin/bash -n /tmp/runner-manager.sh; then
-          printf '%s\n' "Runner runtime script failed syntax validation." > /forgecore/app/state/runner-service.error;
-          echo "[bootstrap] manager syntax validation failed";
-          exit 1;
-        fi;
-        rm -f /forgecore/app/state/runner-service.error;
-        chmod 700 /tmp/runner-manager.sh;
-        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [bootstrap] manager artifact verified; launching";
-        exec /bin/bash /tmp/runner-manager.sh
+        set -euo pipefail;
+        sudo mkdir -p /forgecore/app/state/agent-requests /forgecore/app/state/agent-resets;
+        sudo mkdir -p /forgecore/storage/agents /forgecore/storage/logs /forgecore/storage/cache /forgecore/storage/workspaces /forgecore/storage/artifacts;
+        sudo chown -R runner:docker /forgecore/app /forgecore/storage/agents /forgecore/storage/logs /forgecore/storage/cache /forgecore/storage/workspaces /forgecore/storage/artifacts;
+        test -f /forgecore/storage/.forgecore-external
+        || { echo "ForgeCore external storage marker missing"; exit 1; };
+        test -r /forgecore/runtime/github-agent-manager.b64
+        || { echo "GitHub Agent Manager artifact missing"; exit 1; };
+        base64 -d /forgecore/runtime/github-agent-manager.b64 > /tmp/github-agent-manager.sh;
+        /bin/bash -n /tmp/github-agent-manager.sh;
+        chmod 700 /tmp/github-agent-manager.sh;
+        exec /bin/bash /tmp/github-agent-manager.sh
     healthcheck:
       test:
         - CMD-SHELL
         - >-
-          test -f /forgecore/app/state/status.json
+          test -f /forgecore/app/state/agent-status.json
           && now=$(date +%s)
-          && last=$(jq -r '.status_epoch // 0' /forgecore/app/state/status.json)
+          && last=$(jq -r '.status_epoch // 0' /forgecore/app/state/agent-status.json)
           && test $((now-last)) -lt 20
       interval: 10s
       timeout: 5s
@@ -138,7 +110,7 @@ services:
     environment:
       FORGECORE_APP_ROOT: /forgecore/app
       FORGECORE_STORAGE_ROOT: /forgecore/storage
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.66"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.67"
       FORGECORE_NATIVE_POLL_SECONDS: "2"
       FORGECORE_NATIVE_DEFAULT_TIMEOUT_SECONDS: "1800"
       FORGECORE_BUILD_DOCKER_HOST: "http://build-docker:2375"
@@ -181,7 +153,7 @@ services:
       FORGECORE_STORAGE_ROOT: /forgecore/storage
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.66"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.67"
     volumes:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore-beta}:/forgecore/storage
       - ${APP_DATA_DIR}/data:/forgecore/app
@@ -205,7 +177,7 @@ services:
       FORGECORE_STORAGE_DISPLAY: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore-beta}
       FORGECORE_STORAGE_HOST_PATH: ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore-beta}
       FORGECORE_STORAGE_RESOLUTION: ${FORGECORE_STORAGE_RESOLUTION:-unknown}
-      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.66"
+      FORGECORE_RUNTIME_VERSION: "0.1.0-beta.67"
       FORGECORE_DASHBOARD_B64: /forgecore/runtime/dashboard-v2.b64
       FORGECORE_GITHUB_CLIENT_ID: ${FORGECORE_GITHUB_CLIENT_ID:-}
     volumes:
@@ -213,7 +185,7 @@ services:
       - ${FORGECORE_STORAGE_ROOT:-/mnt/forgecore-beta}:/forgecore/storage:ro
       - ${APP_DATA_DIR}/dashboard-server.b64:/forgecore/runtime/dashboard-server.b64:ro
       - ${APP_DATA_DIR}/dashboard-v2.b64:/forgecore/runtime/dashboard-v2.b64:ro
-      - ${APP_DATA_DIR}/runner-manager.b64:/forgecore/inspect/runner-manager.b64:ro
+      - ${APP_DATA_DIR}/github-agent-manager.b64:/forgecore/inspect/github-agent-manager.b64:ro
     entrypoint:
       - /bin/sh
       - -c
