@@ -27,7 +27,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
 
 <div id="authScreen" class="screen center">
   <div class="card auth-card">
-    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.5</small></div></div>
+    <div class="brand"><div class="logo">FC</div><div><b>ForgeCore</b><small>Clean Beta · 0.1.0-beta.6</small></div></div>
     <div id="setupMode">
       <h1>Create your ForgeCore account</h1>
       <p>This account protects this Umbrel installation. GitHub connection comes next and is kept separate from the local login.</p>
@@ -130,7 +130,7 @@ body{min-height:100vh;background:radial-gradient(circle at 22% -10%,rgba(244,160
 <div id="runnerModal" class="runner-modal hidden" role="dialog" aria-modal="true" aria-labelledby="runnerModalTitle">
   <div class="runner-modal-card card">
     <div class="runner-modal-head">
-      <div><div class="kicker">Runner details</div><h2 id="runnerModalTitle">Runner</h2></div>
+      <div><div id="detailModalKicker" class="kicker">Details</div><h2 id="runnerModalTitle">Details</h2></div>
       <button id="runnerModalClose" class="btn" type="button">Close</button>
     </div>
     <div id="runnerModalBody" class="runner-modal-body"></div>
@@ -171,12 +171,12 @@ function showGithubQueryError(){
 }
 function dashboardCacheKey(){
   const account=state.github?.account?.login||"default";
-  return "forgecore-dashboard-v5:"+account.toLowerCase();
+  return "forgecore-dashboard-v6:"+account.toLowerCase();
 }
 function loadDashboardCache(){
   try{
     const cached=JSON.parse(localStorage.getItem(dashboardCacheKey())||"null");
-    if(!cached||cached.version!==5)return false;
+    if(!cached||cached.version!==6)return false;
     state.repositories=Array.isArray(cached.repositories)?cached.repositories:[];
     state.inventories=cached.inventories&&typeof cached.inventories==="object"?cached.inventories:{};
     state.localRunners=Array.isArray(cached.localRunners)?cached.localRunners:[];
@@ -188,7 +188,7 @@ function loadDashboardCache(){
 function saveDashboardCache(){
   try{
     localStorage.setItem(dashboardCacheKey(),JSON.stringify({
-      version:5,
+      version:6,
       savedAt:Date.now(),
       repositories:state.repositories,
       inventories:state.inventories,
@@ -311,9 +311,7 @@ function repositoryRow(repo,includeRunners){
     : syncing?"runner status syncing…":"runner status not loaded";
   const summary=(repo.private?"Private":"Public")+' · '+esc(repo.defaultBranch||"main")+' · '+runnerSummary;
   const duplicateWarning=includeRunners&&inv?.possibleForgeCoreDuplicates?'<div class="runner-warning"><b>Possible duplicate runners</b><br>GitHub reports '+Number(inv.forgeCoreCandidateCount||0)+' ForgeCore-labelled runners for this repository. Inspect each runner before removing an old registration.</div>':"";
-  const repoActions=includeRunners
-    ? '<a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>'
-    : '<button class="btn" data-repo-open="'+esc(repo.fullName)+'">Details</button><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>';
+  const repoActions='<button class="btn" type="button" data-repo-details="'+esc(repo.fullName)+'">Details</button><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">GitHub ↗</a>';
   const createRunner=includeRunners&&inv&&!syncing&&(!local&&runners.length===0)?'<button class="btn primary" data-runner-create="'+esc(repo.fullName)+'">Add Runner</button>':"";
   const localPending=includeRunners&&local&&!hasMatchingLocal?'<div class="local-runner"><b>'+esc(local.name||"ForgeCore Runner")+'</b><small>Managed by ForgeCore · '+esc(local.online?"Online":local.phase||"Offline")+' · waiting for matching GitHub inventory</small><div class="local-runner-actions"><button class="btn" type="button" data-local-runner-details="'+esc(repo.fullName)+'">Details</button></div></div>':"";
   return '<div class="repo-row"><div><b>'+esc(repo.fullName)+'</b><small>'+summary+'</small>'+(includeRunners?runnerRows(repo.fullName):"")+duplicateWarning+localPending+'</div><div class="actions">'+repoActions+createRunner+'</div></div>';
@@ -349,7 +347,7 @@ function render(){
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   q("#forgecoreAccountKv").innerHTML=[
     ["Local user",state.session?.username||"—"],
-    ["Version",state.session?.version||"0.1.0-beta.5"],
+    ["Version",state.session?.version||"0.1.0-beta.6"],
     ["ForgeCore Runners",String(state.localRunners.length)]
   ].map(([a,b])=>'<div><span>'+esc(a)+'</span><b>'+esc(b)+'</b></div>').join("");
   const appLink=q("#githubAppLink");appLink.href=state.github?.app?.htmlUrl||"https://github.com/settings/apps";appLink.classList.toggle("hidden",!state.github?.app?.htmlUrl);
@@ -363,19 +361,42 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape")closeRunnerM
 function runnerDetailsGrid(rows){
   return '<div class="runner-detail-grid">'+rows.map(([label,value])=>'<div><span>'+esc(label)+'</span><b>'+esc(value==null||value===""?"—":value)+'</b></div>').join("")+'</div>';
 }
-function showRunnerModal(title,body){
-  const modal=q("#runnerModal"),titleEl=q("#runnerModalTitle"),bodyEl=q("#runnerModalBody");
+function showDetailsModal(kicker,title,body){
+  const modal=q("#runnerModal"),kickerEl=q("#detailModalKicker"),titleEl=q("#runnerModalTitle"),bodyEl=q("#runnerModalBody");
   if(!modal||!titleEl||!bodyEl){
-    toast("Runner details could not be opened. Reload ForgeCore and try again.");
+    toast("Details could not be opened. Reload ForgeCore and try again.");
     return false;
   }
-  titleEl.textContent=title||"Runner";
+  if(kickerEl)kickerEl.textContent=kicker||"Details";
+  titleEl.textContent=title||"Details";
   bodyEl.innerHTML=body;
   modal.classList.remove("hidden");
   modal.scrollTop=0;
   const card=modal.querySelector(".runner-modal-card");
   if(card)card.scrollTop=0;
   return true;
+}
+function showRunnerModal(title,body){return showDetailsModal("Runner details",title||"Runner",body)}
+function openRepositoryDetails(repository){
+  const repo=state.repositories.find(item=>item.fullName===repository);
+  if(!repo){toast("Repository was not found. Refresh repositories and try again.");return}
+  const inv=state.inventories[repository],runners=inv?.runners||[],local=localRunnerFor(repository);
+  const online=runners.filter(r=>r.online).length,offline=Math.max(0,runners.length-online);
+  const syncState=state.syncingRepos.has(repository)?"Syncing with GitHub":inv?.error?"Cached data · refresh failed":inv?"Live GitHub inventory":"Runner inventory not loaded yet";
+  const localStatus=local?(local.online?"Online":local.phase||"Offline"):"No local ForgeCore Runner";
+  const body=runnerDetailsGrid([
+    ["Repository",repo.fullName],
+    ["Visibility",repo.private?"Private":"Public"],
+    ["Default branch",repo.defaultBranch||"main"],
+    ["GitHub runners",inv?String(runners.length):"Loading…"],
+    ["Online",inv?String(online):"—"],
+    ["Offline",inv?String(offline):"—"],
+    ["Runner sync",syncState],
+    ["Local ForgeCore Runner",localStatus]
+  ])+
+  (inv?.error?'<div class="runner-warning">Latest runner refresh failed: '+esc(inv.error)+'. Cached repository data is still shown.</div>':"")+
+  '<div class="runner-modal-actions"><a class="btn" href="'+esc(repo.htmlUrl||("https://github.com/"+repository))+'" target="_blank" rel="noopener">Open repository ↗</a><a class="btn" href="'+esc(inv?.settingsUrl||repo.runnerSettingsUrl)+'" target="_blank" rel="noopener">Runner settings ↗</a></div>';
+  showDetailsModal("Repository details",repo.fullName,body);
 }
 function managedRunnerControls(local,repository,currentName){
   if(!local)return "";
@@ -495,16 +516,17 @@ document.addEventListener("click",event=>{
     }
     return;
   }
-  const repoDetails=event.target.closest?.("[data-repo-open]");
+  const repoDetails=event.target.closest?.("[data-repo-details]");
   if(repoDetails){
     event.preventDefault();
-    showView("runners");
-    const repo=repoDetails.dataset.repoOpen;
-    setTimeout(()=>{
-      const cards=qa("#runnerList .repo-row");
-      const match=cards.find(card=>card.querySelector("b")?.textContent===repo);
-      match?.scrollIntoView({behavior:"smooth",block:"center"});
-    },80);
+    event.stopPropagation();
+    try{
+      openRepositoryDetails(repoDetails.dataset.repoDetails);
+    }catch(err){
+      console.error("repository details",err);
+      toast("Could not open repository details: "+(err?.message||"unknown error"));
+    }
+    return;
   }
 });
 q("#setupForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,err=q("#setupError");try{err.textContent="";await api("/api/account/setup",{method:"POST",body:JSON.stringify({username:form.username.value,password:form.password.value})});await boot()}catch(ex){err.textContent=ex.message}});
