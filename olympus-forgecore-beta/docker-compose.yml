@@ -1,0 +1,75 @@
+version: "3.7"
+
+services:
+  docker:
+    image: docker:29.8.1-dind
+    restart: unless-stopped
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    command:
+      - dockerd
+      - --host=tcp://0.0.0.0:2375
+      - --host=unix:///var/run/docker.sock
+      - --data-root=/storage/docker
+      - --log-level=warn
+    volumes:
+      - ${APP_DATA_DIR}/storage:/storage
+    healthcheck:
+      test: ["CMD", "docker", "-H", "tcp://127.0.0.1:2375", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  agent:
+    image: ghcr.io/actions/actions-runner:2.337.0
+    restart: unless-stopped
+    init: true
+    depends_on:
+      - docker
+    environment:
+      FORGECORE_APP_ROOT: /data
+      FORGECORE_STORAGE_ROOT: /storage
+      DOCKER_HOST: tcp://docker:2375
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}/storage:/storage
+      - ${APP_DATA_DIR}/runtime/agent-manager.sh:/runtime/agent-manager.sh:ro
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - >-
+        set -euo pipefail;
+        sudo mkdir -p /data/state/agent-requests /data/state/agent-resets /storage/agents /storage/logs;
+        sudo chown -R runner:docker /data /storage/agents /storage/logs;
+        command -v jq >/dev/null || { echo "ForgeCore Agent image is missing jq"; exit 1; };
+        /bin/bash -n /runtime/agent-manager.sh;
+        exec /bin/bash /runtime/agent-manager.sh
+
+  web:
+    image: python:3.13-alpine
+    restart: unless-stopped
+    environment:
+      FORGECORE_APP_ROOT: /data
+      FORGECORE_STORAGE_ROOT: /storage
+      PORT: "8080"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - ${APP_DATA_DIR}/storage:/storage
+      - ${APP_DATA_DIR}/runtime/server.py:/runtime/server.py:ro
+      - ${APP_DATA_DIR}/runtime/index.html:/runtime/index.html:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        python3 -m py_compile /runtime/server.py
+        && exec python3 /runtime/server.py
+    ports:
+      - "8800:8080"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 5s
