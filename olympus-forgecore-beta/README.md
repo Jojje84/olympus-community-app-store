@@ -1,25 +1,22 @@
 # ForgeCore Runner Core Beta
 
-ForgeCore is a local-first self-hosted GitHub Actions runner manager for Umbrel.
+ForgeCore Runner Core is a local-first self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 26
+## Beta 27
 
-Beta 26 connects runner creation and workflow routing into one operation.
+Beta 27 fixes a status bug where a ForgeCore self-hosted runner could successfully accept and run GitHub Actions jobs while the ForgeCore dashboard remained stuck on Connecting or Offline.
 
-- **Add runner** loads the real GitHub Actions workflows from the selected repository.
-- Select existing workflows while creating the runner.
-- Optionally create missing **Build**, **Test**, **Release** and **Deploy** starter workflows in the same flow.
-- ForgeCore registers the runner first, waits until GitHub sees it, adds the runner's stable `fc-route-*` label and then updates the selected workflow files automatically.
-- Workflow assignment is persisted locally and retried in the background, so closing the browser does not cancel the operation.
-- Runner cards show whether workflow setup is connecting, retrying or complete.
-- Manual workflow assignment remains available later for changes.
-- Runner identity remains tied to this ForgeCore node via the persistent `fc-node-*` label.
-- Normal runner status remains local-first on the Beelink.
+- The runner manager now persists the listener log offset for each start.
+- Readiness is checked continuously after the initial startup window.
+- A late "Listening for Jobs" signal promotes the local runner state to Online within the normal heartbeat loop.
+- No runner re-registration is required for this recovery.
+- Normal status refresh remains local-first and does not poll GitHub.
+- Beta 26 automatic workflow binding remains intact.
 
-GitHub still chooses self-hosted runners through each workflow's `runs-on` value. ForgeCore now manages that automatically when the runner is created.
+The regression gate explicitly simulates delayed listener readiness and verifies that the state changes from Connecting to Online without restarting the runner.
 
-Version: 0.1.0-beta.26
+Version: 0.1.0-beta.27
 
-Source branch: `clean-beta/auto-workflow-bind-v26`
+Source branch: `clean-beta/runner-online-v27`
 
-Source commit: `7688b5c1cad0aba7069eae016a162836593e10f0`
+Source commit: `4aed28f0de250a3cc6b9a4376c1d474c1b00ab4e`
