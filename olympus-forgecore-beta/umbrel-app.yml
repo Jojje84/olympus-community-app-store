@@ -2,21 +2,24 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.21"
+version: "0.1.0-beta.22"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-21
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-22
 description: >-
   ForgeCore Runner Core is a focused self-hosted GitHub Actions runner manager for Umbrel.
   Connect GitHub, choose repositories, create one or more ForgeCore runners, and manage
   runner health, capacity, lifecycle and diagnostics from one mobile-friendly dashboard.
 releaseNotes: >-
-  Clean Beta 21 is a startup hotfix for Runner Core. Beta 20 shipped a Docker Compose
-  dashboard build check that still looked for the old "Clean Beta" dashboard marker,
-  while the rebuilt dashboard identifies itself as "Runner Core". That mismatch caused
-  the web container to exit during startup. Beta 21 aligns the Compose startup guard with
-  the Runner Core dashboard marker and adds a release-gate check so Compose, dashboard
-  and package versions cannot drift apart again. The remaining legacy workflow DELETE
-  API path is also disabled to match the Runner Core product boundary.
+  Clean Beta 22 makes managed runners editable and fixes runner removal reliability.
+  Runner details now include Edit runner with name, common roles (build, test, release,
+  deploy) and custom labels. Saving performs one controlled re-registration operation,
+  avoiding the previous reset/register race. Managed removal now deletes the GitHub
+  runner registration first and only then queues local cleanup. Busy runners return a
+  clear conflict with an optional Force remove path for stuck jobs. Internal ForgeCore
+  routing labels are preserved automatically and the shared ForgeCore label cannot be
+  removed by the editor. The runner watchdog now also recovers listeners that remain
+  locally connecting/offline while GitHub cannot assign new jobs, closing a stale-runner
+  gap found during Beta 22 release testing.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
