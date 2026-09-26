@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-sparkyfitness
 category: "health-&-fitness"
 name: SparkyFitness
-version: "1.7.1"
+version: "1.7.2"
 tagline: Track workouts, nutrition and health
 icon: https://raw.githubusercontent.com/CodeWithCJ/SparkyFitness/main/docs/src/public/logo.png
 description: >-
@@ -13,7 +13,7 @@ description: >-
   This Olympus package uses persistent Umbrel storage and per-install generated
   secrets. Create your own SparkyFitness account after installation.
 releaseNotes: >-
-  Packaged from upstream SparkyFitness v1.7.1.
+  Packaged from upstream SparkyFitness v1.7.2.
 
 developer: CodeWithCJ
 website: https://codewithcj.github.io/SparkyFitness/

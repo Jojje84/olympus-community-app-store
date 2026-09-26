@@ -27,7 +27,7 @@ services:
 
   sparkyfitness-server:
     container_name: sparkyfitness-server
-    image: codewithcj/sparkyfitness_server:v1.7.1
+    image: codewithcj/sparkyfitness_server:v1.7.2
     restart: on-failure
     depends_on:
       sparkyfitness-db:
@@ -54,7 +54,7 @@ services:
 
   sparkyfitness-frontend:
     container_name: sparkyfitness-web
-    image: codewithcj/sparkyfitness:v1.7.1
+    image: codewithcj/sparkyfitness:v1.7.2
     restart: on-failure
     depends_on:
       - sparkyfitness-server
