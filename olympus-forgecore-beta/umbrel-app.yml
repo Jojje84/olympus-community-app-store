@@ -2,23 +2,24 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.23"
+version: "0.1.0-beta.24"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-23
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-24
 description: >-
-  ForgeCore Runner Core is a focused self-hosted GitHub Actions runner manager for Umbrel.
-  Connect GitHub, choose repositories, create one or more ForgeCore runners, and manage
-  runner health, capacity, lifecycle and diagnostics from one mobile-friendly dashboard.
+  ForgeCore Runner Core is a local-first self-hosted GitHub Actions runner manager for
+  Umbrel. Your Beelink owns runner identity, heartbeat, job state, workflow assignments,
+  logs and lifecycle. GitHub is used for repository access, runner registration and
+  explicit verification instead of continuous dashboard polling.
 releaseNotes: >-
-  Clean Beta 23 makes workflow assignment a first-class runner setting. Create and Edit
-  runner now offer Build workflow, Test workflow, Release workflow and Deploy workflow
-  assignments instead of exposing role labels as the primary concept. ForgeCore maps
-  those assignments to GitHub self-hosted runner labels and shows the active workflow
-  assignments directly on each runner card. Edit and Remove are now optimistic in the
-  dashboard: accepted edits appear immediately while the runner reconnects, and accepted
-  removals disappear from the list immediately while GitHub/local cleanup finishes in
-  the background. Pending operations are protected from periodic refresh so old state
-  does not flash back into the UI.
+  Clean Beta 24 rebuilds Runner Core around the original ForgeCore local-first model.
+  Runner health and Busy/Online/Offline state now come from local heartbeat and GitHub
+  runner job hooks on the Beelink instead of repeated GitHub API inventory polling.
+  Repository discovery is cached for one hour and only force-refreshed when the user
+  asks for it. The dashboard is redesigned into Home, Workflows and Runners. Workflows
+  are local ForgeCore profiles with user-defined names and stable routing labels, so a
+  workflow can be renamed without breaking GitHub routing. Unused old workflow profiles
+  can be deleted directly; profiles still assigned to runners are protected until those
+  runners are edited. Start/Stop/Restart use local Busy state and do not call GitHub.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
