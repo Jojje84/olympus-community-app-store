@@ -2,22 +2,21 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.20"
+version: "0.1.0-beta.21"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-20
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-21
 description: >-
   ForgeCore Runner Core is a focused self-hosted GitHub Actions runner manager for Umbrel.
   Connect GitHub, choose repositories, create one or more ForgeCore runners, and manage
   runner health, capacity, lifecycle and diagnostics from one mobile-friendly dashboard.
 releaseNotes: >-
-  Clean Beta 20 rebuilds ForgeCore around runners only. The Apps and workflow editing
-  surfaces are removed from the Clean Beta dashboard. GitHub permissions are reduced to
-  metadata read, Actions read and Administration write, eliminating workflow-write and
-  pull-request permission dependencies. The new Runner Core dashboard focuses on
-  repositories, runner creation, online/busy/offline state, start/stop/restart, rename,
-  removal, queue visibility, diagnostics and tester checks. A remote-status watchdog is
-  retained for stale runner recovery. Beta 20 uses a dedicated multi-layer Runner Core
-  validation suite and must pass real self-hosted execution before publication.
+  Clean Beta 21 is a startup hotfix for Runner Core. Beta 20 shipped a Docker Compose
+  dashboard build check that still looked for the old "Clean Beta" dashboard marker,
+  while the rebuilt dashboard identifies itself as "Runner Core". That mismatch caused
+  the web container to exit during startup. Beta 21 aligns the Compose startup guard with
+  the Runner Core dashboard marker and adds a release-gate check so Compose, dashboard
+  and package versions cannot drift apart again. The remaining legacy workflow DELETE
+  API path is also disabled to match the Runner Core product boundary.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
