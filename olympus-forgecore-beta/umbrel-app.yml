@@ -2,24 +2,25 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.24"
+version: "0.1.0-beta.25"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-24
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-25
 description: >-
-  ForgeCore Runner Core is a local-first self-hosted GitHub Actions runner manager for
-  Umbrel. Your Beelink owns runner identity, heartbeat, job state, workflow assignments,
-  logs and lifecycle. GitHub is used for repository access, runner registration and
-  explicit verification instead of continuous dashboard polling.
+  ForgeCore is a local-first self-hosted GitHub Actions runner manager for Umbrel.
+  Your Beelink owns runner identity, heartbeat, logs and lifecycle. GitHub is used for
+  repository access, runner registration and explicit management of the real
+  .github/workflows files.
 releaseNotes: >-
-  Clean Beta 24 rebuilds Runner Core around the original ForgeCore local-first model.
-  Runner health and Busy/Online/Offline state now come from local heartbeat and GitHub
-  runner job hooks on the Beelink instead of repeated GitHub API inventory polling.
-  Repository discovery is cached for one hour and only force-refreshed when the user
-  asks for it. The dashboard is redesigned into Home, Workflows and Runners. Workflows
-  are local ForgeCore profiles with user-defined names and stable routing labels, so a
-  workflow can be renamed without breaking GitHub routing. Unused old workflow profiles
-  can be deleted directly; profiles still assigned to runners are protected until those
-  runners are edited. Start/Stop/Restart use local Busy state and do not call GitHub.
+  Beta 25 removes the confusing local workflow-profile layer. The Workflows screen now
+  shows the real GitHub Actions workflow files from the selected repository and provides
+  explicit Create, Rename, Assign runner and Delete actions. Multiple old workflows can
+  be selected and deleted together. Build/Test/Release/Deploy are available as optional
+  starter templates that create real workflow files using workflow_dispatch only.
+  ForgeCore now exposes its persistent Node ID and every new or edited runner receives a
+  machine label (fc-node-...). Existing local runners are shown as managed by this
+  ForgeCore and can be verified/tagged in GitHub without re-registering. Runner status
+  remains local-first; GitHub workflow data is loaded only when the Workflows screen is
+  explicitly opened/refreshed.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
