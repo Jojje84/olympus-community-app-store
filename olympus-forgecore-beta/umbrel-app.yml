@@ -2,22 +2,22 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.19"
-tagline: GitHub-first build control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=clean-beta-19
+version: "0.1.0-beta.20"
+tagline: Self-hosted GitHub runner control plane
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-20
 description: >-
-  A clean ForgeCore beta rebuilt from a new GitHub-first foundation. Connect GitHub,
-  import repositories and self-hosted runner state, and optionally attach a local
-  ForgeCore Runner. The runtime is Runner-first; only a one-time Beta 4 layout migration is kept to preserve existing managed runners.
+  ForgeCore Runner Core is a focused self-hosted GitHub Actions runner manager for Umbrel.
+  Connect GitHub, choose repositories, create one or more ForgeCore runners, and manage
+  runner health, capacity, lifecycle and diagnostics from one mobile-friendly dashboard.
 releaseNotes: >-
-  Clean Beta 19 introduces Runner-only mode for normal CI routing. GitHub-hosted Ubuntu,
-  Windows and macOS choices are removed from the workflow editor, and the routing API
-  rejects hosted execution requests. Existing hosted jobs are detected and surfaced with
-  a one-click Move all jobs to ForgeCore action. Repositories without a managed runner
-  are prompted to create one first. GitHub Actions may remain as the scheduler, while
-  build and test compute stays on ForgeCore self-hosted runners and does not consume
-  GitHub-hosted Actions minutes. Beta 18 permission repair and protected-branch handling
-  remain included.
+  Clean Beta 20 rebuilds ForgeCore around runners only. The Apps and workflow editing
+  surfaces are removed from the Clean Beta dashboard. GitHub permissions are reduced to
+  metadata read, Actions read and Administration write, eliminating workflow-write and
+  pull-request permission dependencies. The new Runner Core dashboard focuses on
+  repositories, runner creation, online/busy/offline state, start/stop/restart, rename,
+  removal, queue visibility, diagnostics and tester checks. A remote-status watchdog is
+  retained for stale runner recovery. Beta 20 uses a dedicated multi-layer Runner Core
+  validation suite and must pass real self-hosted execution before publication.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
