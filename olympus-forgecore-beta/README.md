@@ -1,22 +1,32 @@
-# ForgeCore Clean Beta
+# ForgeCore Runner Core Beta
 
-ForgeCore Clean Beta is the GitHub-first ForgeCore package for Umbrel.
+ForgeCore Runner Core is the focused self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 19
+## Beta 20
 
-Beta 19 simplifies normal CI around Runner-only execution.
+Beta 20 rebuilds the Clean Beta around runners only.
 
-- GitHub-hosted Ubuntu, Windows and macOS routing choices are removed from the normal workflow editor.
-- The routing API rejects attempts to move jobs back to GitHub-hosted compute.
-- Existing hosted jobs are detected and can be moved to ForgeCore with **Move all jobs to ForgeCore**.
-- Repositories without a managed runner get a **Create ForgeCore runner** action first.
-- GitHub Actions may remain as trigger/scheduler, but build and test jobs execute on ForgeCore self-hosted runners.
-- Runner health now includes a guarded remote-status watchdog that can request a safe restart when the local process looks online but GitHub reports it offline or missing.
-- Release validation no longer depends on live edits to `.github/workflows`. Runner-only routing is tested deterministically, while the self-hosted runner performs a real GitHub branch + file write/read/delete test.
-- The complete Beta 19 release candidate passed shell, JavaScript, Python, Compose, runner-boundary and live GitHub repository validation on the ForgeCore runner.
+- Apps, Delivery and workflow editing are removed from the Clean Beta dashboard.
+- GitHub permissions are reduced to metadata read, Actions read and Administration write.
+- Repositories are the entry point for creating repository-scoped ForgeCore runners.
+- Runner status is shown as Online, Busy, Reconnecting, Offline or Stopped.
+- Runner controls include Start, Stop, Restart, Rename, Remove and Force recover.
+- Queue/capacity visibility and runner/registration logs are built into the dashboard.
+- A remote-status watchdog recovers stale runner listeners, including stale offline+busy states.
+- Existing Beta 19 runner metadata is preserved.
+- The release gate runs seven separate tests in sequence on the real ForgeCore self-hosted runner.
 
-Version: 0.1.0-beta.19
+Validation for the published candidate passed:
+1. Python + permission contract
+2. Dashboard + mobile boundary
+3. Runner manager lifecycle boundary
+4. HTTP API boot smoke
+5. Package + Compose integrity
+6. Beta 19 runner persistence
+7. Real self-hosted runner E2E
 
-Source branch: `clean-beta/runner-only-v19`
+Version: 0.1.0-beta.20
 
-Source commit: `0873f7a4993bcce776925e4addafa12559250862`
+Source branch: `clean-beta/runner-core-v20`
+
+Source commit: `3a264ebc0a6d5bc9239e60c6861f3cb68c33d8fa`
