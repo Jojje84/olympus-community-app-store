@@ -1,26 +1,33 @@
 # ForgeCore Runner Core Beta
 
-ForgeCore Runner Core is the focused self-hosted GitHub Actions runner manager for Umbrel.
+ForgeCore Runner Core is a local-first self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 23
+## Beta 24
 
-Beta 23 makes workflow assignment a first-class runner setting and removes the need to refresh after accepted runner changes.
+Beta 24 returns Runner Core to the original ForgeCore architecture: the Beelink owns runner state and GitHub is the job broker, not the dashboard database.
 
-- Create runner now offers **Build workflow**, **Test workflow**, **Release workflow** and **Deploy workflow** assignments.
-- ForgeCore maps those assignments to GitHub self-hosted runner labels.
-- Runner cards show the active workflow assignments directly.
-- Edit runner can change name, workflow assignments and custom labels.
-- Accepted edits are reflected immediately while the runner reconnects.
-- Accepted removals disappear immediately from the dashboard while GitHub/local cleanup finishes.
-- Pending operations are protected from periodic refresh so stale state does not flash back into the UI.
-- The release validation now runs all checks as steps inside one self-hosted job, avoiding repeated runner reservation between test jobs.
+- Runner identity remains persistent on the Beelink.
+- Online / Busy / Offline comes from local heartbeat and GitHub runner job hooks.
+- Normal dashboard refresh does not query GitHub.
+- Repository discovery is cached for one hour and can be explicitly refreshed.
+- Start / Stop / Restart use local state and do not call GitHub.
+- The dashboard is reorganized into **Home**, **Workflows** and **Runners**.
+- Workflows are local ForgeCore profiles with user-defined names and stable routing labels.
+- Renaming a workflow profile does not change its routing label.
+- Unused old workflow profiles can be deleted immediately.
+- Profiles still assigned to runners are protected until those runners are edited.
+- Runner Edit and Remove remain visually stable until local runner-manager state confirms the operation.
 
-GitHub workflow routing still uses `runs-on` labels under the hood. Example:
-- Build: `runs-on: [self-hosted, ForgeCore, build]`
-- Release: `runs-on: [self-hosted, ForgeCore, release]`
+The release gate passed in one self-hosted job:
+1. Python local-first contract
+2. Dashboard UX + no background GitHub polling
+3. Runner-manager heartbeat + job hooks
+4. API boot smoke
+5. Package integrity + exact payload validation
+6. Real self-hosted runner E2E
 
-Version: 0.1.0-beta.23
+Version: 0.1.0-beta.24
 
-Source branch: `clean-beta/workflow-assignments-v23`
+Source branch: `clean-beta/local-first-v24`
 
-Source commit: `287c884b17543bceb0a88ed3909a0452dbed4a7b`
+Source commit: `d2ac04a951bd5144b0408a2fc98ed7d6012810d5`
