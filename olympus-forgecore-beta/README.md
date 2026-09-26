@@ -2,31 +2,25 @@
 
 ForgeCore Runner Core is the focused self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 21
+## Beta 22
 
-Beta 21 is a startup hotfix for Runner Core.
+Beta 22 focuses on managed runner editing, reliable removal and stale-listener recovery.
 
-Beta 20 rebuilt the dashboard around runners, but the packaged Docker Compose startup guard still searched for the old dashboard marker `Clean Beta · beta.20`. The actual dashboard identifies itself as `Runner Core · beta.20`, so the web container exited immediately during startup.
+- Runner details now include **Edit runner**.
+- Name and runner labels can be changed after creation.
+- Common roles are available directly: **build**, **test**, **release** and **deploy**.
+- Additional custom labels remain supported.
+- The shared **ForgeCore** label is always preserved automatically.
+- Internal ForgeCore route labels are preserved during edits.
+- Editing uses one controlled re-registration path rather than the previous reset/register race.
+- **Remove runner** deletes the GitHub runner registration first, then cleans up the local ForgeCore runner.
+- Busy runners return a clear conflict and can be **Force removed** when a job is genuinely stuck.
+- The watchdog now recovers runners that remain locally connecting/offline while GitHub cannot assign new jobs.
 
-Beta 21 fixes that mismatch and strengthens the release gate:
+Release testing also reproduced the Beta 21 stale-listener case. The edit/remove contract and UI/package checks ran successfully on the self-hosted ForgeCore runner before that installed Beta 21 listener stopped accepting new jobs. The Beta 22 watchdog closes that recovery gap. A direct source/package audit passed all version, contract and Base64 integrity checks before publication.
 
-- Compose now checks for the real Runner Core dashboard marker.
-- The package validation requires Compose, dashboard and server versions to match.
-- The validation starts the actual packaged `web` service with `docker compose up` and verifies `/health`.
-- The remaining legacy workflow DELETE endpoint is disabled to match the Runner Core boundary.
-- The full seven-stage Runner Core validation passed on self-hosted runner ID 24.
+Version: 0.1.0-beta.22
 
-Validation passed:
-1. Python + permission contract
-2. Dashboard + mobile boundary
-3. Runner manager lifecycle boundary
-4. HTTP API boot smoke
-5. Package + Compose integrity, including real packaged web startup
-6. Beta 19 runner persistence
-7. Real self-hosted runner E2E
+Source branch: `clean-beta/runner-edit-v22`
 
-Version: 0.1.0-beta.21
-
-Source branch: `clean-beta/runner-core-v21`
-
-Source commit: `3db98c8add8ea5d564066afc76e4796f23e631ce`
+Source commit: `627e79ef5674755c5391a79a2460b17151e846f3`
