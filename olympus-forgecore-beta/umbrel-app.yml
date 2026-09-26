@@ -2,24 +2,22 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.26"
+version: "0.1.0-beta.27"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-26
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-27
 description: >-
   ForgeCore is a local-first self-hosted GitHub Actions runner manager for Umbrel.
   Your Beelink owns runner identity, heartbeat, logs and lifecycle. GitHub is used for
   repository access, runner registration and explicit management of the real
   .github/workflows files.
 releaseNotes: >-
-  Beta 26 connects runner creation and workflow routing into one operation. Add runner
-  now loads the real GitHub Actions workflows for the selected repository. The user can
-  select existing workflows and/or create missing Build, Test, Release and Deploy
-  starters before pressing Create. ForgeCore registers the runner, waits until GitHub
-  sees it, adds the stable fc-route label and then updates or creates the selected real
-  .github/workflows files automatically. The workflow binding is stored locally and
-  retried in the background, so closing the browser does not cancel the operation.
-  Runner cards show whether workflow setup is connecting, retrying or complete. Manual
-  workflow assignment remains available for later changes.
+  Clean Beta 27 fixes a local status bug where a self-hosted ForgeCore runner could
+  successfully accept and run GitHub Actions jobs while the dashboard remained stuck
+  on Connecting or Offline. The runner manager now persists the listener log offset and
+  keeps checking for late "Listening for Jobs" readiness after the initial startup
+  window. As soon as the existing listener becomes ready, the local heartbeat state is
+  promoted to Online without re-registering the runner or polling GitHub. Beta 27 keeps
+  Beta 26 automatic workflow binding intact.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
