@@ -2,31 +2,31 @@
 
 ForgeCore Runner Core is the focused self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 20
+## Beta 21
 
-Beta 20 rebuilds the Clean Beta around runners only.
+Beta 21 is a startup hotfix for Runner Core.
 
-- Apps, Delivery and workflow editing are removed from the Clean Beta dashboard.
-- GitHub permissions are reduced to metadata read, Actions read and Administration write.
-- Repositories are the entry point for creating repository-scoped ForgeCore runners.
-- Runner status is shown as Online, Busy, Reconnecting, Offline or Stopped.
-- Runner controls include Start, Stop, Restart, Rename, Remove and Force recover.
-- Queue/capacity visibility and runner/registration logs are built into the dashboard.
-- A remote-status watchdog recovers stale runner listeners, including stale offline+busy states.
-- Existing Beta 19 runner metadata is preserved.
-- The release gate runs seven separate tests in sequence on the real ForgeCore self-hosted runner.
+Beta 20 rebuilt the dashboard around runners, but the packaged Docker Compose startup guard still searched for the old dashboard marker `Clean Beta · beta.20`. The actual dashboard identifies itself as `Runner Core · beta.20`, so the web container exited immediately during startup.
 
-Validation for the published candidate passed:
+Beta 21 fixes that mismatch and strengthens the release gate:
+
+- Compose now checks for the real Runner Core dashboard marker.
+- The package validation requires Compose, dashboard and server versions to match.
+- The validation starts the actual packaged `web` service with `docker compose up` and verifies `/health`.
+- The remaining legacy workflow DELETE endpoint is disabled to match the Runner Core boundary.
+- The full seven-stage Runner Core validation passed on self-hosted runner ID 24.
+
+Validation passed:
 1. Python + permission contract
 2. Dashboard + mobile boundary
 3. Runner manager lifecycle boundary
 4. HTTP API boot smoke
-5. Package + Compose integrity
+5. Package + Compose integrity, including real packaged web startup
 6. Beta 19 runner persistence
 7. Real self-hosted runner E2E
 
-Version: 0.1.0-beta.20
+Version: 0.1.0-beta.21
 
-Source branch: `clean-beta/runner-core-v20`
+Source branch: `clean-beta/runner-core-v21`
 
-Source commit: `3a264ebc0a6d5bc9239e60c6861f3cb68c33d8fa`
+Source commit: `3db98c8add8ea5d564066afc76e4796f23e631ce`
