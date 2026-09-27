@@ -2,21 +2,24 @@
 
 ForgeCore Runner Core is a local-first self-hosted GitHub Actions runner manager for Umbrel.
 
-## Beta 27
+## Beta 28
 
-Beta 27 fixes a status bug where a ForgeCore self-hosted runner could successfully accept and run GitHub Actions jobs while the ForgeCore dashboard remained stuck on Connecting or Offline.
+Beta 28 fixes repository-specific runner selection and makes multi-repository routing explicit.
 
-- The runner manager now persists the listener log offset for each start.
-- Readiness is checked continuously after the initial startup window.
-- A late "Listening for Jobs" signal promotes the local runner state to Online within the normal heartbeat loop.
-- No runner re-registration is required for this recovery.
-- Normal status refresh remains local-first and does not poll GitHub.
-- Beta 26 automatic workflow binding remains intact.
+- Repository matching is normalized and case-insensitive.
+- Assign runner lists specific runners registered to the selected repository first.
+- "Any runner registered to this repository" is an explicit fallback, not the default.
+- If a repository has no ForgeCore runner, the assignment dialog tells you directly and offers to create one for that repository.
+- Create workflow uses the same repository-aware runner selection.
+- A new **Repositories** view makes multi-repo setups first-class.
+- Each repository shows its ForgeCore runners and provides **Add runner** and **Workflows** actions.
+- Workflow cards show the routing chain: **Repository → Workflow → Runner → This ForgeCore Node**.
+- Runner cards show the repository and persistent ForgeCore Node ID so you can see which Beelink-managed runner belongs to which repo.
 
-The regression gate explicitly simulates delayed listener readiness and verifies that the state changes from Connecting to Online without restarting the runner.
+The full Beta 28 validation passed on the real self-hosted ForgeCore runner.
 
-Version: 0.1.0-beta.27
+Version: 0.1.0-beta.28
 
-Source branch: `clean-beta/runner-online-v27`
+Source branch: `clean-beta/repo-routing-v28`
 
-Source commit: `4aed28f0de250a3cc6b9a4376c1d474c1b00ab4e`
+Source commit: `e1de639716497453ed055509d290e39c0dfd82d2`
