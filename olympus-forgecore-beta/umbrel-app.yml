@@ -2,24 +2,23 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.28"
+version: "0.1.0-beta.29"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-28
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-29
 description: >-
   ForgeCore is a local-first self-hosted GitHub Actions runner manager for Umbrel.
   Your Beelink owns runner identity, heartbeat, logs and lifecycle. GitHub is used for
   repository access, runner registration and explicit management of the real
   .github/workflows files.
 releaseNotes: >-
-  Clean Beta 28 makes repository routing explicit and fixes specific-runner selection.
-  Runner matching is now case-insensitive and normalized, so a runner cannot disappear
-  from Assign runner because of repository-name casing. Assign runner lists the specific
-  runners registered to the selected repository first and treats "Any runner registered
-  to this repository" as an explicit fallback rather than the default. A new Repositories
-  view makes multi-repository setups first-class: each repository shows its local
-  ForgeCore runners and provides direct Add runner and Workflows actions. Workflow cards
-  now show Repository -> Workflow -> Runner routing and the ForgeCore Node ID so the user
-  can see which Beelink-managed runner GitHub Actions is configured to use.
+  Clean Beta 29 fixes workflow file permissions and makes choosing your own runner explicit.
+  Workflow management is now verified per repository before Rename, Delete, Create or runner
+  routing is enabled. If the current GitHub App can list Actions but cannot read the real
+  .github/workflows YAML files, ForgeCore shows Update GitHub access instead of failing later
+  with GitHub HTTP 404 contents=read. Assign runner is redesigned as a visible list of local
+  repository-scoped ForgeCore runners; the first local runner is selected by default and
+  "Any runner" is a separate fallback. Each runner option shows local status and ForgeCore
+  Node ID so the user can see exactly which runner on this Beelink will receive the workflow.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
