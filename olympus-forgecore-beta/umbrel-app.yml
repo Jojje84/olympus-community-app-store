@@ -2,22 +2,24 @@ manifestVersion: 1
 id: olympus-forgecore-beta
 category: developer
 name: ForgeCore Beta
-version: "0.1.0-beta.27"
+version: "0.1.0-beta.28"
 tagline: Self-hosted GitHub runner control plane
-icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-27
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-forgecore-beta/icon.svg?v=runner-core-28
 description: >-
   ForgeCore is a local-first self-hosted GitHub Actions runner manager for Umbrel.
   Your Beelink owns runner identity, heartbeat, logs and lifecycle. GitHub is used for
   repository access, runner registration and explicit management of the real
   .github/workflows files.
 releaseNotes: >-
-  Clean Beta 27 fixes a local status bug where a self-hosted ForgeCore runner could
-  successfully accept and run GitHub Actions jobs while the dashboard remained stuck
-  on Connecting or Offline. The runner manager now persists the listener log offset and
-  keeps checking for late "Listening for Jobs" readiness after the initial startup
-  window. As soon as the existing listener becomes ready, the local heartbeat state is
-  promoted to Online without re-registering the runner or polling GitHub. Beta 27 keeps
-  Beta 26 automatic workflow binding intact.
+  Clean Beta 28 makes repository routing explicit and fixes specific-runner selection.
+  Runner matching is now case-insensitive and normalized, so a runner cannot disappear
+  from Assign runner because of repository-name casing. Assign runner lists the specific
+  runners registered to the selected repository first and treats "Any runner registered
+  to this repository" as an explicit fallback rather than the default. A new Repositories
+  view makes multi-repository setups first-class: each repository shows its local
+  ForgeCore runners and provides direct Add runner and Workflows actions. Workflow cards
+  now show Repository -> Workflow -> Runner routing and the ForgeCore Node ID so the user
+  can see which Beelink-managed runner GitHub Actions is configured to use.
 developer: Jojje84
 website: https://github.com/Jojje84/ForgeCore
 dependencies: []
