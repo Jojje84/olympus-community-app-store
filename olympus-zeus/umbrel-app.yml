@@ -1,0 +1,47 @@
+manifestVersion: 1
+storage:
+  dataRoot: data
+id: olympus-zeus
+category: ai
+name: Zeus
+version: "0.1.0-dev.48"
+tagline: Local modular AI runtime powered by Qwen
+icon: https://raw.githubusercontent.com/Jojje84/olympus-community-app-store/main/olympus-zeus/icon.png?v=0.1.0-dev.48
+description: >-
+  Zeus is a local modular AI runtime for UmbrelOS.
+
+
+  This development package runs the Zeus control layer, Qwen Code Web Shell,
+  llama.cpp and the verified Qwen3.5-0.8B Q8_0 model. The model is stored in
+  persistent app data and verified by SHA-256.
+
+
+  Zeus application code and replaceable runtime components are versioned
+  separately from persistent workspace data so future upgrades can preserve
+  settings, skills, memory and user data.
+
+
+  This development package is pinned to the exact image that passed the Zeus
+  container gate and is publicly pullable from GHCR. Olympus promotion remains
+  blocked until host-level Umbrel validation is complete.
+releaseNotes: >-
+  Development build based on the fully tested Container Build #48 artifact.
+
+developer: Jojje84
+website: https://github.com/Jojje84/olympus-community-app-store/tree/main/olympus-zeus
+dependencies: []
+repo: https://github.com/Jojje84/olympus-community-app-store
+support: https://github.com/Jojje84/olympus-community-app-store/issues
+
+port: 18417
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+backupIgnore:
+  - "data/models/*"
+
+submitter: Jojje84
+submission: https://github.com/Jojje84/olympus-community-app-store
