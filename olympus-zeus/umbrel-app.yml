@@ -22,10 +22,10 @@ description: >-
 
 
   This development package is pinned to the exact image that passed the Zeus
-  container gate and is publicly pullable from GHCR. Olympus promotion remains
-  blocked until host-level Umbrel validation is complete.
+  container gate and is publicly pullable from GHCR. It is published as a
+  development candidate for real-host Umbrel validation before a stable release.
 releaseNotes: >-
-  Development build based on the fully tested Container Build #48 artifact.
+  Development candidate based on the fully tested Container Build #48 artifact. Real-host Umbrel install, reboot, migration, backup/restore, upgrade and rollback validation remain before a stable release.
 
 developer: Jojje84
 website: https://github.com/Jojje84/olympus-community-app-store/tree/main/olympus-zeus
