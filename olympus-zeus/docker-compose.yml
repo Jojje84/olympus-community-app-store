@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: olympus-zeus_app_1
+      APP_PORT: 4171
+
+  app:
+    image: ghcr.io/jojje84/zeus:0.1.0-dev.48@sha256:f911e2f417941479e4680a238d6754a976764e39f60b1083fef80f88c3ee09db
+    restart: on-failure
+    init: true
+    environment:
+      TZ: Europe/Stockholm
+      ZEUS_QWEN_HOST: "0.0.0.0"
+      ZEUS_QWEN_PORT: "4170"
+      ZEUS_GATEWAY_HOST: "0.0.0.0"
+      ZEUS_GATEWAY_PORT: "4171"
+      ZEUS_LLAMA_HOST: "127.0.0.1"
+      ZEUS_LLAMA_PORT: "18101"
+      ZEUS_MODEL_AUTO_DOWNLOAD: "1"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    networks:
+      - zeus_private
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node --input-type=module -e
+          'const r=await fetch("http://127.0.0.1:4171/__zeus/health");
+          if(!r.ok)process.exit(1)'
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 15m
+
+networks:
+  zeus_private:
+    driver: bridge
