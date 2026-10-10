@@ -2,7 +2,7 @@ manifestVersion: 1
 id: olympus-lyftr
 category: "health-&-fitness"
 name: Lyftr
-version: "0.1.0-beta.6"
+version: "0.1.0-beta.7"
 tagline: Lightweight workout and nutrition tracking
 icon: https://raw.githubusercontent.com/Cawlumm/lyftr/main/mobile/assets/icon.png
 description: >-
@@ -13,7 +13,7 @@ description: >-
   This Olympus package stores its SQLite database persistently in Umbrel.
   Registration is set to first-user so the first account claims the instance.
 releaseNotes: >-
-  Packaged from upstream Lyftr v0.1.0-beta.6.
+  Packaged from upstream Lyftr v0.1.0-beta.7.
 
 developer: Cawlumm
 website: https://lyftr-app.pages.dev/

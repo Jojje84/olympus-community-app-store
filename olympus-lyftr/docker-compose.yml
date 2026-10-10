@@ -10,7 +10,7 @@ services:
 
   backend:
     container_name: lyftr-backend
-    image: cwlumm/lyftr-backend:v0.1.0-beta.6
+    image: cwlumm/lyftr-backend:v0.1.0-beta.7
     restart: on-failure
     volumes:
       - ${APP_DATA_DIR}/data:/app/data
@@ -33,7 +33,7 @@ services:
 
   frontend:
     container_name: lyftr-web
-    image: cwlumm/lyftr-frontend:v0.1.0-beta.6
+    image: cwlumm/lyftr-frontend:v0.1.0-beta.7
     restart: on-failure
     environment:
       BACKEND_ORIGIN: backend:3000
